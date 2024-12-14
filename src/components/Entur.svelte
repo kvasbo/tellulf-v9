@@ -9,7 +9,6 @@
 		entur = new Entur();
 		setInterval(() => {
 			trains = entur.getTrains();
-			console.log(trains);
 		}, 5000);
 	});
 
