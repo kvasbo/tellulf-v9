@@ -1,0 +1,9 @@
+{
+  "name": "Tellulf - hjemmeskjermen vår",
+  "short_name": "Tellulf",
+  "description": "Tellulf for iPad",
+  "start_url": "/",
+  "display": "fullscreen",
+  "background_color": "#ffffff",
+  "theme_color": "#000000"
+}

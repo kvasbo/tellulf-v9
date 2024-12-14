@@ -1380,6 +1380,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/luxon@npm:*":
+  version: 3.4.2
+  resolution: "@types/luxon@npm:3.4.2"
+  checksum: 10c0/d835467de3daf7e17ba78b50bb5a14efd94272439ca067990d71332a54b311544459c69623eddd243b511b28d70194c9591a9ee8cf9c038962c965f991affd7e
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:*":
   version: 22.10.2
   resolution: "@types/node@npm:22.10.2"
@@ -4926,6 +4933,7 @@ __metadata:
     "@sveltejs/adapter-node": "npm:^5.2.10"
     "@sveltejs/kit": "npm:^2.9.0"
     "@sveltejs/vite-plugin-svelte": "npm:^5.0.0"
+    "@types/luxon": "npm:*"
     drizzle-kit: "npm:^0.22.0"
     drizzle-orm: "npm:^0.33.0"
     eslint: "npm:^9.7.0"

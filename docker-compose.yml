@@ -1,0 +1,27 @@
+services:
+  tellulf:
+    image: ghcr.io/kvasbo/tellulf-v6:main
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    ports:
+      - "${EXPOSE_PORT}:3000"
+    environment:
+      - YR_URL_FORECAST=${YR_URL_FORECAST}
+      - YR_URL_NOWCAST=${YR_URL_NOWCAST}
+      - CAL_ID_FELLES=${CAL_ID_FELLES}
+      - CAL_ID_BURSDAG=${CAL_ID_BURSDAG}
+      - CAL_ID_MIDDAG=${CAL_ID_MIDDAG}
+      - GOOGLE_KEY_B64=${GOOGLE_KEY_B64}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_USER=${MQTT_USER}
+      - MQTT_PASS=${MQTT_PASS}
+      - PGUSER=${PGUSER}
+      - PGPASSWORD=${PGPASSWORD}
+      - PGHOST=${PGHOST}
+      - PGPORT=${PGPORT}
+      - PGDATABASE=${PGDATABASE}
+networks:
+  default:
+    name: ${NETWORK_NAME}
+    external: true
