@@ -15,13 +15,13 @@
 	<div id="current_temperature">{temperature}&deg;</div>
 	<div id="aux-weather-info">
 		<div id="day_info_sun">
-			<img alt="" src="/sunrise.png" width="22" />{sunrise}<img
+			<img alt="" src="/sunrise.png" width="22" />&nbsp;{sunrise}&nbsp;&nbsp;<img
 				alt=""
 				src="/sunset.png"
 				width="22"
-			/>{sunset}
+			/>&nbsp;{sunset}
 		</div>
-		<div id="current_pressure">{pressure}</div>
-		<div id="current_humidity">{humidity}</div>
+		<div id="current_pressure">{pressure} hPa</div>
+		<div id="current_humidity">{humidity}% hum</div>
 	</div>
 </currentweather>

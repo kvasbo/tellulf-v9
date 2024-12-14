@@ -4,7 +4,7 @@ export class Entur {
   trains = [];
 
   constructor() {
-    this.Update();
+    setTimeout(() => this.Update(), 5000);
     setInterval(() => {
       this.Update();
     }, 60000);

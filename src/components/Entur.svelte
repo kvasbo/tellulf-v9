@@ -14,10 +14,10 @@
 	onMount(() => {
 		entur = new Entur();
 		// Initial load
-		updateTrains();
+		// updateTrains();
 
 		// Set up interval for updates
-		const interval = setInterval(updateTrains, 5000);
+		const interval = setInterval(updateTrains, 30000);
 
 		// Cleanup on component destroy
 		return () => clearInterval(interval);

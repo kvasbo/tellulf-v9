@@ -3,10 +3,12 @@
 	import Day from './Day.svelte';
 
 	let days = [];
+	// For now this gets pretty much everything.
 	async function updateCalendar() {
 		console.log('Updating calendar');
 		const data = await fetch("/api/calendar");
-		days = await data.json();
+		const json = await data.json();
+		days = json.days;
 	}
 
 	onMount(() => {

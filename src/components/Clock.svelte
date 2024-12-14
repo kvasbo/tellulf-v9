@@ -39,6 +39,6 @@
 	<div id="now_time">{time}</div>
 	<div id="date_week">
 		<div id="now_date">{date}</div>
-		<div id="now_week">{week}</div>
+		<div id="now_week">Uke {week}</div>
 	</div>
 </clock>

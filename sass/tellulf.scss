@@ -141,13 +141,6 @@ calendar {
           flex-direction: column;
           justify-content: center;
         }
-        .event-time-end,
-        .event-time-start {
-          width: 60px;
-        }
-        .event-time-spacer {
-          width: 20px;
-        }
       }
     }
   }
@@ -180,8 +173,7 @@ footer {
   display: flex;
 }
 
-#power-cabin,
-#power-home,
+.powerDisplay,
 #bane,
 #cooler {
   display: flex;
