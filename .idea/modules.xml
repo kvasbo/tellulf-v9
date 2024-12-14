@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Tellulf v9.iml" filepath="$PROJECT_DIR$/.idea/Tellulf v9.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tellulf-v6/.idea/tellulf-v6.iml" filepath="$PROJECT_DIR$/../tellulf-v6/.idea/tellulf-v6.iml" />
     </modules>
   </component>
 </project>

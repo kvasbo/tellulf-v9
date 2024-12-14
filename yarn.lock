@@ -1413,7 +1413,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/ws@npm:^8.5.9":
+"@types/ws@npm:*, @types/ws@npm:^8.5.9":
   version: 8.5.13
   resolution: "@types/ws@npm:8.5.13"
   dependencies:
@@ -4934,6 +4934,7 @@ __metadata:
     "@sveltejs/kit": "npm:^2.9.0"
     "@sveltejs/vite-plugin-svelte": "npm:^5.0.0"
     "@types/luxon": "npm:*"
+    "@types/ws": "npm:*"
     drizzle-kit: "npm:^0.22.0"
     drizzle-orm: "npm:^0.33.0"
     eslint: "npm:^9.7.0"
