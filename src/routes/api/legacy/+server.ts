@@ -1,3 +1,7 @@
+import { Calendar } from '$lib/server/Calendar.mjs';
+
+const calendar = new Calendar();
+
 export async function GET(): Promise<Response> {
 	try {
 		const out = { success: true };

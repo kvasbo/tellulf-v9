@@ -90,28 +90,6 @@ app.get("/", (req, res) => {
 });
 
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-const clients = [];
-
-wss.on("connection", function connection(ws) {
-  ws.on("message", function incoming(message) {
-    console.log("received: %s", message);
-    ws.send(JSON.stringify({ message: "Hello, from Tellulf Server!" }));
-  });
-
-  ws.on("close", () => {
-    console.log("Client disconnecting", clients.length);
-    clients.splice(clients.indexOf(ws), 1);
-    console.log("Client disconnected", clients.length);
-  });
-
-  clients.push(ws);
-  console.log("Client connected", clients.length);
-
-  // Run the update loop immediately (for all clients, but hey, it's just a clock)
-  updateClocks(false);
-  pushDataToClients();
-});
 
 server.listen(port, () => {
   console.log(
@@ -123,28 +101,13 @@ server.listen(port, () => {
  * Push data to all connected clients
  */
 function pushDataToClients() {
-  console.log(`Pushing updated data to ${clients.length} connected clients`);
 
   const homey = smart.getData();
   const enturData = entur.Get();
   const currentWeather = weather.getCurrentWeather();
   const longTermForecast = weather.getDailyForecasts();
   const powerPrice = powerPriceGetter.getPowerPrice();
-  const eventsHash = calendar.getEventsHash();
-  console.log("Events hash", eventsHash);
-  clients.forEach((client) => {
-    client.send(
-      JSON.stringify({
-        homey,
-        powerPrice,
-        entur: enturData,
-        currentWeather,
-        longTermForecast,
-        eventsHash,
-        version,
-      }),
-    );
-  });
+
 }
 
 /**

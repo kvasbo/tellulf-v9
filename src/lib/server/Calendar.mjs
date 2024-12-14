@@ -1,13 +1,11 @@
 import { google } from "googleapis";
 import { DateTime } from "luxon";
-import { createHash } from "crypto";
+import { GOOGLE_KEY_B64, CAL_ID_MIDDAG, CAL_ID_FELLES, CAL_ID_BURSDAG } from '$env/static/private';
 
 const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 
 // Get the Google key from the environment variable
-const key64 = process.env.GOOGLE_KEY_B64 ? process.env.GOOGLE_KEY_B64 : "";
-
-const GOOGLE_KEY = JSON.parse(Buffer.from(key64, "base64").toString("utf8"));
+const GOOGLE_KEY = JSON.parse(Buffer.from(GOOGLE_KEY_B64, "base64").toString("utf8"));
 
 /**
  * Calendar class, with methods for fetching events, birthdays and dinners.
@@ -130,11 +128,6 @@ export class Calendar {
     };
   }
 
-  getEventsHash() {
-    const jsonString = JSON.stringify(this.events);
-    return createHash("sha256").update(jsonString).digest("hex");
-  }
-
   /**
    * Parse the title of an event, if it is a birthday then change it to display
    * the age of the person if the event title ends in a string.
@@ -161,8 +154,8 @@ export class Calendar {
   }
 
   async refreshEvents() {
-    if (process.env.CAL_ID_FELLES) {
-      this.events = await Calendar.getCalendarData(process.env.CAL_ID_FELLES);
+    if (CAL_ID_FELLES) {
+      this.events = await Calendar.getCalendarData(CAL_ID_FELLES);
 
       console.log(this.events.length + " events fetched.");
     } else {
@@ -171,8 +164,8 @@ export class Calendar {
   }
 
   async refreshDinners() {
-    if (process.env.CAL_ID_MIDDAG) {
-      this.dinners = await Calendar.getCalendarData(process.env.CAL_ID_MIDDAG);
+    if (CAL_ID_MIDDAG) {
+      this.dinners = await Calendar.getCalendarData(CAL_ID_MIDDAG);
 
       console.log(this.dinners.length + " dinners fetched.");
     } else {
@@ -183,9 +176,9 @@ export class Calendar {
   }
 
   async refreshBirthdays() {
-    if (process.env.CAL_ID_BURSDAG) {
+    if (CAL_ID_BURSDAG) {
       this.birthdays = await Calendar.getCalendarData(
-        process.env.CAL_ID_BURSDAG,
+        CAL_ID_BURSDAG,
       );
 
       console.log(this.birthdays.length + " birthdays fetched.");
