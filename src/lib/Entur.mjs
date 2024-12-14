@@ -10,7 +10,7 @@ export class Entur {
     }, 60000);
   }
 
-  Get() {
+  getTrains() {
     return this.trains;
   }
 

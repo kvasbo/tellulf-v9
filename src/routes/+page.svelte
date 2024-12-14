@@ -5,6 +5,7 @@
 	import { Updater } from '$lib/client/updater';
 	import Clock from '../components/Clock.svelte';
 	import CurrentWeather from '../components/CurrentWeather.svelte';
+	import Entur from '../components/Entur.svelte';
 
 	let updater;
 
@@ -13,8 +14,11 @@
 			updater = new Updater();
 		}
 	});
-
 </script>
 
 <Clock />
 <CurrentWeather />
+
+<footer>
+	<Entur />
+</footer>

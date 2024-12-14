@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 
 import { Days } from "./Days.mjs";
-import { Entur } from "./Entur.mjs";
+import { Entur } from "../Entur.mjs";
 import { Weather } from "./Weather.mjs";
 import { Calendar } from "./Calendar.mjs";
 import { Settings } from "luxon";
@@ -92,7 +92,7 @@ const server = http.createServer(app);
 
 server.listen(port, () => {
   console.log(
-    `Tellulf version ${version} listening on port ${port} for both WS and HTTP`,
+    `Tellulf version ${version} listening on port ${port}`,
   );
 });
 
