@@ -1,6 +1,12 @@
+import { Calendar } from '$lib/server/Calendar.mjs';
+import { Days } from '$lib/server/Days.mjs';
+
+const calendar = new Calendar();
+const days = new Days(calendar);
+
 export async function GET(): Promise<Response> {
 	try {
-		const out = { success: true };
+		const out = days.generateComingDays();
 		return new Response(JSON.stringify(out), {
 			headers: {
 				'Content-Type': 'application/json'

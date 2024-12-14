@@ -3,20 +3,30 @@
 	import { onMount } from 'svelte';
 
 	let entur;
-	$: trains = [];
+	let trains = [];
+
+	function updateTrains() {
+		if (entur) {
+			trains = entur.getTrains();
+		}
+	}
 
 	onMount(() => {
 		entur = new Entur();
-		setInterval(() => {
-			trains = entur.getTrains();
-		}, 5000);
-	});
+		// Initial load
+		updateTrains();
 
+		// Set up interval for updates
+		const interval = setInterval(updateTrains, 5000);
+
+		// Cleanup on component destroy
+		return () => clearInterval(interval);
+	});
 </script>
 
 <div id="bane">
 	<strong>Neste baner</strong>
-	{#each trains.slice(0,4) as train}
+	{#each trains.slice(0, 4) as train}
 		<div>
 			{new Date(train.time).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })} {train.destination}
 		</div>

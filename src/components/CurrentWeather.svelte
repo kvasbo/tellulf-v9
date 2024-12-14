@@ -2,8 +2,8 @@
 	import { getSunrise, getSunset } from 'sunrise-sunset-js';
 	import { weatherStore } from "$lib/client/store";
 	const jsDate = new Date();
-	const sunRiseDate = getSunrise(59.9139, 10.7522, jsDate);
-	const sunSetDate = getSunset(59.9139, 10.7522, jsDate);
+	const sunRiseDate = getSunrise(59.9508, 10.6847, jsDate);
+	const sunSetDate = getSunset(59.9508, 10.6847, jsDate);
 	$: sunrise = sunRiseDate.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
 	$: sunset = sunSetDate.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
 	$: temperature = $weatherStore.temperature;
