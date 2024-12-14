@@ -1,6 +1,8 @@
 import { Calendar } from '$lib/server/Calendar.mjs';
+import { Entur } from '$lib/server/Entur.mjs';
 
 const calendar = new Calendar();
+const entur = new Entur();
 
 export async function GET(): Promise<Response> {
 	try {

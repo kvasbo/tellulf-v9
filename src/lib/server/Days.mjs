@@ -1,5 +1,4 @@
 import { Weather } from "./Weather.mjs";
-import { getSunrise, getSunset } from "sunrise-sunset-js";
 import { DateTime } from "luxon";
 
 export class Days {
@@ -37,9 +36,6 @@ export class Days {
 
     const date = dt.toISODate()?.toString();
 
-    const sunRiseDate = getSunrise(59.9139, 10.7522, jsDate);
-    const sunSetDate = getSunset(59.9139, 10.7522, jsDate);
-
     const daily = this.weather.getDailyForecasts();
 
     const dayHeight = this.calendar.calculateDisplayHeightForDay(jsDate);
@@ -52,10 +48,6 @@ export class Days {
       events: this.calendar.getEventsForDate(jsDate),
       birthdays: this.calendar.getBirthdaysForDate(jsDate),
       dinner: this.calendar.getDinnerForDate(jsDate),
-      sunrise: DateTime.fromJSDate(sunRiseDate)
-        .setLocale("nb")
-        .toFormat("HH:mm"),
-      sunset: DateTime.fromJSDate(sunSetDate).setLocale("nb").toFormat("HH:mm"),
       displayHeight: dayHeight,
     };
   }
