@@ -7,8 +7,6 @@ services:
     ports:
       - "${EXPOSE_PORT}:3000"
     environment:
-      - YR_URL_FORECAST=${YR_URL_FORECAST}
-      - YR_URL_NOWCAST=${YR_URL_NOWCAST}
       - CAL_ID_FELLES=${CAL_ID_FELLES}
       - CAL_ID_BURSDAG=${CAL_ID_BURSDAG}
       - CAL_ID_MIDDAG=${CAL_ID_MIDDAG}
