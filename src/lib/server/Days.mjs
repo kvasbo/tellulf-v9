@@ -1,10 +1,9 @@
-import { Weather } from './Weather.mjs';
 import { DateTime } from 'luxon';
 
 export class Days {
 
-	constructor(calendar) {
-		this.weather = new Weather();
+	constructor(calendar, weather) {
+		this.weather = weather;
 		this.calendar = calendar;
 	}
 
