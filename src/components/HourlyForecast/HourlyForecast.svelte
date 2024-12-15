@@ -36,7 +36,7 @@
 	<div class="weather">
 		{#each $hourlyForecastStore.slice(1, 19) as forecast}
 			<forecast>
-				<span class="forecastMovablePart" style="margin-bottom: {20 + (mapToRange(forecast.instant.air_temperature))}%;">
+				<span class="forecastMovablePart" style="margin-bottom: {20 + (mapToRange(forecast.instant.air_temperature) * 10)}%;">
 					<img class="weather_icon" alt="symbol" src="weathericon/png/{forecast.symbol}.png" />
 					<div class="temperature">
 						{forecast.instant.air_temperature}°

@@ -11,6 +11,7 @@ $grid_margin: 15px;
 $margin: 10px;
 $white: #fdf6e3;
 $gray: #444444;
+$light_gray: #c0c0c0;
 
 * {
 	box-sizing: border-box;
@@ -95,6 +96,11 @@ calendar {
 	justify-content: center;
 	overflow: hidden;
 	day {
+		.calendaricon {
+			height: $text_small;
+			margin-right: 0.3em;
+			width: $text_small;
+		}
 		.dateHeader {
 			align-items: center;
 			border-bottom: 1px solid $gray;
@@ -154,6 +160,49 @@ nowcast {
 	flex-direction: column;
 	justify-content: space-evenly;
 	align-items: flex-start;
+	.weather {
+		position: relative;
+		display: flex;
+		flex: 1;
+		flex-wrap: nowrap;
+		.time {
+			position: absolute;
+			bottom: 15px;
+		}
+		:last-child {
+			border-right: none;
+		}
+		forecast {
+			flex: 1;
+			position: relative;
+			align-items: center;
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-end;
+			margin: 0;
+			height: 100%;
+			border-right: 1px solid $light_gray;
+			:last-child {
+				border-right: none;
+			}
+			.forecastMovablePart {
+				display: flex;
+				bottom: 0;
+				justify-content: center;
+				align-items: center;
+				flex-direction: column;
+				.forecastProb {
+					color: $gray;
+					font-size: $text_small;
+					text-align: center;
+				}
+				.weather_icon {
+					height: auto;
+					width: 70%;
+				}
+			}
+		}
+	}
 }
 
 footer {
@@ -162,68 +211,11 @@ footer {
 	flex-direction: row;
 	justify-content: space-evenly;
 	flex: 1;
-}
-
-.footerBox {
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start;
-	align-items: flex-start;
-	flex: 1;
-}
-
-.weather {
-	position: relative;
-	display: flex;
-	flex: 1;
-	flex-wrap: nowrap;
-	.time {
-		position: absolute;
-		bottom: 15px;
-	}
-	:last-child {
-		border-right: none;
-	}
-	forecast {
-		flex: 1;
-		position: relative;
-		align-items: center;
+	.footerBox {
 		display: flex;
 		flex-direction: column;
-		justify-content: flex-end;
-		background-color: white;
-		margin: 0;
-		height: 100%;
-		border-right: 1px solid $gray;
-		:last-child {
-			border-right: none;
-		}
-		.forecastMovablePart {
-			display: flex;
-			bottom: 0;
-			justify-content: center;
-			align-items: center;
-			flex-direction: column;
-			.forecastProb {
-				color: $gray;
-				font-size: $text_small;
-				text-align: center;
-			}
-			.weather_icon {
-				height: auto;
-				width: 70%;
-			}
-		}
+		justify-content: flex-start;
+		align-items: flex-start;
+		flex: 1;
 	}
-}
-
-.weather_icon {
-	height: auto;
-	width: 70%;
-}
-
-.calendaricon {
-	height: $text_small;
-	margin-right: 0.3em;
-	width: $text_small;
 }
