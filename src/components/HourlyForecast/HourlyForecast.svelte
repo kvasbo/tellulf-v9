@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { hourlyForecastStore } from '$lib/client/store';
+	import { weatherIconMapping } from '$lib/client/weatherSymbolMapping';
 
 	$: hourlyForecastStore;
 
@@ -39,6 +40,17 @@
 		max = temp.max;
 		mapToRange = temp.mapToRange;
 	}
+
+	function getWeatherIcon(symbol: string) {
+		if (!weatherIconMapping[symbol]) {
+			return '';
+		}
+		return `/weather-icons-${isItStatic(symbol)}/${weatherIconMapping[symbol]}.svg`;
+	}
+
+	function isItStatic(symbol: string) {
+		return ['clearsky_night', 'partly-cloudy-night'].includes(symbol) ? 'static' : 'animated';
+	}
 </script>
 
 <nowcast>
@@ -49,7 +61,7 @@
 					class="forecastMovablePart"
 					style="margin-bottom: {10 + mapToRange(forecast.instant.air_temperature) * 7}%;"
 				>
-					<img class="weather_icon" alt="symbol" src="weathericon/png/{forecast.symbol}.png" />
+					<img class="weather_icon" alt="symbol" src={getWeatherIcon(forecast.symbol)} />
 					<div class="temperature">
 						{forecast.instant.air_temperature}°
 					</div>
