@@ -1,6 +1,6 @@
 services:
   tellulf:
-    image: ghcr.io/kvasbo/tellulf-v6:main
+    image: ghcr.io/kvasbo/tellulf-v9:main
     restart: unless-stopped
     stdin_open: true
     tty: true
@@ -16,11 +16,7 @@ services:
       - MQTT_HOST=${MQTT_HOST}
       - MQTT_USER=${MQTT_USER}
       - MQTT_PASS=${MQTT_PASS}
-      - PGUSER=${PGUSER}
-      - PGPASSWORD=${PGPASSWORD}
-      - PGHOST=${PGHOST}
-      - PGPORT=${PGPORT}
-      - PGDATABASE=${PGDATABASE}
+      - DATABASE_URL=${DATABASE_URL}
 networks:
   default:
     name: ${NETWORK_NAME}
