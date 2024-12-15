@@ -8,9 +8,21 @@ const options = {
 	keepalive: 15
 };
 
+// Singleton class to handle MQTT communication
 export class MqttClient {
+
+	private client: mqtt.MqttClient;
+	private static instance: MqttClient;
+
+	public static getInstance(): MqttClient {
+		if (!MqttClient.instance) {
+			MqttClient.instance = new MqttClient();
+		}
+		return MqttClient.instance;
+	}
+
 	// Connect to MQTT broker
-	constructor() {
+	private constructor() {
 		this.client = mqtt.connect(env.MQTT_HOST, options);
 		this.client
 			.on('connect', () => {
@@ -18,9 +30,13 @@ export class MqttClient {
 				this.client.subscribe('#');
 				this.client.publish('tellulf/poll', 'Tellulf is online and polling');
 			})
+			.on('disconnect', () => {
+				this.log('Disconnected');
+			})
 			.on('error', (error) => {
 				console.log('MQTT Error', error.message);
 				this.client.end();
+				console.log("MQTT client ended, reconnecting in 2 seconds", error.message);
 				setTimeout(() => this.client.reconnect(), 2000);
 			})
 			.on('reconnect', () => {
@@ -33,7 +49,7 @@ export class MqttClient {
 	 * @param topic
 	 * @param message
 	 */
-	publish(topic, message) {
+	publish(topic: string, message: string) {
 		if (message !== null && message !== undefined) {
 			this.client.publish(topic, message.toString());
 		}
@@ -44,7 +60,7 @@ export class MqttClient {
 	 * @param message
 	 * @param value
 	 */
-	log(message, value = '') {
+	log(message: string, value = '') {
 		const d = new Date();
 		const t = d.toLocaleString('nb-NO', { timeZone: 'Europe/Oslo' });
 		console.log(t, 'MQTT ' + message, value);

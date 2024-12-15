@@ -5,11 +5,12 @@ let version: string | null = null;
 export class Updater {
 	constructor() {
 		console.log('Updater instantiated');
-		setInterval(this.update, 5000);
+		setTimeout(this.update, 1000);
+		setInterval(this.update, 15000);
 	}
 
 	async update() {
-		//console.log('Updating data');
+
 		// Fetch data from the server
 		const response = await fetch("/api/calendar");
 		const data = await response.json();
@@ -19,6 +20,8 @@ export class Updater {
 			console.log('Version mismatch');
 			location.reload();
 		}
+
+		// console.log(data);
 
 		version = data.version;
 

@@ -1,7 +1,7 @@
 import { Calendar } from '$lib/server/Calendar.mjs';
 import { Days } from '$lib/server/Days.mjs';
 import { Smarthouse } from '$lib/server/Smarthouse.mjs';
-import { MqttClient } from '$lib/server/MQTT.mjs';
+import { MqttClient } from '$lib/server/MQTT';
 import { PowerPrice } from '$lib/server/PowerPrice.mjs';
 import { Weather } from '$lib/server/Weather.mjs';
 import { VERSION } from '$lib/server/version';
@@ -9,7 +9,7 @@ import { VERSION } from '$lib/server/version';
 const weather = new Weather();
 const calendar = new Calendar();
 const days = new Days(calendar, weather);
-const mqttClient = new MqttClient();
+const mqttClient = MqttClient.getInstance();
 // Create smarthouse connector
 const smart = new Smarthouse(mqttClient);
 smart.startMqtt();

@@ -1,1 +1,1 @@
-export const VERSION = Date.now().toString();
+export const VERSION = new Date().toISOString();
