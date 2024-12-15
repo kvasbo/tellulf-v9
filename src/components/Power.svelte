@@ -17,7 +17,7 @@
 
 </script>
 
-<div class="powerDisplay">
+<div class="footerBox">
 	<div>
 		<strong>{place}</strong><br />
 		I dag: {Math.round(currentToday)} kWh<br />

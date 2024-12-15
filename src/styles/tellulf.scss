@@ -141,13 +141,6 @@ calendar {
           flex-direction: column;
           justify-content: center;
         }
-        .event-time-end,
-        .event-time-start {
-          width: 60px;
-        }
-        .event-time-spacer {
-          width: 20px;
-        }
       }
     }
   }
@@ -178,12 +171,12 @@ nowcast {
 footer {
   grid-area: bottom-boxes;
   display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  flex: 1;
 }
 
-#power-cabin,
-#power-home,
-#bane,
-#cooler {
+.footerBox {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;

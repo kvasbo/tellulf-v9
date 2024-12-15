@@ -7,6 +7,7 @@
 	import Entur from '../components/Entur.svelte';
 	import ComingDays from '../components/ComingDays/ComingDays.svelte';
 	import Power from '../components/Power.svelte';
+	import HourlyForecast from '../components/HourlyForecast/HourlyForecast.svelte';
 
 	let updater;
 	onMount(() => {
@@ -18,6 +19,7 @@
 
 <Clock />
 <CurrentWeather />
+<HourlyForecast />
 <ComingDays />
 
 <footer>

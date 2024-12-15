@@ -17,14 +17,14 @@
 		// updateTrains();
 
 		// Set up interval for updates
-		const interval = setInterval(updateTrains, 30000);
+		const interval = setInterval(updateTrains, 5000);
 
 		// Cleanup on component destroy
 		return () => clearInterval(interval);
 	});
 </script>
 
-<div id="bane">
+<div class="footerBox">
 	<strong>Neste baner</strong>
 	{#each trains.slice(0, 4) as train}
 		<div>

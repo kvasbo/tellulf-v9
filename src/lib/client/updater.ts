@@ -1,4 +1,4 @@
-import { weatherStore, powerStoreCabin, powerStoreHome } from './store';
+import { weatherStore, powerStoreCabin, powerStoreHome, hourlyForecastStore, type HourlyForecastStore } from './store';
 
 export class Updater {
 	constructor() {
@@ -11,7 +11,9 @@ export class Updater {
 		// Fetch data from the server
 		const response = await fetch("/api/calendar");
 		const data = await response.json();
-		console.log(data);
+
+		// console.log(data);
+
 		if (data.homey) {
 			weatherStore.update((state) => {
 				state.temperature = data.homey.tempOut;
@@ -32,6 +34,11 @@ export class Updater {
 				return state;
 			});
 		}
-
+		if (data.hourlyWeather) {
+			hourlyForecastStore.update((state: HourlyForecastStore) => {
+				state = data.hourlyWeather;
+				return state;
+			});
+		}
 	}
 }
