@@ -2,6 +2,16 @@
 	let { day } = $props();
 </script>
 
+<!-- Define filter for icons -->
+<svg width="0" height="0">
+	<defs>
+		<filter id="shape-shadow">
+			<feDropShadow dx="0" dy="0" stdDeviation="4"
+										flood-color="black" flood-opacity="0.4"/>
+		</filter>
+	</defs>
+</svg>
+
 <day>
 	<div class="dateHeader">
 		{day.weekday}
@@ -13,7 +23,7 @@
 							<img
 								alt="light rain"
 								class="headerWeatherIconPrep light"
-								style="opacity: 100%;"
+								style="filter: url(#shape-shadow);"
 								src="weather-icons-animated/rain.svg"
 							/>
 							<span class="rainProb">{day.daily_forecast.lightRainProbability}%</span>
@@ -24,7 +34,7 @@
 							<img
 								alt="heavy rain"
 								class="headerWeatherIconPrep heavy"
-								style="opacity: 100%;"
+								style="filter: url(#shape-shadow);"
 								src="weather-icons-animated/extreme-rain.svg"
 							/>
 							<span class="rainProb">{day.daily_forecast.heavyRainProbability}%</span>
