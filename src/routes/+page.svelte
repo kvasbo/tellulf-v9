@@ -15,6 +15,16 @@
 		const interval = setInterval(() => updater.update(), 15000);
 		return () => clearInterval(interval);
 	});
+
+	// Reload the page on the hour
+	function setReloadClient(inHours: number) {
+		const now = new Date();
+		const startOfNextHour = new Date();
+		startOfNextHour.setUTCHours(now.getUTCHours() + inHours, 0, 1, 0);
+		const diff = startOfNextHour.getTime() - now.getTime();
+		setTimeout(() => window.location.reload(), diff);
+	}
+	setReloadClient(1);
 </script>
 
 <Clock />
