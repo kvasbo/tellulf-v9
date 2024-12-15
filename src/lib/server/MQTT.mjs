@@ -21,7 +21,7 @@ export class MqttClient {
 			.on('error', (error) => {
 				console.log('MQTT Error', error.message);
 				this.client.end();
-				this.client.reconnect();
+				setTimeout(() => this.client.reconnect(), 2000);
 			})
 			.on('reconnect', () => {
 				console.log('MQTT reconnecting');
