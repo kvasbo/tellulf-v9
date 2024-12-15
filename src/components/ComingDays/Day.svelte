@@ -14,7 +14,7 @@
 								alt="light rain"
 								class="headerWeatherIconPrep light"
 								style="opacity: 100%;"
-								src="weathericon/png/lightrain.png"
+								src="weather-icons-animated/rain.svg"
 							/>
 							<span class="rainProb">{day.daily_forecast.lightRainProbability}%</span>
 						</div>
@@ -25,7 +25,7 @@
 								alt="heavy rain"
 								class="headerWeatherIconPrep heavy"
 								style="opacity: 100%;"
-								src="weathericon/png/heavyrain.png"
+								src="weather-icons-animated/extreme-rain.svg"
 							/>
 							<span class="rainProb">{day.daily_forecast.heavyRainProbability}%</span>
 						</div>
