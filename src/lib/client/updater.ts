@@ -1,5 +1,7 @@
 import { weatherStore, powerStoreCabin, powerStoreHome, hourlyForecastStore, type HourlyForecastStore } from './store';
 
+let version: string | null = null;
+
 export class Updater {
 	constructor() {
 		console.log('Updater instantiated');
@@ -12,7 +14,13 @@ export class Updater {
 		const response = await fetch("/api/calendar");
 		const data = await response.json();
 
-		// console.log(data);
+		// Version check
+		if (data.version !== version && version !== null) {
+			console.log('Version mismatch');
+			location.reload();
+		}
+
+		version = data.version;
 
 		if (data.homey) {
 			weatherStore.update((state) => {

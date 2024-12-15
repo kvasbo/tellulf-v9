@@ -4,6 +4,7 @@ import { Smarthouse } from '$lib/server/Smarthouse.mjs';
 import { MqttClient } from '$lib/server/MQTT.mjs';
 import { PowerPrice } from '$lib/server/PowerPrice.mjs';
 import { Weather } from '$lib/server/Weather.mjs';
+import { VERSION } from '$lib/server/version';
 
 const weather = new Weather();
 const calendar = new Calendar();
@@ -28,6 +29,7 @@ export async function GET(): Promise<Response> {
 			powerPrice: powerPriceGetter.getPowerPrice(),
 			currentWeather: weather.getCurrentWeather(),
 			longTermForecast:  weather.getDailyForecasts(),
+			version: VERSION
 		};
 		return new Response(JSON.stringify(out), {
 			headers: {
