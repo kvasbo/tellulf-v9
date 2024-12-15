@@ -19,14 +19,14 @@ $gray: #444444;
 body {
   cursor: none;
   display: grid;
-  grid-template-columns: 16vw 28% 20% 1fr;
-  grid-template-rows: 16vw 55% 1fr;
+  grid-template-columns: 35% 22% 1fr;
+  grid-template-rows: 30% 55% 1fr;
   row-gap: $grid_margin;
   column-gap: $grid_margin;
   grid-template-areas:
-    "analog_clock time_and_date current_weather calendar"
-    "weather_nowcast weather_nowcast weather_nowcast calendar"
-    "bottom-boxes bottom-boxes bottom-boxes calendar";
+    "time_and_date current_weather calendar"
+    "weather_nowcast weather_nowcast calendar"
+    "bottom-boxes bottom-boxes calendar";
   font-family: "Montserrat", sans-serif;
   font-weight: $font_weight;
   font-size: $text_size;
@@ -68,10 +68,6 @@ currentweather {
   flex-direction: column;
   flex: 2;
   justify-content: center;
-}
-
-.analogClock {
-  grid-area: analog_clock;
 }
 
 clock {

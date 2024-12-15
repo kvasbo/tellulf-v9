@@ -8,7 +8,6 @@
 	import ComingDays from '../components/ComingDays/ComingDays.svelte';
 	import Power from '../components/Power.svelte';
 	import HourlyForecast from '../components/HourlyForecast/HourlyForecast.svelte';
-	import AnalogClock from '../components/AnalogClock.svelte';
 
 	let updater;
 	onMount(() => {
@@ -17,7 +16,7 @@
 		return () => clearInterval(interval);
 	});
 </script>
-<AnalogClock />
+
 <Clock />
 <CurrentWeather />
 <HourlyForecast />
