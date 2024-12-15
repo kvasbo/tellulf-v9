@@ -1,9 +1,9 @@
 import * as mqtt from 'mqtt';
-import { MQTT_HOST, MQTT_USER, MQTT_PASS } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 const options = {
-	username: MQTT_USER,
-	password: MQTT_PASS,
+	username: env.MQTT_USER,
+	password: env.MQTT_PASS,
 	clientId: 'tellulf-' + Math.random().toString(16).substring(2, 8),
 	keepalive: 15
 };
@@ -11,10 +11,10 @@ const options = {
 export class MqttClient {
 	// Connect to MQTT broker
 	constructor() {
-		this.client = mqtt.connect(MQTT_HOST, options);
+		this.client = mqtt.connect(env.MQTT_HOST, options);
 		this.client
 			.on('connect', () => {
-				this.log(`${options.clientId} connected to ${MQTT_HOST}`);
+				this.log(`${options.clientId} connected to ${env.MQTT_HOST}`);
 				this.client.subscribe('#');
 				this.client.publish('tellulf/poll', 'Tellulf is online and polling');
 			})
