@@ -54,6 +54,15 @@
 </script>
 
 <nowcast>
+	<!-- Define filter for icons -->
+	<svg width="0" height="0">
+		<defs>
+			<filter id="shape-shadow">
+				<feDropShadow dx="0" dy="0" stdDeviation="4"
+											flood-color="#333333" flood-opacity="0.2"/>
+			</filter>
+		</defs>
+	</svg>
 	<div class="weather">
 		{#each $hourlyForecastStore.slice(1, 19) as forecast}
 			<forecast>
@@ -61,7 +70,7 @@
 					class="forecastMovablePart"
 					style="margin-bottom: {10 + mapToRange(forecast.instant.air_temperature) * 7}%;"
 				>
-					<img class="weather_icon" alt="symbol" src={getWeatherIcon(forecast.symbol)} />
+					<img class="weather_icon" alt="symbol" src={getWeatherIcon(forecast.symbol)} style="filter: url(#shape-shadow);"/>
 					<div class="temperature">
 						{forecast.instant.air_temperature}°
 					</div>
