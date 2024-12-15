@@ -72,7 +72,6 @@
 <style>
     .analogClock {
         position: relative;
-
         width: 100%;
         aspect-ratio: 1;
         max-width: 100%;
@@ -138,14 +137,14 @@
     .clock-hour {
         position: absolute;
         z-index: 2;
-        top: 24%;
+        top: 25%;
         left: 49.2%;
         width: 1.6%;
         height: 26%;
         background-color: #555;
         border-radius: 1%;
         box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
-        transform-origin: 50% 77%;
+        transform-origin: 50% 100%;  /* Changed to bottom */
         transition: 0.5s;
         -webkit-animation: rotate-hour 43200s linear infinite;
         -moz-animation: rotate-hour 43200s linear infinite;
@@ -161,7 +160,7 @@
         background-color: #555;
         border-radius: 1%;
         box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
-        transform-origin: 50% 82%;
+        transform-origin: 50% 100%;  /* Changed to bottom */
         transition: 0.5s;
         -webkit-animation: rotate-minute 3600s linear infinite;
         -moz-animation: rotate-minute 3600s linear infinite;
@@ -176,7 +175,7 @@
         height: 47%;
         background-color: #a00;
         box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
-        transform-origin: 50% 85%;
+        transform-origin: 50% 100%;  /* Changed to bottom */
         transition: 0.5s;
         -webkit-animation: rotate-second 60s linear infinite;
         -moz-animation: rotate-second 60s linear infinite;
@@ -187,7 +186,7 @@
         display: block;
         position: absolute;
         left: -150%;
-        bottom: 11%;
+        bottom: 60%;
         width: 300%;
         aspect-ratio: 1;
         background-color: #a00;
