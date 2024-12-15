@@ -14,12 +14,9 @@
 				max = forecast.instant.air_temperature;
 			}
 		});
-		// Round to nearest five up and down
-		min = Math.floor(min / 5) * 5;
-		max = Math.ceil(max / 5) * 5;
 
 		// Function to map a value from one range to another
-		const mapToRange = (value) => {
+		const mapToRange = (value: number) => {
 			return ((value - min) / (max - min)) * 80;
 		};
 
@@ -29,14 +26,25 @@
 			mapToRange
 		};
 	}
-	const { min, max, mapToRange } = calculateMinMax();
+
+	let min: number, max: number, mapToRange: Function;
+
+	$: if ($hourlyForecastStore) {
+		const temp = calculateMinMax();
+		min = temp.min;
+		max = temp.max;
+		mapToRange = temp.mapToRange;
+	}
 </script>
 
 <nowcast>
 	<div class="weather">
 		{#each $hourlyForecastStore.slice(1, 19) as forecast}
 			<forecast>
-				<span class="forecastMovablePart" style="margin-bottom: {20 + (mapToRange(forecast.instant.air_temperature) * 10)}%;">
+				<span
+					class="forecastMovablePart"
+					style="margin-bottom: {15 + mapToRange(forecast.instant.air_temperature) * 7}%;"
+				>
 					<img class="weather_icon" alt="symbol" src="weathericon/png/{forecast.symbol}.png" />
 					<div class="temperature">
 						{forecast.instant.air_temperature}°
