@@ -15,6 +15,10 @@
 			}
 		});
 
+		// Make sure the range touches 0
+		min = Math.min(min, 0);
+		max = Math.max(max, 0);
+
 		// Function to map a value from one range to another
 		const mapToRange = (value: number) => {
 			return ((value - min) / (max - min)) * 80;
@@ -43,7 +47,7 @@
 			<forecast>
 				<span
 					class="forecastMovablePart"
-					style="margin-bottom: {15 + mapToRange(forecast.instant.air_temperature) * 7}%;"
+					style="margin-bottom: {10 + mapToRange(forecast.instant.air_temperature) * 7}%;"
 				>
 					<img class="weather_icon" alt="symbol" src="weathericon/png/{forecast.symbol}.png" />
 					<div class="temperature">
