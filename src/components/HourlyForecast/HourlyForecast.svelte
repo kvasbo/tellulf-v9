@@ -7,7 +7,7 @@
 	function calculateMinMax() {
 		let min = 100;
 		let max = -100;
-		$hourlyForecastStore.forEach((forecast) => {
+		$hourlyForecastStore.slice(1,19).forEach((forecast) => {
 			if (forecast.instant.air_temperature < min) {
 				min = forecast.instant.air_temperature;
 			}
@@ -16,9 +16,23 @@
 			}
 		});
 
+		console.log('pre', min, max);
+
+		// Fix the ranges
+		if (min > 0) {
+			min = 0;
+			max = Math.max(max, 20);
+		} else if (max < 0) {
+			max = 0;
+			min = Math.min(min, -25);
+		}
+
+
+		console.log('post', min, max);
+
 		// Make sure the range touches 0
-		min = Math.min(min, 0);
-		max = Math.max(max, 0);
+		// min = Math.min(min, 0);
+		//max = Math.max(max, 0);
 
 		// Function to map a value from one range to another
 		const mapToRange = (value: number) => {
