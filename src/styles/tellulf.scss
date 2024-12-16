@@ -165,7 +165,14 @@ nowcast {
 		position: relative;
 		display: flex;
 		flex: 1;
+		width: 100%;
 		flex-wrap: nowrap;
+		.zeroLine {
+			position: absolute;
+			width: 100%;
+			border-bottom: 10px solid rgba(0, 0, 255, 0.1);
+			border-top: 10px solid rgba(255, 0, 0, 0.1);
+		}
 		.time {
 			position: absolute;
 			bottom: 15px;
@@ -187,7 +194,9 @@ nowcast {
 				border-right: none;
 			}
 			.forecastMovablePart {
+				transform: translateY(50%);
 				display: flex;
+				position: absolute;
 				bottom: 0;
 				justify-content: center;
 				align-items: center;

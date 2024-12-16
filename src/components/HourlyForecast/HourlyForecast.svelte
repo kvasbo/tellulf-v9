@@ -7,6 +7,7 @@
 	function calculateMinMax() {
 		let min = 100;
 		let max = -100;
+		let displayZeroLine = 'none';
 		$hourlyForecastStore.slice(1,19).forEach((forecast) => {
 			if (forecast.instant.air_temperature < min) {
 				min = forecast.instant.air_temperature;
@@ -16,42 +17,39 @@
 			}
 		});
 
-		console.log('pre', min, max);
-
 		// Fix the ranges
-		if (min > 0) {
+		if (min > 0 && max > 10) {
 			min = 0;
-			max = Math.max(max, 20);
-		} else if (max < 0) {
+			max = Math.max(max, 25);
+		} else if (min > -10 && max <= 10) {
+			max = Math.max(max, 10);
+			min = Math.min(min, -10);
+			displayZeroLine = 'block';
+		} else if (max < 0 && min < -10) {
 			max = 0;
 			min = Math.min(min, -25);
 		}
 
-
-		console.log('post', min, max);
-
-		// Make sure the range touches 0
-		// min = Math.min(min, 0);
-		//max = Math.max(max, 0);
-
 		// Function to map a value from one range to another
 		const mapToRange = (value: number) => {
-			return ((value - min) / (max - min)) * 80;
+			return ((value - min) / (max - min)) * 100;
 		};
 
 		return {
 			min,
 			max,
+			displayZeroLine,
 			mapToRange
 		};
 	}
 
-	let min: number, max: number, mapToRange: Function;
+	let min: number, max: number, displayZeroLine:string, mapToRange: Function;
 
 	$: if ($hourlyForecastStore) {
 		const temp = calculateMinMax();
 		min = temp.min;
 		max = temp.max;
+		displayZeroLine = temp.displayZeroLine;
 		mapToRange = temp.mapToRange;
 	}
 
@@ -80,9 +78,10 @@
 	<div class="weather">
 		{#each $hourlyForecastStore.slice(1, 19) as forecast}
 			<forecast>
+				<div class="zeroLine" style="bottom: {mapToRange(0)}%; display: {displayZeroLine};"></div>
 				<span
 					class="forecastMovablePart"
-					style="margin-bottom: {10 + mapToRange(forecast.instant.air_temperature) * 7}%;"
+					style="bottom: {mapToRange(forecast.instant.air_temperature)}%;"
 				>
 					<img class="weather_icon" alt="symbol" src={getWeatherIcon(forecast.symbol)} style="filter: url(#shape-shadow);"/>
 					<div class="temperature">
