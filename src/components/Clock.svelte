@@ -1,4 +1,7 @@
 <script lang="ts">
+
+	import { Moon, Hemisphere } from "lunarphase-js";
+
 	function getDateWeek(date: Date) {
 		const currentDate = typeof date === 'object' ? date : new Date();
 		const januaryFirst = new Date(currentDate.getFullYear(), 0, 1);
@@ -39,6 +42,8 @@
 	<div id="now_time">{time}</div>
 	<div id="date_week">
 		<div id="now_date">{date}</div>
-		<div id="now_week">Uke {week}</div>
+		<div id="now_week">{Moon.lunarPhaseEmoji(new Date(), {
+			hemisphere: Hemisphere.SOUTHERN,
+		})} Uke {week}</div>
 	</div>
 </clock>

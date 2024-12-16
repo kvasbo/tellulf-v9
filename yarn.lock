@@ -3606,6 +3606,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lunarphase-js@npm:^2.0.3":
+  version: 2.0.3
+  resolution: "lunarphase-js@npm:2.0.3"
+  checksum: 10c0/20ac3a5926d69f595973f5e56d097336ba92f9a93adbaab791d98860ff9344db95da177e1e028af9cb91b8b859cc6c24c7f43dbf4cbe3c58e233e334adc99323
+  languageName: node
+  linkType: hard
+
 "luxon@npm:^3.5.0":
   version: 3.5.0
   resolution: "luxon@npm:3.5.0"
@@ -4943,6 +4950,7 @@ __metadata:
     fast-xml-parser: "npm:^4.5.0"
     globals: "npm:^15.0.0"
     googleapis: "npm:^144.0.0"
+    lunarphase-js: "npm:^2.0.3"
     luxon: "npm:^3.5.0"
     mqtt: "npm:^5.10.3"
     pg: "npm:^8.13.1"
