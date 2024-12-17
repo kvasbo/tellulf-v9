@@ -17,11 +17,18 @@
 
 </script>
 
+<style>
+	.powerLabel {
+		width: 60px;
+			display: inline-block;
+	}
+</style>
+
 <div class="footerBox">
 	<div>
 		<strong>{place}</strong><br />
-		I dag: {Math.round(currentToday)} kWh<br />
-		Nå: {Math.round(currentPower / 1000)} kW<br />
-		Pris: {currentPrice.toFixed(2)} kr
+		<span class="powerLabel">I dag</span>{Math.round(currentToday)} kWh<br />
+		<span class="powerLabel">Nå</span>{Math.round(currentPower / 1000)} kW<br />
+		<span class="powerLabel">Pris</span>{currentPrice.toFixed(2)} kr
 	</div>
 </div>

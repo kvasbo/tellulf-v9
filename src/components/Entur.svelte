@@ -28,7 +28,7 @@
 	<strong>Neste baner</strong>
 	{#each trains.slice(0, 4) as train}
 		<div>
-			{new Date(train.time).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })} {train.destination}
+			<span style="width: 50px; display: inline-block;">{new Date(train.time).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}</span> {train.destination}
 		</div>
 	{/each}
 </div>
