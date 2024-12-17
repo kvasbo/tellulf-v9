@@ -4,6 +4,8 @@
 
 	$: hourlyForecastStore;
 
+	const waves = ['wave1.svg', 'wave2.svg', 'wave3.svg'];
+
 	// Function to get the height of the rain bar
 	// 3mm of rain will be 50% of the height
 	function getRainHeight(rain: number) {
@@ -88,13 +90,14 @@
 					class="rain"
 					style="height: {getRainHeight(forecast.details.precipitation_amount)}%;"
 				></div>
-				<img
-					class="rainWave"
-					src="/wave.svg"
-					style="display: {forecast.details.precipitation_amount > 0
-						? 'block'
-						: 'none'}; bottom: {getRainHeight(forecast.details.precipitation_amount)}%;"
-				/>
+				{#if forecast.details.precipitation_amount > 0}
+					<img
+						alt="rain"
+						class="rainWave"
+						src="{waves[Math.floor(Math.random() * waves.length)]}"
+						style="bottom: {getRainHeight(forecast.details.precipitation_amount)}%;"
+					/>
+				{/if}
 				<span
 					class="forecastMovablePart"
 					style="bottom: {mapToRange(forecast.instant.air_temperature)}%;"
@@ -128,9 +131,17 @@
 </nowcast>
 
 <style>
+	.rain {
+		background-color: #3ea4f0;
+		position: absolute;
+		bottom: 0;
+		color: white;
+		display: flex;
+		width: 100%;
+	}
 	.rainWave {
 		position: absolute;
 		width: 100%;
-		display: none;
+		display: block;
 	}
 </style>

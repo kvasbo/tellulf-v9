@@ -190,14 +190,6 @@ nowcast {
 			margin: 0;
 			height: 100%;
 			border-right: 1px solid $light_gray;
-			.rain {
-				background-color: #3ea4f0;
-				position: absolute;
-				bottom: 0;
-				color: $white;
-				display: flex;
-				width: 100%;
-			}
 			:last-child {
 				border-right: none;
 			}
