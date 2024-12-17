@@ -14,7 +14,7 @@
 		let min = 100;
 		let max = -100;
 		let displayZeroLine = 'none';
-		$hourlyForecastStore.slice(1,19).forEach((forecast) => {
+		$hourlyForecastStore.slice(1, 19).forEach((forecast) => {
 			if (forecast.instant.air_temperature < min) {
 				min = forecast.instant.air_temperature;
 			}
@@ -49,7 +49,7 @@
 		};
 	}
 
-	let min: number, max: number, displayZeroLine:string, mapToRange: Function;
+	let min: number, max: number, displayZeroLine: string, mapToRange: Function;
 
 	$: if ($hourlyForecastStore) {
 		const temp = calculateMinMax();
@@ -76,8 +76,7 @@
 	<svg width="0" height="0">
 		<defs>
 			<filter id="shape-shadow">
-				<feDropShadow dx="0" dy="0" stdDeviation="4"
-											flood-color="#333333" flood-opacity="0.2"/>
+				<feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#333333" flood-opacity="0.2" />
 			</filter>
 		</defs>
 	</svg>
@@ -85,12 +84,27 @@
 		{#each $hourlyForecastStore.slice(1, 19) as forecast}
 			<forecast>
 				<div class="zeroLine" style="bottom: {mapToRange(0)}%; display: {displayZeroLine};"></div>
-				<div class="rain" style="height: {getRainHeight(forecast.details.precipitation_amount)}%;"></div>
+				<div
+					class="rain"
+					style="height: {getRainHeight(forecast.details.precipitation_amount)}%;"
+				></div>
+				<img
+					class="rainWave"
+					src="/wave.svg"
+					style="display: {forecast.details.precipitation_amount > 0
+						? 'block'
+						: 'none'}; bottom: {getRainHeight(forecast.details.precipitation_amount)}%;"
+				/>
 				<span
 					class="forecastMovablePart"
 					style="bottom: {mapToRange(forecast.instant.air_temperature)}%;"
 				>
-					<img class="weather_icon" alt="symbol" src={getWeatherIcon(forecast.symbol)} style="filter: url(#shape-shadow);"/>
+					<img
+						class="weather_icon"
+						alt="symbol"
+						src={getWeatherIcon(forecast.symbol)}
+						style="filter: url(#shape-shadow);"
+					/>
 					<div class="temperature">
 						{forecast.instant.air_temperature}°
 					</div>
@@ -112,3 +126,11 @@
 		{/each}
 	</div>
 </nowcast>
+
+<style>
+	.rainWave {
+		position: absolute;
+		width: 100%;
+		display: none;
+	}
+</style>
