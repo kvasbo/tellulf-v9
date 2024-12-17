@@ -4,6 +4,12 @@
 
 	$: hourlyForecastStore;
 
+	// Function to get the height of the rain bar
+	// 3mm of rain will be 50% of the height
+	function getRainHeight(rain: number) {
+		return Math.min(100, rain * 17);
+	}
+
 	function calculateMinMax() {
 		let min = 100;
 		let max = -100;
@@ -79,6 +85,7 @@
 		{#each $hourlyForecastStore.slice(1, 19) as forecast}
 			<forecast>
 				<div class="zeroLine" style="bottom: {mapToRange(0)}%; display: {displayZeroLine};"></div>
+				<div class="rain" style="height: {getRainHeight(forecast.details.precipitation_amount)}%;"></div>
 				<span
 					class="forecastMovablePart"
 					style="bottom: {mapToRange(forecast.instant.air_temperature)}%;"

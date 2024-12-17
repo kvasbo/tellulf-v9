@@ -171,8 +171,7 @@ nowcast {
 		.zeroLine {
 			position: absolute;
 			width: 100%;
-			border-bottom: 10px solid rgba(0, 0, 255, 0.1);
-			border-top: 10px solid rgba(255, 0, 0, 0.1);
+			border-bottom: 1px solid $light_gray;
 		}
 		.time {
 			position: absolute;
@@ -191,6 +190,14 @@ nowcast {
 			margin: 0;
 			height: 100%;
 			border-right: 1px solid $light_gray;
+			.rain {
+				background-color: rgba(0,0,255,0.1);
+				position: absolute;
+				bottom: 0;
+				color: $white;
+				display: flex;
+				width: 100%;
+			}
 			:last-child {
 				border-right: none;
 			}
@@ -209,7 +216,7 @@ nowcast {
 				}
 				.weather_icon {
 					height: auto;
-					width: 70%;
+					width: 100%;
 				}
 			}
 		}
