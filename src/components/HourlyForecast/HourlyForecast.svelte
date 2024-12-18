@@ -90,7 +90,7 @@
 					class="rain"
 					style="height: {getRainHeight(forecast.details.precipitation_amount)}%;"
 				></div>
-				{#if forecast.details.precipitation_amount > 0}
+				{#if false && forecast.details.precipitation_amount > 0}
 					<img
 						alt="rain"
 						class="rainWave"
