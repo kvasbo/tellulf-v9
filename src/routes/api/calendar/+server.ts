@@ -2,18 +2,21 @@ import { Calendar } from '$lib/server/Calendar';
 import { Days } from '$lib/server/Days.mjs';
 import { Smarthouse } from '$lib/server/Smarthouse.mjs';
 import { MqttClient } from '$lib/server/MQTT';
-import { PowerPrice } from '$lib/server/PowerPrice.mjs';
+import { PowerPrices } from '$lib/server/PowerPrices';
 import { Weather } from '$lib/server/Weather.mjs';
+import { Tibber } from '$lib/server/Tibber';
 import { VERSION } from '$lib/server/version';
 
 const weather = new Weather();
+const tibber = Tibber.getInstance();
 const calendar = Calendar.getInstance();
 const days = new Days(calendar, weather);
 const mqttClient = MqttClient.getInstance();
+
 // Create smarthouse connector
 const smart = new Smarthouse(mqttClient);
 smart.startMqtt();
-const powerPriceGetter = new PowerPrice();
+const powerPriceGetter = new PowerPrices();
 
 // For now, this is a kind of "all stuff comes from here" endpoint
 // TODO: Separate concerns.

@@ -4961,6 +4961,7 @@ __metadata:
     sunrise-sunset-js: "npm:^2.2.1"
     svelte: "npm:^5.0.0"
     svelte-check: "npm:^4.0.0"
+    tibber-api: "npm:^5.3.1"
     twig: "npm:^1.17.1"
     typescript: "npm:^5.0.0"
     typescript-eslint: "npm:^8.0.0"
@@ -4970,6 +4971,15 @@ __metadata:
     zod: "npm:^3.24.1"
   languageName: unknown
   linkType: soft
+
+"tibber-api@npm:^5.3.1":
+  version: 5.3.1
+  resolution: "tibber-api@npm:5.3.1"
+  dependencies:
+    ws: "npm:^8.18.0"
+  checksum: 10c0/96569a0ec9d83432998e12631ba287e840f5ff67721de3f5a98d4e8b09c1da92086ccb509cbbd948f0940a3cd64510995b6a9309ebd8568b032fba676b9236db
+  languageName: node
+  linkType: hard
 
 "tiny-glob@npm:^0.2.9":
   version: 0.2.9
