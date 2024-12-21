@@ -1,20 +1,22 @@
 <script lang="js">
 	import { Entur } from '$lib/Entur.mjs';
+	import FooterTable from './Footer/FooterTable.svelte';
 	import { onMount } from 'svelte';
 
 	let entur;
-	let trains = [];
+	let tableData = [];
 
 	function updateTrains() {
 		if (entur) {
-			trains = entur.getTrains();
+			let trains = entur.getTrains();
+			tableData = trains.map((train) => [new Date(train.time).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }), train.destination]);
 		}
 	}
 
 	onMount(() => {
 		entur = new Entur();
 		// Initial load
-		// updateTrains();
+		updateTrains();
 
 		// Set up interval for updates
 		const interval = setInterval(updateTrains, 5000);
@@ -24,11 +26,4 @@
 	});
 </script>
 
-<div class="footerBox">
-	<strong>Neste baner</strong>
-	{#each trains.slice(0, 4) as train}
-		<div>
-			<span style="width: 50px; display: inline-block;">{new Date(train.time).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}</span> {train.destination}
-		</div>
-	{/each}
-</div>
+<FooterTable header="Neste baner" tableData={tableData} />
