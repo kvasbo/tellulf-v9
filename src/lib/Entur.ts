@@ -1,9 +1,48 @@
 import { XMLParser } from 'fast-xml-parser';
+import { z } from 'zod';
 
-// TODO: Zod or similar for type checking
+const enturSchema = z.object({
+	Siri: z.object({
+		ServiceDelivery: z.object({
+			EstimatedTimetableDelivery: z.object({
+				EstimatedJourneyVersionFrame: z.object({
+					EstimatedVehicleJourney: z.array(
+						z.object({
+							EstimatedCalls: z
+								.object({
+									EstimatedCall: z.union([
+										z.array(
+											z.object({
+												StopPointName: z.string(),
+												ExpectedDepartureTime: z.string().optional(),
+												DestinationDisplay: z.string()
+											})
+										),
+										z.object({
+											StopPointName: z.string(),
+											ExpectedDepartureTime: z.string().optional(),
+											DestinationDisplay: z.string()
+										})
+									])
+								})
+								.optional(),
+							LineRef: z.string(),
+							DirectionRef: z.number()
+						})
+					)
+				})
+			})
+		})
+	})
+});
+
+interface Train {
+	time: string;
+	destination: string;
+}
 
 export class Entur {
-	trains = [];
+	trains: Train[] = [];
 
 	constructor() {
 		setTimeout(() => this.Update(), 5000);
@@ -12,7 +51,7 @@ export class Entur {
 		}, 60000);
 	}
 
-	getTrains() {
+	getTrains(): Train[] {
 		return this.trains;
 	}
 
@@ -22,57 +61,52 @@ export class Entur {
 			const xmlData = await fetch('https://api.entur.io/realtime/v1/rest/et?datasetId=RUT');
 			const text = await xmlData.text();
 			const parsed = parser.parse(text);
+			console.log(parsed);
+			const valid = enturSchema.safeParse(parsed);
+			console.log(valid);
+			if (!valid.success) {
+				console.error('Invalid data from Entur');
+				this.trains = [];
+				return;
+			}
 			const trips =
-				parsed.Siri.ServiceDelivery.EstimatedTimetableDelivery.EstimatedJourneyVersionFrame
+				valid.data.Siri.ServiceDelivery.EstimatedTimetableDelivery.EstimatedJourneyVersionFrame
 					.EstimatedVehicleJourney;
-			const filteredTrips = trips.filter(
-				(trip: {
-					EstimatedCalls: {
-						EstimatedCall: {
-							length: number;
-							filter: (arg0: (call: unknown) => boolean) => {
-								(): unknown;
-								new (): unknown;
-								length: number;
-							};
-						};
-					};
-					LineRef: string;
-					DirectionRef: number;
-				}) => {
-					if (
-						!trip.EstimatedCalls?.EstimatedCall ||
-						trip.EstimatedCalls.EstimatedCall.length === 0
-					) {
-						return false;
-					}
-					if (trip.LineRef !== 'RUT:Line:1' || trip.DirectionRef !== 1) {
-						return false;
-					}
-					// @ts-expect-error - This is a hack to get around the fact that the type is unknown
-					if (
-						!Array.isArray(trip.EstimatedCalls.EstimatedCall) ||
-						trip.EstimatedCalls.EstimatedCall.filter((call) => call.StopPointName === 'Slemdal')
-							.length === 0
-					) {
-						return false;
-					}
-					return true;
+			const filteredTrips = trips.filter((trip) => {
+				// Check if the trip has any EstimatedCalls
+				if (
+					!trip.EstimatedCalls ||
+					!trip.EstimatedCalls.EstimatedCall ||
+					!Array.isArray(trip.EstimatedCalls.EstimatedCall) ||
+					trip.EstimatedCalls.EstimatedCall.length === 0
+				) {
+					return false;
 				}
-			);
-			const filteredTrains = filteredTrips.map(
-				(trip: { EstimatedCalls: { EstimatedCall: any[] } }) => {
-					const found = trip.EstimatedCalls.EstimatedCall.find(
-						(stop) => stop.StopPointName === 'Slemdal'
-					);
-					return {
-						time: found.ExpectedDepartureTime,
-						destination: found.DestinationDisplay
-					};
+				// Check if the trip is on the correct line and direction
+				if (trip.LineRef !== 'RUT:Line:1' || trip.DirectionRef !== 1) {
+					return false;
 				}
-			);
+				if (
+					!Array.isArray(trip.EstimatedCalls.EstimatedCall) ||
+					trip.EstimatedCalls.EstimatedCall.filter((call) => call.StopPointName === 'Slemdal')
+						.length === 0
+				) {
+					return false;
+				}
+				return true;
+			});
+			const filteredTrains = filteredTrips.map((trip): { time: string; destination: string } => {
+				// @ts-expect-error - We have already checked that this is an array
+				const found = trip.EstimatedCalls?.EstimatedCall.find(
+					(stop: { StopPointName: string }) => stop.StopPointName === 'Slemdal'
+				);
+				return {
+					time: found.ExpectedDepartureTime,
+					destination: found.DestinationDisplay
+				};
+			});
 
-			this.trains = filteredTrains.sort((a: { time: number }, b: { time: number }) => {
+			this.trains = filteredTrains.sort((a, b) => {
 				return new Date(a.time).getTime() - new Date(b.time).getTime();
 			});
 
