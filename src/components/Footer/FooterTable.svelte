@@ -1,5 +1,11 @@
 <script lang="ts">
-	let { header, tableData } = $props();
+	interface Props {
+		header: string;
+		tableData: string[][];
+	}
+
+	export let header: Props['header'] = "default name";
+	export let tableData: Props['tableData'] = [];
 </script>
 
 <div class="footerBox">

@@ -1,10 +1,10 @@
-<script lang="js">
-	import { Entur } from '$lib/Entur.mjs';
+<script lang="ts">
+	import { Entur } from '$lib/Entur.js';
 	import FooterTable from './Footer/FooterTable.svelte';
 	import { onMount } from 'svelte';
 
-	let entur;
-	let tableData = [];
+	let entur: Entur;
+	let tableData: string[][] = [];
 
 	function updateTrains() {
 		if (entur) {
