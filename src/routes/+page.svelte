@@ -24,7 +24,9 @@
 		const diff = startOfNextHour.getTime() - now.getTime();
 		setTimeout(() => window.location.reload(), diff);
 	}
-	setReloadClient(1);
+	if (typeof window !== 'undefined') {
+		setReloadClient(1);
+	}
 </script>
 
 <Clock />
