@@ -2,6 +2,7 @@
 	import '../styles/tellulf.scss';
 	import { Updater } from '$lib/client/updater';
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import Clock from '../components/Clock.svelte';
 	import CurrentWeather from '../components/CurrentWeather.svelte';
 	import Entur from '../components/Entur.svelte';
@@ -16,16 +17,13 @@
 		return () => clearInterval(interval);
 	});
 
-	// Reload the page on the hour
-	function setReloadClient(inHours: number) {
+	// Reload the page on the hour (only in the browser)
+	if (browser) {
 		const now = new Date();
 		const startOfNextHour = new Date();
-		startOfNextHour.setUTCHours(now.getUTCHours() + inHours, 0, 1, 0);
+		startOfNextHour.setUTCHours(now.getUTCHours() + 1, 0, 1, 0);
 		const diff = startOfNextHour.getTime() - now.getTime();
 		setTimeout(() => window.location.reload(), diff);
-	}
-	if (typeof window !== 'undefined') {
-		setReloadClient(1);
 	}
 </script>
 
