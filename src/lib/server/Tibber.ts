@@ -24,61 +24,55 @@ const TibberSubscriptionSchema = z.object({
 
 type TibberSubscriptionData = z.infer<typeof TibberSubscriptionSchema>;
 
-const tibberKey = env.TIBBER_KEY;
-const homeId = env.TIBBER_ID_HOME;
-const cabinId = env.TIBBER_ID_CABIN;
-
-console.log('Tibber Key: ' + tibberKey);
-console.log('Home ID: ' + homeId);
-console.log('Cabin ID: ' + cabinId);
-
-if (!tibberKey || !homeId || !cabinId) {
-	console.log('Missing Tibber config');
-	process.exit();
-}
-
-const places: { id: string; name: Place }[] = [
-	{ id: homeId, name: 'home' },
-	{ id: cabinId, name: 'cabin' }
-];
-
 // Config object needed when instantiating TibberQuery
-const configBase = {
-	// Endpoint configuration.
-	apiEndpoint: {
-		apiKey: tibberKey,
-		queryUrl: 'https://api.tibber.com/v1-beta/gql'
-	},
-	// Query configuration.
-	timestamp: true,
-	power: true,
-	accumulatedConsumption: true,
-	accumulatedProduction: true,
-	accumulatedCost: true,
-	accumulatedReward: true,
-	minPower: true,
-	averagePower: true,
-	maxPower: true,
-	powerProduction: true,
-	minPowerProduction: true,
-	maxPowerProduction: true,
-	active: true
-};
-
-const configHome = { ...configBase, homeId: homeId };
-const configCabin = { ...configBase, homeId: cabinId };
-
-// Instance of TibberQuery
-const tibberQueryHome = new TibberQuery(configHome);
-const tibberQueryCabin = new TibberQuery(configCabin);
-const tibberQuery = new TibberQuery(configBase);
-
-const tibberFeedHome = new TibberFeed(tibberQueryHome, 60000, true, 5000);
-const tibberFeedCabin = new TibberFeed(tibberQueryCabin, 60000, true, 5000);
+function getBaseConfig(tibberKey: string) {
+	return {
+		// Endpoint configuration.
+		apiEndpoint: {
+			apiKey: tibberKey,
+			queryUrl: 'https://api.tibber.com/v1-beta/gql'
+		},
+		// Query configuration.
+		timestamp: true,
+		power: true,
+		accumulatedConsumption: true,
+		accumulatedProduction: true,
+		accumulatedCost: true,
+		accumulatedReward: true,
+		minPower: true,
+		averagePower: true,
+		maxPower: true,
+		powerProduction: true,
+		minPowerProduction: true,
+		maxPowerProduction: true,
+		active: true
+	};
+}
 
 export class Tibber {
 	lastCabinPower = 0; // Hack to handle intermittent power production data
 	lastUpdated = new Date();
+
+	private tibberKey = env.TIBBER_KEY;
+	private homeId = env.TIBBER_ID_HOME;
+	private cabinId = env.TIBBER_ID_CABIN;
+
+	private places: { id: string; name: Place }[] = [
+		{ id: this.homeId, name: 'home' },
+		{ id: this.cabinId, name: 'cabin' }
+	];
+
+	private baseConfig = getBaseConfig(this.tibberKey);
+	private configHome = { ...this.baseConfig, homeId: this.homeId };
+	private configCabin = { ...this.baseConfig, homeId: this.cabinId };
+
+	// Instance of TibberQuery
+	private tibberQueryHome = new TibberQuery(this.configHome);
+	private tibberQueryCabin = new TibberQuery(this.configCabin);
+	private tibberQuery = new TibberQuery(this.baseConfig);
+
+	private tibberFeedHome = new TibberFeed(this.tibberQueryHome, 60000, true, 5000);
+	private tibberFeedCabin = new TibberFeed(this.tibberQueryCabin, 60000, true, 5000);
 
 	// The new structure for everything!
 	status = {
@@ -98,8 +92,8 @@ export class Tibber {
 
 	// Create Tibber instances and start subscriptions
 	private constructor() {
-		this.setupTibberFeed(tibberFeedHome, 'home');
-		this.setupTibberFeed(tibberFeedCabin, 'cabin');
+		this.setupTibberFeed(this.tibberFeedHome, 'home');
+		this.setupTibberFeed(this.tibberFeedCabin, 'cabin');
 
 		this.updateUsage();
 		setInterval(() => this.updateUsage(), 1000 * 60 * 5); // Update data every five minutes
@@ -134,13 +128,13 @@ export class Tibber {
 		const query = usageQuery.replace(/HOURS_TO_GET/g, hoursToGet.toString());
 
 		// Get the data
-		const data = await tibberQuery.query(query);
+		const data = await this.tibberQuery.query(query);
 
 		// Run through all homes and get consumption, prices etc.
 		data.viewer.homes.forEach(async (home) => {
 			// Find the place
 			// console.log('Updating data for', home);
-			const place = places.find((p) => p.id === home.id);
+			const place = this.places.find((p) => p.id === home.id);
 			const todayStart = DateTime.now().setZone('Europe/Oslo').startOf('day');
 
 			// Get consumption

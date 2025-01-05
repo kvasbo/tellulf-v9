@@ -8,9 +8,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  TIBBER_KEY: ""
-  TIBBER_ID_HOME: ""
-  TIBBER_ID_CABIN: ""
 
 jobs:
   build:
