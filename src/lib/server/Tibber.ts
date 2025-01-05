@@ -24,8 +24,6 @@ const TibberSubscriptionSchema = z.object({
 
 type TibberSubscriptionData = z.infer<typeof TibberSubscriptionSchema>;
 
-const PUSH_INTERVAL = 15; // 15 seconds!
-
 const tibberKey = env.TIBBER_KEY ? env.TIBBER_KEY.toString() : '';
 
 const homeId = env.TIBBER_ID_HOME ? env.TIBBER_ID_HOME.toString() : '';
