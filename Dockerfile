@@ -9,6 +9,7 @@ RUN corepack enable && corepack prepare yarn@stable --activate
 
 # Copy package files
 COPY package.json yarn.lock .yarnrc.yml ./
+COPY ./svelte-kit/tsconfig.json ./svelte-kit/tsconfig.json
 
 # Install dependencies
 RUN yarn install --immutable
