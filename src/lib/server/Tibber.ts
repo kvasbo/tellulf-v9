@@ -24,11 +24,9 @@ const TibberSubscriptionSchema = z.object({
 
 type TibberSubscriptionData = z.infer<typeof TibberSubscriptionSchema>;
 
-const tibberKey = env.TIBBER_KEY ? env.TIBBER_KEY.toString() : '';
-
-const homeId = env.TIBBER_ID_HOME ? env.TIBBER_ID_HOME.toString() : '';
-
-const cabinId = env.TIBBER_ID_CABIN ? env.TIBBER_ID_CABIN.toString() : '';
+const tibberKey = env.TIBBER_KEY;
+const homeId = env.TIBBER_ID_HOME;
+const cabinId = env.TIBBER_ID_CABIN;
 
 console.log('Tibber Key: ' + tibberKey);
 console.log('Home ID: ' + homeId);
