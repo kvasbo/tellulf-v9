@@ -29,13 +29,13 @@
 		if (min > 0) {
 			min = 0;
 			max = Math.max(max, 25);
+		} else if (max < 0) {
+			max = 0;
+			min = Math.min(min, -25);
 		} else if (min > -10 && max <= 10) {
 			max = Math.max(max, 10);
 			min = Math.min(min, -10);
 			displayZeroLine = 'block';
-		} else if (max < 0) {
-			max = 0;
-			min = Math.min(min, -25);
 		} else {
 			max = max + 5;
 			min = min - 5;
@@ -46,16 +46,28 @@
 			return ((value - min) / (max - min)) * 100;
 		};
 
+		const getBackground = () => {
+			if (max <= 0) {
+				return `linear-gradient(180deg, #e3f2fd00	0%, #e3f2fdFF 100%)`;
+			} else if (min >= 0) {
+				// If the temperature is above 0, use a red gradient
+				return `linear-gradient(180deg, #ff8a8022 0%, #ff8a8000 100%)`;
+			} else {
+				// If the temperature is between -10 and 10, use a white gradient
+				return `linear-gradient(180deg, #ff8a8022 0%, #e3f2fd99 100%)`;
+			}
+		};
+
 		return {
 			min,
 			max,
 			displayZeroLine,
 			mapToRange,
-			background: getBackground(min, max)
+			getBackground
 		};
 	}
 
-	let min: number, max: number, displayZeroLine: string, mapToRange: Function, background: string;
+	let min: number, max: number, displayZeroLine: string, mapToRange: Function, background: Function;
 
 	$: if ($hourlyForecastStore) {
 		const temp = calculateMinMax();
@@ -63,7 +75,7 @@
 		max = temp.max;
 		displayZeroLine = temp.displayZeroLine;
 		mapToRange = temp.mapToRange;
-		background = temp.background;
+		background = temp.getBackground;
 	}
 
 	function getWeatherIcon(symbol: string) {
@@ -76,20 +88,6 @@
 	function isItStatic(symbol: string) {
 		return ['clearsky_night', 'partly-cloudy-night'].includes(symbol) ? 'static' : 'animated';
 	}
-
-	function getBackground(min: number, max: number) {
-		// If the temperature is below 0, use a blue gradient
-		if (max <= 0) {
-			return `linear-gradient(180deg, #e3f2fd00	 0%, #e3f2fd99 100%)`;
-		} else if (min >= 0) {
-			// If the temperature is above 0, use a red gradient
-			return `linear-gradient(180deg, #ff8a8022 0%, #ff8a8000 100%)`;
-		} else {
-			// If the temperature is between -10 and 10, use a white gradient
-			return `linear-gradient(180deg, #ff8a8022 0%, #e3f2fd99 100%)`;
-		}
-	}
-
 </script>
 
 <nowcast>
@@ -101,7 +99,7 @@
 			</filter>
 		</defs>
 	</svg>
-	<div class="weather" style="background: {background}">
+	<div class="weather" style="background: {background()}">
 		{#each $hourlyForecastStore.slice(1, 19) as forecast}
 			<forecast>
 				<div class="zeroLine" style="bottom: {mapToRange(0)}%; display: {displayZeroLine};"></div>
@@ -113,11 +111,11 @@
 					<img
 						alt="rain"
 						class="rainWave"
-						src="{waves[Math.floor(Math.random() * waves.length)]}"
+						src={waves[Math.floor(Math.random() * waves.length)]}
 						style="bottom: {getRainHeight(forecast.details.precipitation_amount)}%;"
 					/>
 				{/if}
-				<span
+				<div
 					class="forecastMovablePart"
 					style="bottom: {mapToRange(forecast.instant.air_temperature)}%;"
 				>
@@ -140,7 +138,7 @@
 							&nbsp;
 						{/if}
 					</div>
-				</span>
+				</div>
 				<div class="time">
 					{forecast.hour}
 				</div>
