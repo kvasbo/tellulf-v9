@@ -26,16 +26,16 @@
 		});
 
 		// Fix the ranges
-		if (min > 0) {
+		if (min > -7 && max <= 7) {
+			max = Math.max(max, 10);
+			min = Math.min(min, -10);
+			displayZeroLine = 'block';
+		} else if (min > 0) {
 			min = 0;
 			max = Math.max(max, 25);
 		} else if (max < 0) {
 			max = 0;
 			min = Math.min(min, -25);
-		} else if (min > -10 && max <= 10) {
-			max = Math.max(max, 10);
-			min = Math.min(min, -10);
-			displayZeroLine = 'block';
 		} else {
 			max = max + 5;
 			min = min - 5;
