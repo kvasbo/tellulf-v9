@@ -27,8 +27,8 @@
 
 		// Fix the ranges
 		if (min > -7 && max <= 7) {
-			max = Math.max(max, 10);
-			min = Math.min(min, -10);
+			max = 10;
+			min = -10;
 			displayZeroLine = 'block';
 		} else if (min > 0) {
 			min = 0;
@@ -37,8 +37,9 @@
 			max = 0;
 			min = Math.min(min, -25);
 		} else {
-			max = max + 5;
-			min = min - 5;
+			max = Math.ceil(max / 5) * 5;
+			min = Math.floor(min / 5) * 5;
+			displayZeroLine = 'block';
 		}
 
 		// Function to map a value from one range to another
