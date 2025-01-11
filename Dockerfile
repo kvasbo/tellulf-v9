@@ -5,19 +5,19 @@ FROM node:22
 WORKDIR /app
 
 # Install yarn globally
-RUN corepack enable && corepack prepare yarn@stable --activate
+RUN corepack enable && corepack prepare pnpm@stable --activate
 
 # Copy package files
-COPY package.json yarn.lock .yarnrc.yml ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN yarn install --immutable
+RUN pnpm install --frozen-lockfile
 
 # Copy the rest of the application
 COPY . .
 
 # Build the application
-RUN yarn build
+RUN pnpm build
 
 # Expose the port the app runs on
 EXPOSE 3000
