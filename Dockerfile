@@ -5,7 +5,7 @@ FROM node:22
 WORKDIR /app
 
 # Install yarn globally
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.3 --activate
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
