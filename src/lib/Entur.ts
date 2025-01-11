@@ -13,13 +13,13 @@ const enturSchema = z.object({
 									EstimatedCall: z.union([
 										z.array(
 											z.object({
-												StopPointName: z.string(),
+												StopPointName: z.string().optional(),
 												ExpectedDepartureTime: z.string().optional(),
 												DestinationDisplay: z.string()
 											})
 										),
 										z.object({
-											StopPointName: z.string(),
+											StopPointName: z.string().optional(),
 											ExpectedDepartureTime: z.string().optional(),
 											DestinationDisplay: z.string()
 										})
