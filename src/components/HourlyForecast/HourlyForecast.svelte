@@ -26,7 +26,7 @@
 		});
 
 		// Fix the ranges
-		if (min > -7 && max <= 7) {
+		if (min > -10 && max <= 10) {
 			max = 10;
 			min = -10;
 			displayZeroLine = 'block';
