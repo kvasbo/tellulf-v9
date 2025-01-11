@@ -28,4 +28,4 @@ ENV HOST=0.0.0.0
 ENV PORT=3000
 
 # Start the application
-CMD ["yarn", "start"]
+CMD ["pnpm", "start"]
