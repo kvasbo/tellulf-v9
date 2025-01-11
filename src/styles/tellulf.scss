@@ -188,8 +188,12 @@ nowcast {
 			flex-direction: column;
 			justify-content: flex-end;
 			margin: 0;
-			height: 100%;
+			height: 90%;
 			border-right: 1px solid $light_gray;
+			.time {
+				position: absolute;
+				bottom: -40px;
+			}
 			:last-child {
 				border-right: none;
 			}
