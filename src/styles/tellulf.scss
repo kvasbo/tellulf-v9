@@ -194,21 +194,22 @@ nowcast {
 				border-right: none;
 			}
 			.forecastMovablePart {
-				transform: translateY(50%);
+				transform: translateY(80px);
 				display: flex;
 				position: absolute;
 				bottom: 0;
 				justify-content: center;
 				align-items: center;
 				flex-direction: column;
+				height: 120px;
 				.forecastProb {
 					color: $gray;
 					font-size: $text_small;
 					text-align: center;
 				}
 				.weather_icon {
-					height: auto;
-					width: 100%;
+					height: 64px;
+					width: 64px;
 				}
 			}
 		}
