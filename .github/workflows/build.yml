@@ -52,4 +52,4 @@ jobs:
       - name: Invoke deployment hook
         uses: distributhor/workflow-webhook@v3
         with:
-          webhook_url: ${{ secrets.PORTAINER_WEBHOOK }}
+          webhook_url: ${{ secrets.PORTAINER_WEBHOOK }}?tag=main
