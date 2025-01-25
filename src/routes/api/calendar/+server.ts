@@ -21,8 +21,10 @@ const tibber = new Tibber();
 // TODO: Separate concerns.
 export async function GET(): Promise<Response> {
 	try {
+
 		const out = {
 			days: days.generateComingDays(),
+			tibber: tibber.getPowerData(),
 			currentTemperature: weather.getCurrentWeather().temperature,
 			currentWeatherIcon: weather.getCurrentWeather().symbol,
 			hourlyWeather: weather.getHourlyForecasts(),
