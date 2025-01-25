@@ -1,4 +1,10 @@
-import { weatherStore, powerStoreCabin, powerStoreHome, hourlyForecastStore, type HourlyForecastStore } from './store';
+import {
+	weatherStore,
+	powerStoreCabin,
+	powerStoreHome,
+	hourlyForecastStore,
+	type HourlyForecastStore
+} from './store';
 
 let version: string | null = null;
 
@@ -10,9 +16,8 @@ export class Updater {
 	}
 
 	async update() {
-
 		// Fetch data from the server
-		const response = await fetch("/api/calendar");
+		const response = await fetch('/api/calendar');
 		const data = await response.json();
 
 		// Version check
@@ -20,8 +25,6 @@ export class Updater {
 			console.log('Version mismatch');
 			location.reload();
 		}
-
-		// console.log(data);
 
 		version = data.version;
 
@@ -32,16 +35,18 @@ export class Updater {
 				state.pressure = data.homey.pressure;
 				return state;
 			});
+		}
+		if (data.tibber) {
 			powerStoreCabin.update((state) => {
 				state.price = data.powerPrice;
-				state.power = data.homey.powerCabin;
-				state.powerToday = data.homey.powerUsedTodayCabin;
+				state.power = data.tibber['cabin'].currentPower;
+				state.powerToday = data.tibber['cabin'].accumulatedConsumption;
 				return state;
 			});
 			powerStoreHome.update((state) => {
 				state.price = data.powerPrice;
-				state.power = data.homey.power;
-				state.powerToday = data.homey.powerUsedToday;
+				state.power = data.tibber['home'].currentPower;
+				state.powerToday = data.tibber['home'].accumulatedConsumption;
 				return state;
 			});
 		}
