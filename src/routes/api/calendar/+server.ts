@@ -2,7 +2,6 @@ import { Calendar } from '$lib/server/Calendar';
 import { Days } from '$lib/server/Days.mjs';
 import { Smarthouse } from '$lib/server/Smarthouse.mjs';
 import { MqttClient } from '$lib/server/MQTT';
-import { PowerPrice } from '$lib/server/PowerPrice.mjs';
 import { Weather } from '$lib/server/Weather.mjs';
 import { VERSION } from '$lib/server/version';
 import { Tibber } from '$lib/server/Tibber';
@@ -14,7 +13,6 @@ const mqttClient = MqttClient.getInstance();
 // Create smarthouse connector
 const smart = new Smarthouse(mqttClient);
 smart.startMqtt();
-const powerPriceGetter = new PowerPrice();
 const tibber = new Tibber();
 
 // For now, this is a kind of "all stuff comes from here" endpoint
@@ -30,7 +28,6 @@ export async function GET(): Promise<Response> {
 			hourlyWeather: weather.getHourlyForecasts(),
 			dangerData: weather.getDangerData(),
 			homey: smart.getData(),
-			powerPrice: powerPriceGetter.getPowerPrice(),
 			currentWeather: weather.getCurrentWeather(),
 			longTermForecast:  weather.getDailyForecasts(),
 			version: VERSION

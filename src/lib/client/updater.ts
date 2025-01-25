@@ -38,13 +38,13 @@ export class Updater {
 		}
 		if (data.tibber) {
 			powerStoreCabin.update((state) => {
-				state.price = data.powerPrice;
+				state.price = data.tibber['cabin'].currentPrice;
 				state.power = data.tibber['cabin'].currentPower;
 				state.powerToday = data.tibber['cabin'].accumulatedConsumption;
 				return state;
 			});
 			powerStoreHome.update((state) => {
-				state.price = data.powerPrice;
+				state.price = data.tibber['home'].currentPrice;
 				state.power = data.tibber['home'].currentPower;
 				state.powerToday = data.tibber['home'].accumulatedConsumption;
 				return state;
