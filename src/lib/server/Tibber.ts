@@ -31,6 +31,11 @@ const initValues: powerData = {
 	currentPrice: 0
 };
 
+export const enum Places {
+	Home = 'home',
+	Cabin = 'cabin'
+}
+
 export class Tibber {
 	private feedHome: TibberFeed;
 	private feedCabin: TibberFeed;
@@ -64,7 +69,7 @@ export class Tibber {
 		return this.data;
 	}
 
-	private setupFeed(feed: TibberFeed, where: 'home' | 'cabin' = 'home') {
+	private setupFeed(feed: TibberFeed, where: Places) {
 		feed.on('data', (data) => {
 			this.data[where].timestamp = new Date().toISOString();
 			this.data[where].accumulatedConsumption = data.accumulatedConsumption;
@@ -94,23 +99,23 @@ export class Tibber {
 			new TibberQuery({ ...this.config, homeId: env.TIBBER_ID_CABIN })
 		);
 
-		this.setupFeed(this.feedHome, 'home');
-		this.setupFeed(this.feedCabin, 'cabin');
+		this.setupFeed(this.feedHome, Places.Home);
+		this.setupFeed(this.feedCabin, Places.Cabin);
 
 		this.feedHome.connect();
 		this.feedCabin.connect();
 
 		// Start power price fetching loop
-		this.updatePowerPrice('home');
-		this.updatePowerPrice('cabin');
+		this.updatePowerPrice(Places.Home);
+		this.updatePowerPrice(Places.Cabin);
 
 		setInterval(() => {
-			this.updatePowerPrice('home');
-			this.updatePowerPrice('cabin');
+			this.updatePowerPrice(Places.Home);
+			this.updatePowerPrice(Places.Cabin);
 		}, 60000);
 	}
 
-	private async updatePowerPrice(where: 'home' | 'cabin') {
+	private async updatePowerPrice(where: Places) {
 		const id = where === 'home' ? env.TIBBER_ID_HOME : env.TIBBER_ID_CABIN;
 		const price = await this.query.getCurrentEnergyPrice(id);
 		this.data[where].currentPrice = price.total;
