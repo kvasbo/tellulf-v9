@@ -12,7 +12,7 @@ importers:
         specifier: ^0.33.0
         version: 0.33.0(pg@8.13.1)(postgres@3.4.5)
       fast-xml-parser:
-        specifier: ^4.5.0
+        specifier: ^4.5.1
         version: 4.5.1
       googleapis:
         specifier: ^144.0.0
@@ -30,11 +30,14 @@ importers:
         specifier: ^8.13.1
         version: 8.13.1
       postgres:
-        specifier: ^3.4.4
+        specifier: ^3.4.5
         version: 3.4.5
       sunrise-sunset-js:
         specifier: ^2.2.1
         version: 2.2.1
+      tibber-api:
+        specifier: ^5.3.1
+        version: 5.3.1
       twig:
         specifier: ^1.17.1
         version: 1.17.1
@@ -46,64 +49,64 @@ importers:
         version: 3.24.1
     devDependencies:
       '@eslint/compat':
-        specifier: ^1.2.3
+        specifier: ^1.2.4
         version: 1.2.5(eslint@9.18.0)
       '@sveltejs/adapter-node':
-        specifier: ^5.2.10
+        specifier: ^5.2.11
         version: 5.2.11(@sveltejs/kit@2.15.2(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.17.3)(vite@6.0.7(@types/node@22.10.5)(sass@1.83.1)))(svelte@5.17.3)(vite@6.0.7(@types/node@22.10.5)(sass@1.83.1)))
       '@sveltejs/kit':
-        specifier: ^2.9.0
+        specifier: ^2.15.2
         version: 2.15.2(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.17.3)(vite@6.0.7(@types/node@22.10.5)(sass@1.83.1)))(svelte@5.17.3)(vite@6.0.7(@types/node@22.10.5)(sass@1.83.1))
       '@sveltejs/vite-plugin-svelte':
-        specifier: ^5.0.0
+        specifier: ^5.0.3
         version: 5.0.3(svelte@5.17.3)(vite@6.0.7(@types/node@22.10.5)(sass@1.83.1))
       '@types/luxon':
-        specifier: '*'
+        specifier: ^3.4.2
         version: 3.4.2
       '@types/ws':
-        specifier: '*'
+        specifier: ^8.5.13
         version: 8.5.13
       drizzle-kit:
-        specifier: ^0.22.0
+        specifier: ^0.22.8
         version: 0.22.8
       eslint:
-        specifier: ^9.7.0
+        specifier: ^9.17.0
         version: 9.18.0
       eslint-config-prettier:
         specifier: ^9.1.0
         version: 9.1.0(eslint@9.18.0)
       eslint-plugin-svelte:
-        specifier: ^2.36.0
+        specifier: ^2.46.1
         version: 2.46.1(eslint@9.18.0)(svelte@5.17.3)
       globals:
-        specifier: ^15.0.0
+        specifier: ^15.14.0
         version: 15.14.0
       prettier:
-        specifier: ^3.3.2
+        specifier: ^3.4.2
         version: 3.4.2
       prettier-plugin-svelte:
-        specifier: ^3.2.6
+        specifier: ^3.3.2
         version: 3.3.2(prettier@3.4.2)(svelte@5.17.3)
       sass:
-        specifier: ^1.82.0
+        specifier: ^1.83.1
         version: 1.83.1
       svelte:
-        specifier: ^5.0.0
+        specifier: ^5.16.5
         version: 5.17.3
       svelte-check:
-        specifier: ^4.0.0
+        specifier: ^4.1.1
         version: 4.1.3(picomatch@4.0.2)(svelte@5.17.3)(typescript@5.7.3)
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.7.2
         version: 5.7.3
       typescript-eslint:
-        specifier: ^8.0.0
+        specifier: ^8.19.1
         version: 8.19.1(eslint@9.18.0)(typescript@5.7.3)
       vite:
-        specifier: ^6.0.0
+        specifier: ^6.0.7
         version: 6.0.7(@types/node@22.10.5)(sass@1.83.1)
       vitest:
-        specifier: ^2.0.4
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.5)(sass@1.83.1)
 
 packages:
@@ -2207,6 +2210,9 @@ packages:
     resolution: {integrity: sha512-eLgtpR2JiTgeuNQRCDcLx35Z7Lu9Qe09GPOz+gvtR9nmIZu5xgFd6oFiLGQlxLD0/u7xVyF5AUkjDVyFHe6Bvw==}
     engines: {node: '>=18'}
 
+  tibber-api@5.3.1:
+    resolution: {integrity: sha512-+8SvQZIYmaDyCvwjqWeSO81K0I0a3LtfgHKePwWI6ldWjqOIIr0XJo2K4p3S7VHN2JTqrtOiHCxjt2SbUdtzrw==}
+
   tiny-glob@0.2.9:
     resolution: {integrity: sha512-g/55ssRPUjShh+xkfx9UPDXqhckHEsHr4Vd9zX55oSdGZc/MD0m3sferOkwWtp98bv+kcVfEHtRJgBVJzelrzg==}
 
@@ -4300,6 +4306,13 @@ snapshots:
       locate-character: 3.0.0
       magic-string: 0.30.17
       zimmerframe: 1.1.2
+
+  tibber-api@5.3.1:
+    dependencies:
+      ws: 8.18.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   tiny-glob@0.2.9:
     dependencies:
