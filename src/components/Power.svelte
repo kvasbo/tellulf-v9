@@ -15,20 +15,27 @@
 	const currentPrice = $derived(where === 'home' ? priceHome : priceCabin);
 	const place = where === 'home' ? 'Hjemme' : 'Hytta';
 
-</script>
-
-<style>
-	.powerLabel {
-		width: 60px;
-			display: inline-block;
+	function getUsage() {
+		// If it's november 30th, use joules instead of kwh
+		if (new Date().getDate() === 30 && new Date().getMonth() === 10) {
+			return `${Math.round(currentToday * 3.6)} MJ`;
+		}
+		return `${currentToday.toFixed(2)} kWh`;
 	}
-</style>
+</script>
 
 <div class="footerBox">
 	<div>
 		<strong>{place}</strong><br />
-		<span class="powerLabel">I dag</span>{Math.round(currentToday)} kWh<br />
+		<span class="powerLabel">I dag</span>{getUsage()}<br />
 		<span class="powerLabel">Nå</span>{Math.round(currentPower / 1000)} kW<br />
 		<span class="powerLabel">Pris</span>{currentPrice.toFixed(2)} kr
 	</div>
 </div>
+
+<style>
+	.powerLabel {
+		width: 60px;
+		display: inline-block;
+	}
+</style>
