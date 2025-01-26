@@ -17,8 +17,10 @@ export class Updater {
 
 	async update() {
 		// Fetch data from the server
-		const response = await fetch('/api/calendar');
+		const response = await fetch('/api/data');
 		const data = await response.json();
+
+		console.log(data);
 
 		// Version check
 		if (data.version !== version && version !== null) {
@@ -41,12 +43,14 @@ export class Updater {
 				state.price = data.tibber['cabin'].currentPrice;
 				state.power = data.tibber['cabin'].currentPower;
 				state.powerToday = data.tibber['cabin'].accumulatedConsumption;
+				state.costToday = data.tibber['cabin'].accumulatedCost;
 				return state;
 			});
 			powerStoreHome.update((state) => {
 				state.price = data.tibber['home'].currentPrice;
 				state.power = data.tibber['home'].currentPower;
 				state.powerToday = data.tibber['home'].accumulatedConsumption;
+				state.costToday = data.tibber['home'].accumulatedCost;
 				return state;
 			});
 		}

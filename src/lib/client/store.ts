@@ -10,6 +10,7 @@ type PowerState = {
 	price: number;
 	power: number;
 	powerToday: number;
+	costToday: number;
 }
 
 export type HourlyForecastStore = HourlyForecast[];

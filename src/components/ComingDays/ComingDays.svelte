@@ -6,7 +6,7 @@
 	// For now this gets pretty much everything.
 	async function updateCalendar() {
 		console.log('Updating calendar');
-		const data = await fetch("/api/calendar");
+		const data = await fetch("/api/data");
 		const json = await data.json();
 		days = json.days;
 	}
