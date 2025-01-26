@@ -19,11 +19,16 @@
 	const place = where === 'home' ? 'Hjemme' : 'Hytta';
 
 	function getUsage() {
-		// If it's november 30th, use joules instead of kwh
-		if (new Date().getDate() === 30 && new Date().getMonth() === 10) {
-			return `${Math.round(currentToday * 3.6)} MJ`;
+		try {
+			// If it's november 30th, use joules instead of kwh
+			if (new Date().getDate() === 30 && new Date().getMonth() === 10) {
+				return `${Math.round(currentToday * 3.6)} MJ`;
+			}
+			return `${currentToday.toFixed(2)} kWh`;
+		} catch (e) {
+			console.error(e);
+			return '0 kWh';
 		}
-		return `${currentToday.toFixed(2)} kWh`;
 	}
 </script>
 
