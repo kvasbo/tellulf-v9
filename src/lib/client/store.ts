@@ -37,13 +37,15 @@ export const weatherStore = writable<WeatherState>({
 });
 
 export const powerStoreHome = writable<PowerState>({
-	price: 9999,
-	power: 9999,
-	powerToday: 9999
+	price: 0,
+	power: 0,
+	powerToday: 0,
+	costToday: 0
 });
 
 export const powerStoreCabin = writable<PowerState>({
-	price: 9999,
-	power: 9999,
-	powerToday: 9999
+	price: 0,
+	power: 0,
+	powerToday: 0,
+	costToday: 0
 });
