@@ -6,13 +6,16 @@
 	const powerHome = $derived($powerStoreHome.power);
 	const todayHome = $derived($powerStoreHome.powerToday);
 	const priceHome = $derived($powerStoreHome.price);
+	const costHome = $derived($powerStoreHome.costToday);
 	const powerCabin = $derived($powerStoreCabin.power);
 	const todayCabin = $derived($powerStoreCabin.powerToday);
 	const priceCabin = $derived($powerStoreCabin.price);
+	const costCabin = $derived($powerStoreCabin.costToday);
 
 	const currentPower = $derived(where === 'home' ? powerHome : powerCabin);
 	const currentToday = $derived(where === 'home' ? todayHome : todayCabin);
 	const currentPrice = $derived(where === 'home' ? priceHome : priceCabin);
+	const currentCost = $derived(where === 'home' ? costHome : costCabin);
 	const place = where === 'home' ? 'Hjemme' : 'Hytta';
 
 	function getUsage() {
@@ -25,12 +28,29 @@
 </script>
 
 <div class="footerBox">
-	<div>
-		<strong>{place}</strong><br />
-		<span class="powerLabel">I dag</span>{getUsage()}<br />
-		<span class="powerLabel">Nå</span>{Math.round(currentPower / 1000)} kW<br />
-		<span class="powerLabel">Pris</span>{currentPrice.toFixed(2)} kr
-	</div>
+	<table class="footerTable">
+		<tbody>
+			<tr>
+				<td colspan="2"><strong>{place}</strong></td>
+			</tr>
+			<tr>
+				<td>I dag</td>
+				<td>{getUsage()}</td>
+			</tr>
+			<tr>
+				<td>Nå</td>
+				<td>{Math.round(currentPower / 1000)} kW</td>
+			</tr>
+			<tr>
+				<td>Pris</td>
+				<td>{currentPrice.toFixed(2)} kr</td>
+			</tr>
+			<tr>
+				<td>Kost</td>
+				<td>{currentCost.toFixed(2)} kr</td>
+			</tr>
+		</tbody>
+	</table>
 </div>
 
 <style>

@@ -75,6 +75,13 @@ export class Tibber {
 			this.data[where].accumulatedConsumption = data.accumulatedConsumption;
 			this.data[where].currentPower = data.power;
 			this.data[where].maxPower = data.maxPower;
+			this.data[where].minPower = data.minPower;
+			this.data[where].averagePower = data.averagePower;
+			this.data[where].powerProduction = data.powerProduction;
+			this.data[where].minPowerProduction = data.minPowerProduction;
+			this.data[where].accumulatedProduction = data.accumulatedProduction;
+			this.data[where].accumulatedCost = data.accumulatedCost;
+			this.data[where].accumulatedReward = data.accumulatedReward;
 		});
 
 		feed.on('error', (error) => {
