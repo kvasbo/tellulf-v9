@@ -123,9 +123,13 @@ export class Tibber {
 	}
 
 	private async updatePowerPrice(where: Places) {
-		const id = where === 'home' ? env.TIBBER_ID_HOME : env.TIBBER_ID_CABIN;
-		const price = await this.query.getCurrentEnergyPrice(id);
-		this.data[where].currentPrice = price.total;
-		console.log(`Updated power price for ${where} to ${price.total}`);
+		try {
+			const id = where === 'home' ? env.TIBBER_ID_HOME : env.TIBBER_ID_CABIN;
+			const price = await this.query.getCurrentEnergyPrice(id);
+			this.data[where].currentPrice = price.total;
+			console.log(`Updated power price for ${where} to ${price.total}`);
+		} catch (error) {
+			console.error(`Failed to update power price for ${where}:`, error);
+		}
 	}
 }
