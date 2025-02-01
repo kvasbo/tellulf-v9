@@ -1,7 +1,7 @@
 import { TibberFeed, TibberQuery, TibberQueryBase, type IConfig } from 'tibber-api';
 import { env } from '$env/dynamic/private';
 
-interface powerData {
+export interface PowerData {
 	timestamp: string;
 	accumulatedConsumption: number;
 	currentPower: number;
@@ -16,7 +16,7 @@ interface powerData {
 	currentPrice: number;
 }
 
-const initValues: powerData = {
+const initValues: PowerData = {
 	timestamp: '',
 	accumulatedConsumption: 0,
 	currentPower: 0,
@@ -39,7 +39,7 @@ export const enum Places {
 export class Tibber {
 	private feedHome: TibberFeed;
 	private feedCabin: TibberFeed;
-	private data: { home: powerData; cabin: powerData } = {
+	private data: { home: PowerData; cabin: PowerData } = {
 		home: { ...initValues },
 		cabin: { ...initValues }
 	};
@@ -67,8 +67,8 @@ export class Tibber {
 		maxPowerProduction: true
 	};
 
-	public getPowerData() {
-		return this.data;
+	public getPowerData(where: Places): PowerData {
+		return this.data[where];
 	}
 
 	private setupFeed(feed: TibberFeed, where: Places) {

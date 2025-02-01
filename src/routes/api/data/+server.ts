@@ -4,7 +4,6 @@ import { Smarthouse } from '$lib/server/Smarthouse.mjs';
 import { MqttClient } from '$lib/server/MQTT';
 import { Weather } from '$lib/server/Weather.mjs';
 import { VERSION } from '$lib/server/version';
-import { Tibber } from '$lib/server/Tibber';
 
 const weather = new Weather();
 const calendar = Calendar.getInstance();
@@ -13,7 +12,6 @@ const mqttClient = MqttClient.getInstance();
 // Create smarthouse connector
 const smart = new Smarthouse(mqttClient);
 smart.startMqtt();
-const tibber = new Tibber();
 
 // For now, this is a kind of "all stuff comes from here" endpoint
 // TODO: Separate concerns.
@@ -22,7 +20,6 @@ export async function GET(): Promise<Response> {
 
 		const out = {
 			days: days.generateComingDays(),
-			tibber: tibber.getPowerData(),
 			currentTemperature: weather.getCurrentWeather().temperature,
 			currentWeatherIcon: weather.getCurrentWeather().symbol,
 			hourlyWeather: weather.getHourlyForecasts(),
