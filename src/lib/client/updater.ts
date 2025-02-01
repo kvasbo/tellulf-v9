@@ -1,7 +1,5 @@
 import {
 	weatherStore,
-	powerStoreCabin,
-	powerStoreHome,
 	hourlyForecastStore,
 	type HourlyForecastStore
 } from './store';
@@ -20,8 +18,6 @@ export class Updater {
 		const response = await fetch('/api/data');
 		const data = await response.json();
 
-		console.log(data);
-
 		// Version check
 		if (data.version !== version && version !== null) {
 			console.log('Version mismatch');
@@ -35,22 +31,6 @@ export class Updater {
 				state.temperature = data.homey.tempOut;
 				state.humidity = data.homey.humOut;
 				state.pressure = data.homey.pressure;
-				return state;
-			});
-		}
-		if (data.tibber) {
-			powerStoreCabin.update((state) => {
-				state.price = data.tibber['cabin'].currentPrice;
-				state.power = data.tibber['cabin'].currentPower;
-				state.powerToday = data.tibber['cabin'].accumulatedConsumption;
-				state.costToday = data.tibber['cabin'].accumulatedCost;
-				return state;
-			});
-			powerStoreHome.update((state) => {
-				state.price = data.tibber['home'].currentPrice;
-				state.power = data.tibber['home'].currentPower;
-				state.powerToday = data.tibber['home'].accumulatedConsumption;
-				state.costToday = data.tibber['home'].accumulatedCost;
 				return state;
 			});
 		}

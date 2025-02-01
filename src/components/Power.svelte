@@ -1,30 +1,26 @@
 <script lang="ts">
-	import { powerStoreHome, powerStoreCabin } from '$lib/client/store';
+	import type { PowerData } from '$lib/server/Tibber';
+	import { onMount } from 'svelte';
+
+	let powerData: PowerData | null = $state(null);
 
 	let { where } = $props();
 
-	const powerHome = $derived($powerStoreHome.power);
-	const todayHome = $derived($powerStoreHome.powerToday);
-	const priceHome = $derived($powerStoreHome.price);
-	const costHome = $derived($powerStoreHome.costToday);
-	const powerCabin = $derived($powerStoreCabin.power);
-	const todayCabin = $derived($powerStoreCabin.powerToday);
-	const priceCabin = $derived($powerStoreCabin.price);
-	const costCabin = $derived($powerStoreCabin.costToday);
+	onMount(() => {
+		setInterval(async () => {
+			const d = await fetch('/api/power?where=' + where);
+			const data = await d.json();
+			powerData = data;
+		}, 1000);
+	});
 
-	const currentPower = $derived(where === 'home' ? powerHome : powerCabin);
-	const currentToday = $derived(where === 'home' ? todayHome : todayCabin);
-	const currentPrice = $derived(where === 'home' ? priceHome : priceCabin);
-	const currentCost = $derived(where === 'home' ? costHome : costCabin);
-	const place = where === 'home' ? 'Hjemme' : 'Hytta';
-
-	function getUsage() {
+	function getUsage(used: number): string {
 		try {
 			// If it's november 30th, use joules instead of kwh
 			if (new Date().getDate() === 30 && new Date().getMonth() === 10) {
-				return `${Math.round(currentToday * 3.6)} MJ`;
+				return `${Math.round(used * 3.6)} MJ`;
 			}
-			return `${currentToday.toFixed(2)} kWh`;
+			return `${used.toFixed(2)} kWh`;
 		} catch (e) {
 			console.error(e);
 			return '0 kWh';
@@ -32,35 +28,32 @@
 	}
 </script>
 
-<div class="footerBox">
-	<table class="footerTable">
-		<tbody>
-			<tr>
-				<td colspan="2"><strong>{place}</strong></td>
-			</tr>
-			<tr>
-				<td>I dag</td>
-				<td>{getUsage()}</td>
-			</tr>
-			<tr>
-				<td>Nå</td>
-				<td>{Math.round(currentPower / 1000)} kW</td>
-			</tr>
-			<tr>
-				<td>Pris</td>
-				<td>{currentPrice.toFixed(2)} kr</td>
-			</tr>
-			<tr>
-				<td>Kost</td>
-				<td>{currentCost.toFixed(2)} kr</td>
-			</tr>
-		</tbody>
-	</table>
-</div>
 
-<style>
-	.powerLabel {
-		width: 60px;
-		display: inline-block;
-	}
-</style>
+	<div class="footerBox">
+		{#if powerData}
+		<table class="footerTable">
+			<tbody>
+				<tr>
+					<td colspan="2"><strong>{where}</strong></td>
+				</tr>
+				<tr>
+					<td>I dag</td>
+					<td>{getUsage(powerData.accumulatedConsumption)}</td>
+				</tr>
+				<tr>
+					<td>Nå</td>
+					<td>{Math.round(powerData.currentPower / 1000)} kW</td>
+				</tr>
+				<tr>
+					<td>Pris</td>
+					<td>{powerData.currentPrice.toFixed(2)} kr</td>
+				</tr>
+				<tr>
+					<td>Kost</td>
+					<td>{powerData.accumulatedCost.toFixed(2)} kr</td>
+				</tr>
+			</tbody>
+		</table>
+		{/if}
+	</div>
+
