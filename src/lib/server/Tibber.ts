@@ -45,6 +45,8 @@ export class Tibber {
 	};
 	private query: TibberQuery;
 
+	private lastCabinProduction: number = 0;
+
 	private config: IConfig = {
 		active: true,
 		apiEndpoint: {
@@ -82,6 +84,12 @@ export class Tibber {
 			this.data[where].accumulatedProduction = data.accumulatedProduction;
 			this.data[where].accumulatedCost = data.accumulatedCost;
 			this.data[where].accumulatedReward = data.accumulatedReward;
+			if (where === 'cabin' && data.powerProduction !== null) {
+				this.lastCabinProduction = data.powerProduction;
+			}
+			if (where === 'cabin') {
+				this.data['cabin'].currentPower = data.power - this.lastCabinProduction;
+			}
 		});
 
 		feed.on('error', (error) => {
