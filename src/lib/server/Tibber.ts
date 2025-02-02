@@ -1,4 +1,4 @@
-import { TibberFeed, TibberQuery, TibberQueryBase, type IConfig } from 'tibber-api';
+import { TibberFeed, TibberQuery, type IConfig } from 'tibber-api';
 import { env } from '$env/dynamic/private';
 
 export interface PowerData {
@@ -37,17 +37,21 @@ export const enum Places {
 }
 
 export class Tibber {
-	private feedHome: TibberFeed;
-	private feedCabin: TibberFeed;
-	private data: { home: PowerData; cabin: PowerData } = {
+	private readonly feedHome: TibberFeed;
+	private readonly feedCabin: TibberFeed;
+	private readonly data: { home: PowerData; cabin: PowerData } = {
 		home: { ...initValues },
 		cabin: { ...initValues }
 	};
-	private query: TibberQuery;
+	private readonly query: TibberQuery;
 
 	private lastCabinProduction: number = 0;
 
-	private config: IConfig = {
+	// Resources that need cleanup
+	private readonly priceUpdateInterval: NodeJS.Timeout;
+	private readonly reconnectionTimers: NodeJS.Timeout[] = [];
+
+	private readonly config: IConfig = {
 		active: true,
 		apiEndpoint: {
 			apiKey: env.TIBBER_KEY,
@@ -67,6 +71,32 @@ export class Tibber {
 		maxPowerProduction: true
 	};
 
+	constructor() {
+		// Initialize TibberQuery and feeds
+		this.query = new TibberQuery(this.config);
+		this.feedHome = new TibberFeed(new TibberQuery({ ...this.config, homeId: env.TIBBER_ID_HOME }));
+		this.feedCabin = new TibberFeed(
+			new TibberQuery({ ...this.config, homeId: env.TIBBER_ID_CABIN })
+		);
+
+		this.setupFeed(this.feedHome, Places.Home);
+		this.setupFeed(this.feedCabin, Places.Cabin);
+
+		// Connect feeds
+		this.feedHome.connect();
+		this.feedCabin.connect();
+
+		// Start power price fetching loop
+		this.updatePowerPrice(Places.Home);
+		this.updatePowerPrice(Places.Cabin);
+
+		// Save the interval ID for power price updates
+		this.priceUpdateInterval = setInterval(() => {
+			this.updatePowerPrice(Places.Home);
+			this.updatePowerPrice(Places.Cabin);
+		}, 60000);
+	}
+
 	public getPowerData(where: Places): PowerData {
 		return this.data[where];
 	}
@@ -84,6 +114,7 @@ export class Tibber {
 			this.data[where].accumulatedProduction = data.accumulatedProduction;
 			this.data[where].accumulatedCost = data.accumulatedCost;
 			this.data[where].accumulatedReward = data.accumulatedReward;
+
 			if (where === 'cabin' && data.powerProduction !== null) {
 				this.lastCabinProduction = data.powerProduction;
 			}
@@ -102,32 +133,9 @@ export class Tibber {
 
 		feed.on('disconnected', () => {
 			console.log(`${where} disconnected from Tibber`);
-			setTimeout(() => feed.connect(), 10000);
+			const reconnectTimer = setTimeout(() => feed.connect(), 10000); // Reconnect attempt in 10 seconds
+			this.reconnectionTimers.push(reconnectTimer); // Track the timer for later cleanup
 		});
-	}
-
-	constructor() {
-		this.query = new TibberQuery(this.config);
-		this.feedHome = new TibberFeed(new TibberQuery({ ...this.config, homeId: env.TIBBER_ID_HOME }));
-
-		this.feedCabin = new TibberFeed(
-			new TibberQuery({ ...this.config, homeId: env.TIBBER_ID_CABIN })
-		);
-
-		this.setupFeed(this.feedHome, Places.Home);
-		this.setupFeed(this.feedCabin, Places.Cabin);
-
-		this.feedHome.connect();
-		this.feedCabin.connect();
-
-		// Start power price fetching loop
-		this.updatePowerPrice(Places.Home);
-		this.updatePowerPrice(Places.Cabin);
-
-		setInterval(() => {
-			this.updatePowerPrice(Places.Home);
-			this.updatePowerPrice(Places.Cabin);
-		}, 60000);
 	}
 
 	private async updatePowerPrice(where: Places) {
@@ -139,5 +147,22 @@ export class Tibber {
 		} catch (error) {
 			console.error(`Failed to update power price for ${where}:`, error);
 		}
+	}
+
+	// Add a destroy method for cleanup
+	public destroydestroy() {
+		// Clear the price update interval
+		clearInterval(this.priceUpdateInterval);
+
+		// Clear reconnection timers
+		this.reconnectionTimers.forEach(clearTimeout);
+
+		// Disconnect feeds and remove event listeners
+		this.feedCabin.close();
+		this.feedHome.close();
+		this.feedHome.removeAllListeners();
+		this.feedCabin.removeAllListeners();
+
+		console.log('Tibber instance destroyed and cleaned up');
 	}
 }

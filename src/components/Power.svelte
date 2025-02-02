@@ -1,22 +1,30 @@
 <script lang="ts">
 	import type { PowerData } from '$lib/server/Tibber';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	let powerData: PowerData | null = $state(null);
 
 	let { where } = $props();
 
+	let intervalId: number; // Store the interval ID
+
 	onMount(() => {
-		setInterval(async () => {
+		// Start the interval
+		intervalId = setInterval(async () => {
 			const d = await fetch('/api/power?where=' + where);
 			const data = await d.json();
 			powerData = data;
 		}, 1000);
 	});
 
+	onDestroy(() => {
+		// Clear the interval when the component is destroyed
+		clearInterval(intervalId);
+	});
+
 	function getUsage(used: number): string {
 		try {
-			// If it's november 30th, use joules instead of kwh
+			// If it's november 30th, use joules instead of kWh
 			if (new Date().getDate() === 30 && new Date().getMonth() === 10) {
 				return `${Math.round(used * 3.6)} MJ`;
 			}
@@ -28,9 +36,8 @@
 	}
 </script>
 
-
-	<div class="footerBox">
-		{#if powerData}
+<div class="footerBox">
+	{#if powerData}
 		<table class="footerTable">
 			<tbody>
 				<tr>
@@ -54,6 +61,5 @@
 				</tr>
 			</tbody>
 		</table>
-		{/if}
-	</div>
-
+	{/if}
+</div>
