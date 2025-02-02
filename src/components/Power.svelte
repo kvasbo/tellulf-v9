@@ -49,7 +49,7 @@
 				</tr>
 				<tr>
 					<td>Nå</td>
-					<td>{Math.round(powerData.currentPower / 1000)} kW</td>
+					<td>{(powerData.currentPower / 1000).toFixed(1)} kW</td>
 				</tr>
 				<tr>
 					<td>Pris</td>
