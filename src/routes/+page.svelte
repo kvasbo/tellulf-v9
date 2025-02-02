@@ -10,7 +10,7 @@
 	import Power from '../components/Power.svelte';
 	import HourlyForecast from '../components/HourlyForecast/HourlyForecast.svelte';
 
-	let updater;
+	let updater: Updater;
 	onMount(() => {
 		updater = new Updater();
 		const interval = setInterval(() => updater.update(), 15000);

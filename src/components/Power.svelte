@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PowerData } from '$lib/server/Tibber';
+	import { type PowerData } from '$lib/server/Tibber';
 	import { onMount, onDestroy } from 'svelte';
 
 	let powerData: PowerData | null = $state(null);
@@ -7,6 +7,8 @@
 	let { where } = $props();
 
 	let intervalId: number; // Store the interval ID
+
+	const maxPower: number = 30000 / 100;
 
 	onMount(() => {
 		// Start the interval
@@ -22,6 +24,10 @@
 		clearInterval(intervalId);
 	});
 
+	function getPowerDisplay(power: number): string {
+		return `${(power/1000).toFixed(1)}`;
+	}
+
 	function getUsage(used: number): string {
 		try {
 			// If it's november 30th, use joules instead of kWh
@@ -34,32 +40,77 @@
 			return '0 kWh';
 		}
 	}
+
+	function getHeader (where: string) {
+		return where === 'home' ? 'Hjemme' : 'Hytta';
+	}
 </script>
+
+<style>
+	.powerShow {
+			width: 100%;
+			height: 50px;
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-start;
+			align-items: flex-start;
+			margin-right: 25px;
+			box-sizing: border-box;
+	}
+	.powerBar {
+			height: 40px;
+			background-color: #3ea4f0;
+      transition: width 0.5s linear;
+			display: flex;
+			justify-content: flex-start;
+			align-items: center;
+			padding-left: 10px;
+			margin-top: 10px;
+			overflow: visible;
+			break-inside: avoid;
+  }
+	.minBar {
+      height: 5px;
+			background-color: #3ea4f033;
+      transition: width 0.5s linear;
+	}
+  .maxBar {
+      height: 5px;
+      background-color: #3ea4f055;
+      transition: width 0.5s linear;
+  }
+	.avgBar {
+      height: 5px;
+      background-color: #3ea4f077;
+      transition: width 0.5s linear;
+  }
+
+
+</style>
 
 <div class="footerBox">
 	{#if powerData}
+		<strong>{getHeader(where)}</strong>
 		<table class="footerTable">
 			<tbody>
 				<tr>
-					<td colspan="2"><strong>{where}</strong></td>
-				</tr>
-				<tr>
-					<td>I dag</td>
-					<td>{getUsage(powerData.accumulatedConsumption)}</td>
-				</tr>
-				<tr>
-					<td>Nå</td>
-					<td>{(powerData.currentPower / 1000).toFixed(1)} kW</td>
-				</tr>
-				<tr>
-					<td>Pris</td>
-					<td>{powerData.currentPrice.toFixed(2)} kr</td>
-				</tr>
-				<tr>
+					<td>Forbruk</td>
 					<td>Kost</td>
+					<td>Pris</td>
+				</tr>
+				<tr>
+					<td>{getUsage(powerData.accumulatedConsumption)}</td>
 					<td>{powerData.accumulatedCost.toFixed(2)} kr</td>
+					<td>{powerData.currentPrice.toFixed(2)} kr</td>
 				</tr>
 			</tbody>
 		</table>
+		<div class="powerShow">
+			<div class="powerBar" style="width: {powerData.currentPower / maxPower}%">{getPowerDisplay(powerData.currentPower)}&nbsp;kW</div>
+			<div class="maxBar" style="width: {powerData.maxPower / maxPower}%"></div>
+			<div class="avgBar" style="width: {powerData.averagePower / maxPower}%"></div>
+			<div class="minBar" style="width: {powerData.minPower / maxPower}%"></div>
+		</div>
 	{/if}
 </div>

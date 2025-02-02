@@ -234,6 +234,10 @@ footer {
 		flex: 1;
 		.footerTable {
 			font-size: 13pt;
+			td {
+				width: 120px;
+				padding-right: 10px;
+			}
 		}
 	}
 }

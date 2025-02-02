@@ -1,5 +1,6 @@
 import { TibberFeed, TibberQuery, type IConfig } from 'tibber-api';
 import { env } from '$env/dynamic/private';
+import { Places } from '$lib/Enums';
 
 export interface PowerData {
 	timestamp: string;
@@ -31,10 +32,7 @@ const initValues: PowerData = {
 	currentPrice: 0
 };
 
-export const enum Places {
-	Home = 'home',
-	Cabin = 'cabin'
-}
+
 
 export class Tibber {
 	private readonly feedHome: TibberFeed;
