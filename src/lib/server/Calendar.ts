@@ -252,7 +252,7 @@ export class Calendar {
       };
     }
 
-    const arrow = " – ";
+    const arrow = "–";
 
     if (dayType === "lastDay") {
       return {

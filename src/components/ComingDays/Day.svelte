@@ -68,16 +68,10 @@
 				<div class="event">{event.displayTitle}</div>
 			{:else}
 				<div class="event">
-					<span class="event-time">
-						<span class="event-time-start">
+					<span class="event-time timespan">
 							{event.displayTime.start}
-						</span>
-						<span class="event-time-spacer">
 							{event.displayTime.spacer}
-						</span>
-						<span class="event-time-start">
 							{event.displayTime.end}
-						</span>
 					</span>
 					{event.displayTitle}
 				</div>

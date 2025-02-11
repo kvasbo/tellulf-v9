@@ -10,7 +10,7 @@ $text_small: 14px;
 $grid_margin: 15px;
 $margin: 10px;
 $white: #fdf6e3;
-$gray: #444444;
+$gray: #555555;
 $light_gray: #c0c0c0;
 
 * {
@@ -137,17 +137,21 @@ calendar {
 		}
 		.event {
 			display: flex;
+			align-items: baseline;
+			justify-content: flex-start;
+			margin-bottom: 3px;
+			margin-top: 3px;
+
 			.event-time {
 				color: $gray;
+				font-variant-numeric: tabular-nums;
 				display: flex;
+				align-items: baseline;
 				justify-content: flex-start;
 				margin-right: 10px;
-				width: 135px;
-				span {
-					display: flex;
-					flex-direction: column;
-					justify-content: center;
-				}
+				font-size: 13pt;
+				width: 123px;
+				overflow: hidden;
 			}
 		}
 	}
