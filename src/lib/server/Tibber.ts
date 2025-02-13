@@ -43,8 +43,6 @@ export class Tibber {
 	};
 	private readonly query: TibberQuery;
 
-	private lastCabinProduction: number = 0;
-
 	// Resources that need cleanup
 	private readonly priceUpdateInterval: NodeJS.Timeout;
 	private readonly reconnectionTimers: NodeJS.Timeout[] = [];
@@ -113,12 +111,10 @@ export class Tibber {
 			this.data[where].accumulatedCost = data.accumulatedCost;
 			this.data[where].accumulatedReward = data.accumulatedReward;
 
-			if (where === 'cabin' && data.powerProduction !== null) {
-				this.lastCabinProduction = data.powerProduction;
+			if (!data.power && data.powerProduction) {
+				this.data[where].currentPower = data.powerProduction * -1;
 			}
-			if (where === 'cabin') {
-				this.data['cabin'].currentPower = data.power - this.lastCabinProduction;
-			}
+
 		});
 
 		feed.on('error', (error) => {

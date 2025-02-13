@@ -26,14 +26,14 @@
 		"@types/luxon": "^3.4.2",
 		"@types/ws": "^8.5.14",
 		"drizzle-kit": "^0.30.4",
-		"eslint": "^9.20.0",
+		"eslint": "^9.20.1",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^2.46.1",
-		"globals": "^15.14.0",
+		"globals": "^15.15.0",
 		"prettier": "^3.5.0",
 		"prettier-plugin-svelte": "^3.3.3",
 		"sass": "^1.84.0",
-		"svelte": "^5.19.10",
+		"svelte": "^5.20.0",
 		"svelte-check": "^4.1.4",
 		"typescript": "^5.7.3",
 		"typescript-eslint": "^8.24.0",
@@ -47,13 +47,13 @@
 		"lunarphase-js": "^2.0.3",
 		"luxon": "^3.5.0",
 		"mqtt": "^5.10.3",
-		"pg": "^8.13.1",
+		"pg": "^8.13.3",
 		"postgres": "^3.4.5",
 		"sunrise-sunset-js": "^2.2.1",
 		"tibber-api": "^5.3.1",
 		"twig": "^1.17.1",
 		"ws": "^8.18.0",
-		"zod": "^3.24.1"
+		"zod": "^3.24.2"
 	},
 	"packageManager": "pnpm@10.0.0"
 }
