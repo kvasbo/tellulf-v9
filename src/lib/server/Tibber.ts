@@ -32,8 +32,6 @@ const initValues: PowerData = {
 	currentPrice: 0
 };
 
-
-
 export class Tibber {
 	private readonly feedHome: TibberFeed;
 	private readonly feedCabin: TibberFeed;
@@ -42,6 +40,8 @@ export class Tibber {
 		cabin: { ...initValues }
 	};
 	private readonly query: TibberQuery;
+
+	private lastCabinProduction = 0;
 
 	// Resources that need cleanup
 	private readonly priceUpdateInterval: NodeJS.Timeout;
@@ -111,10 +111,14 @@ export class Tibber {
 			this.data[where].accumulatedCost = data.accumulatedCost;
 			this.data[where].accumulatedReward = data.accumulatedReward;
 
-			if (!data.power && data.powerProduction) {
-				this.data[where].currentPower = data.powerProduction * -1;
+			if (where === 'cabin' && data.powerProduction !== null) {
+				this.lastCabinProduction = data.powerProduction;
+				// console.log(`Cabin production / usage: ${this.lastCabinProduction}/${data.power}`);
 			}
 
+			if (where === 'cabin' && data.power === 0) {
+				this.data[where].currentPower = this.lastCabinProduction * -1;
+			}
 		});
 
 		feed.on('error', (error) => {
