@@ -6,7 +6,7 @@
 
 	let { where } = $props();
 
-	let intervalId: number; // Store the interval ID
+	let intervalId: NodeJS.Timeout; // Store the interval ID
 
 	const maxPower: number = 30000 / 100;
 
@@ -14,8 +14,7 @@
 		// Start the interval
 		intervalId = setInterval(async () => {
 			const d = await fetch('/api/power?where=' + where);
-			const data = await d.json();
-			powerData = data;
+			powerData = await d.json();
 		}, 1000);
 	});
 
@@ -39,6 +38,10 @@
 			console.error(e);
 			return '0 kWh';
 		}
+	}
+
+	function getBGColor (power: number) {
+		return power < 0 ? '#3ef0a4' : '#3ea4f0';
 	}
 
 	function getHeader (where: string) {
@@ -107,7 +110,7 @@
 			</tbody>
 		</table>
 		<div class="powerShow">
-			<div class="powerBar" style="width: {powerData.currentPower / maxPower}%">{getPowerDisplay(powerData.currentPower)}&nbsp;kW</div>
+			<div class="powerBar" style="background-color: {getBGColor(powerData.currentPower)}; width: {powerData.currentPower / maxPower}%">{getPowerDisplay(powerData.currentPower)}&nbsp;kW</div>
 			<div class="maxBar" style="width: {powerData.maxPower / maxPower}%"></div>
 			<div class="avgBar" style="width: {powerData.averagePower / maxPower}%"></div>
 			<div class="minBar" style="width: {powerData.minPower / maxPower}%"></div>
