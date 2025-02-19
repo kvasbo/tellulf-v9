@@ -32,13 +32,16 @@
 			displayZeroLine = 'block';
 		} else if (min > 0) {
 			min = 0;
-			max = Math.max(max, 25);
+			max = Math.max(max, 20);
 		} else if (max < 0) {
 			max = 0;
-			min = Math.min(min, -25);
+			min = Math.min(min, -20);
 		} else {
 			max = Math.ceil(max / 5) * 5;
 			min = Math.floor(min / 5) * 5;
+			if (max - min < 20) {
+				max = min + 20;
+			}
 			displayZeroLine = 'block';
 		}
 
