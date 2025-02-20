@@ -20,7 +20,7 @@ $light_gray: #c0c0c0;
 body {
 	cursor: none;
 	display: grid;
-	grid-template-columns: 40% 20% 1fr;
+	grid-template-columns: 30% 30% 1fr;
 	grid-template-rows: 30% 55% 1fr;
 	row-gap: $grid_margin;
 	column-gap: $grid_margin;
