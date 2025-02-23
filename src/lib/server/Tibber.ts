@@ -102,7 +102,8 @@ export class Tibber {
 	private setupFeed(feed: TibberFeed, where: Places) {
 		feed.on('data', (data) => {
 			this.data[where].timestamp = new Date().toISOString();
-			this.data[where].accumulatedConsumption = data.accumulatedConsumption;
+			this.data[where].accumulatedConsumption =
+				data.accumulatedConsumption - data.accumulatedProduction;
 			this.data[where].currentPower = data.power;
 			this.data[where].maxPower = data.maxPower;
 			this.data[where].minPower = data.minPower;
@@ -116,7 +117,6 @@ export class Tibber {
 
 			if (where === 'cabin' && data.powerProduction !== null) {
 				this.lastCabinProduction = data.powerProduction;
-				// console.log(`Cabin production / usage: ${this.lastCabinProduction}/${data.power}`);
 			}
 
 			if (where === 'cabin' && data.power === 0) {
