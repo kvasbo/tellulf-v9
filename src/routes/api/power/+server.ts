@@ -1,5 +1,5 @@
 import { Tibber } from '$lib/server/Tibber';
-import type { Places } from '$lib/server/Tibber';
+import type { Places } from '$lib/Enums';
 const tibber = new Tibber();
 
 export async function GET({ request }): Promise<Response> {

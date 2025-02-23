@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { DateTime } from 'luxon';
 import { env } from '$env/dynamic/private';
+import type { Event, EnrichedEvent } from './Calendar.d';
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
@@ -36,8 +37,6 @@ export class Calendar {
 	/**
 	 * Constructor for the Calendar class, that refreshes events, birthdays and dinners every 15 minutes.
 	 * @class
-	 * @param {number} [interval] - Optional interval for main event reload frequency.
-	 * @param {number} [interval] - Optional interval for birthday and dinner reload in seconds.
 	 */
 	private constructor() {
 		this.refreshEvents();
@@ -52,21 +51,6 @@ export class Calendar {
 			this.refreshBirthdays();
 			this.refreshDinners();
 		}, 900 * 1000);
-	}
-
-	/**
-	 * Try to calculate the height of a day in pixels based on the number of events and birthdays.
-	 * @param {Date} jsDate The date to check
-	 * @returns {number} The estimated height in pixels
-	 */
-	calculateDisplayHeightForDay(jsDate: Date) {
-		const eventCount = this.getEventsForDate(jsDate).length;
-		const birthdays = this.getBirthdaysForDate(jsDate).length;
-		const height =
-			this.displayHeights.dayInfo +
-			eventCount * this.displayHeights.event +
-			birthdays * this.displayHeights.birthday;
-		return height;
 	}
 
 	/**
@@ -109,7 +93,7 @@ export class Calendar {
 	 * @returns {boolean} - Returns true if the event falls on the specified date, false otherwise.
 	 */
 	checkEventForDate(event: any, jsDate: Date) {
-		// Find start of day for all of the fuckers
+		// Find start of day for all the fuckers
 		const dt = DateTime.fromJSDate(jsDate).startOf('day');
 		const eventStart = DateTime.fromJSDate(event.start).startOf('day');
 		const eventEnd = DateTime.fromJSDate(event.end).startOf('day');
@@ -123,7 +107,7 @@ export class Calendar {
 		return false;
 	}
 
-	enrichEvent(event, type = '', forDate) {
+	enrichEvent(event: Event, type = '', forDate): EnrichedEvent {
 		const displayTitle = Calendar.getDisplayTitle(event, type);
 		const dayType = Calendar.getDayType(event, forDate);
 		const displayTime = Calendar.getEventDisplayTime(event, dayType);
@@ -151,7 +135,7 @@ export class Calendar {
 			if (foundYear) {
 				const y = Number(event.title.slice(-4));
 				const now = DateTime.now();
-				const age = now.year - 1 * y;
+				const age = now.year - y;
 				title = `${event.title.substring(0, event.title.length - 5)} (${age} år)`;
 			}
 		}
@@ -233,8 +217,8 @@ export class Calendar {
 		return out;
 	}
 
-	// Get the correct displaytime for the event
-	static getEventDisplayTime(event, dayType) {
+	// Get the correct display time for the event
+	static getEventDisplayTime(event: Event, dayType) {
 		if (dayType === 'middleDay') {
 			return {
 				start: '',
@@ -270,7 +254,7 @@ export class Calendar {
 	}
 
 	// Figure out if same date or whether it spans multiple days. For displaying purposes
-	static getDayType(event, date: Date) {
+	static getDayType(event: Event, date: Date) {
 		const dtStart = DateTime.fromJSDate(event.start);
 		const dtEnd = DateTime.fromJSDate(event.end);
 		const dtDate = DateTime.fromJSDate(date);
