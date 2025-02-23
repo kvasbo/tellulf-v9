@@ -29,7 +29,7 @@
 		"eslint": "^9.20.1",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^2.46.1",
-		"globals": "^15.15.0",
+		"globals": "^16.0.0",
 		"prettier": "^3.5.1",
 		"prettier-plugin-svelte": "^3.3.3",
 		"sass": "^1.85.0",
@@ -42,7 +42,7 @@
 	},
 	"dependencies": {
 		"drizzle-orm": "^0.39.3",
-		"fast-xml-parser": "^4.5.1",
+		"fast-xml-parser": "^5.0.6",
 		"googleapis": "^144.0.0",
 		"lunarphase-js": "^2.0.3",
 		"luxon": "^3.5.0",
