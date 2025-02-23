@@ -24,7 +24,7 @@
 	});
 
 	function getPowerDisplay(power: number): string {
-		return `${(power/1000).toFixed(1)}`;
+		return `${(power / 1000).toFixed(1)}`;
 	}
 
 	function getUsage(used: number): string {
@@ -40,57 +40,22 @@
 		}
 	}
 
-	function getBGColor (power: number) {
+	function getBGColor(power: number) {
 		return power < 0 ? '#3ef0a4' : '#3ea4f0';
 	}
 
-	function getHeader (where: string) {
+	function getHeader(where: string) {
 		return where === 'home' ? 'Hjemme' : 'Hytta';
 	}
+
+	// If we have production, return that as min
+	function getMinPower(): number {
+		if (!powerData) {
+			return 0;
+		}
+		return Math.min(powerData.minPower, powerData.maxPowerProduction * -1);
+	}
 </script>
-
-<style>
-	.powerShow {
-			width: 100%;
-			height: 50px;
-			position: relative;
-			display: flex;
-			flex-direction: column;
-			justify-content: flex-start;
-			align-items: flex-start;
-			margin-right: 25px;
-			box-sizing: border-box;
-	}
-	.powerBar {
-			height: 40px;
-			background-color: #3ea4f0;
-      transition: width 0.5s linear;
-			display: flex;
-			justify-content: flex-start;
-			align-items: center;
-			padding-left: 10px;
-			margin-top: 10px;
-			overflow: visible;
-			break-inside: avoid;
-  }
-	.minBar {
-      height: 5px;
-			background-color: #3ea4f033;
-      transition: width 0.5s linear;
-	}
-  .maxBar {
-      height: 5px;
-      background-color: #3ea4f055;
-      transition: width 0.5s linear;
-  }
-	.avgBar {
-      height: 5px;
-      background-color: #3ea4f077;
-      transition: width 0.5s linear;
-  }
-
-
-</style>
 
 <div class="footerBox">
 	{#if powerData}
@@ -110,10 +75,63 @@
 			</tbody>
 		</table>
 		<div class="powerShow">
-			<div class="powerBar" style="background-color: {getBGColor(powerData.currentPower)}; width: {powerData.currentPower / maxPower}%">{getPowerDisplay(powerData.currentPower)}&nbsp;kW</div>
+			<div
+				class="powerBar"
+				style="background-color: {getBGColor(powerData.currentPower)}; width: {Math.abs(
+					powerData.currentPower / maxPower
+				)}%"
+			>
+				{getPowerDisplay(powerData.currentPower)}&nbsp;kW
+			</div>
 			<div class="maxBar" style="width: {powerData.maxPower / maxPower}%"></div>
 			<div class="avgBar" style="width: {powerData.averagePower / maxPower}%"></div>
-			<div class="minBar" style="width: {powerData.minPower / maxPower}%"></div>
+			<div
+				class="minBar"
+				style="background-color: {getBGColor(getMinPower())}; width: {Math.abs(
+					getMinPower() / maxPower
+				)}%"
+			></div>
 		</div>
 	{/if}
 </div>
+
+<style>
+	.powerShow {
+		width: 100%;
+		height: 50px;
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+		align-items: flex-start;
+		margin-right: 25px;
+		box-sizing: border-box;
+	}
+	.powerBar {
+		height: 40px;
+		background-color: #3ea4f0;
+		transition: width 0.5s linear;
+		display: flex;
+		justify-content: flex-start;
+		align-items: center;
+		padding-left: 10px;
+		margin-top: 10px;
+		overflow: visible;
+		break-inside: avoid;
+	}
+	.minBar {
+		height: 5px;
+		background-color: #3ea4f033;
+		transition: width 0.5s linear;
+	}
+	.maxBar {
+		height: 5px;
+		background-color: #3ea4f055;
+		transition: width 0.5s linear;
+	}
+	.avgBar {
+		height: 5px;
+		background-color: #3ea4f077;
+		transition: width 0.5s linear;
+	}
+</style>

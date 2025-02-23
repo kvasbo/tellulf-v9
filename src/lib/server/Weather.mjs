@@ -1,17 +1,15 @@
-import { DateTime, Settings } from "luxon";
-import {
-	YrCompleteResponseSchema,
-	LongTermForecastSchema,
-} from "./types.met.mjs";
+import { DateTime, Settings } from 'luxon';
+import { YrCompleteResponseSchema, LongTermForecastSchema } from './types.met.mjs';
 
 const YR_URL_FORECAST =
-	"https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=59.9508&lon=10.6848";
+	'https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=59.9508&lon=10.6848';
 const YR_URL_FORECAST_LONG =
-	"https://api.met.no/weatherapi/subseasonal/1.0/complete?lat=59.9508&lon=10.6848";
-const YR_URL_DANGER = "https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=59.9508&lon=10.6848";
+	'https://api.met.no/weatherapi/subseasonal/1.0/complete?lat=59.9508&lon=10.6848';
+const YR_URL_DANGER =
+	'https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=59.9508&lon=10.6848';
 
 // Configure the time zone
-Settings.defaultZone = "Europe/Oslo";
+Settings.defaultZone = 'Europe/Oslo';
 
 /**
  * Weather data from Yr
@@ -23,10 +21,10 @@ export class Weather {
 
 	// Common options for fetch
 	fetchOptions = {
-		method: "GET",
+		method: 'GET',
 		headers: {
-			"User-Agent": "tellulf v6: audun@kvasbo.no",
-		},
+			'User-Agent': 'tellulf v6: audun@kvasbo.no'
+		}
 	};
 
 	constructor() {
@@ -37,7 +35,7 @@ export class Weather {
 			() => {
 				this.updateForecasts();
 			},
-			30 * 60 * 1000,
+			30 * 60 * 1000
 		); // Every 30 minutes
 	}
 
@@ -51,17 +49,16 @@ export class Weather {
 	getCurrentWeather() {
 		const out = {
 			temperature: 999,
-			symbol: "blank",
+			symbol: 'blank'
 		};
 
 		if (this.forecast[0]) {
-			out.temperature = this.forecast[0]?.data?.instant?.details
-				?.air_temperature
+			out.temperature = this.forecast[0]?.data?.instant?.details?.air_temperature
 				? this.forecast[0]?.data.instant.details.air_temperature
 				: 999;
 			out.symbol = this.forecast[0]?.data?.next_1_hours?.summary?.symbol_code
 				? this.forecast[0].data.next_1_hours.summary.symbol_code
-				: "blank";
+				: 'blank';
 		}
 
 		return out;
@@ -76,23 +73,13 @@ export class Weather {
 		for (const series of this.longTermForecast) {
 			const time = new Date(series.time);
 			const date = time.toISOString().slice(0, 10);
-			let symbol = "blank";
+			let symbol = 'blank';
 			// Define the symbol based on the data for precipitation
-			if (
-				series.data.next_24_hours.details.probability_of_heavy_precipitation >
-				50
-			) {
+			if (series.data.next_24_hours.details.probability_of_heavy_precipitation > 50) {
 				symbol =
-					series.data.next_24_hours.details.probability_of_frost > 50
-						? "heavysnow"
-						: "heavyrain";
-			} else if (
-				series.data.next_24_hours.details.probability_of_precipitation > 50
-			) {
-				symbol =
-					series.data.next_24_hours.details.probability_of_frost > 50
-						? "snow"
-						: "rain";
+					series.data.next_24_hours.details.probability_of_frost > 50 ? 'heavysnow' : 'heavyrain';
+			} else if (series.data.next_24_hours.details.probability_of_precipitation > 50) {
+				symbol = series.data.next_24_hours.details.probability_of_frost > 50 ? 'snow' : 'rain';
 			}
 
 			dayForecasts[date] = {
@@ -100,15 +87,11 @@ export class Weather {
 				maxTemp: series.data.next_24_hours.details.air_temperature_max,
 				meanTemp: series.data.next_24_hours.details.air_temperature_mean,
 				lightRainProbability:
-					Math.round(
-						series.data.next_24_hours.details.probability_of_precipitation / 10,
-					) * 10,
+					Math.round(series.data.next_24_hours.details.probability_of_precipitation / 10) * 10,
 				heavyRainProbability:
-					Math.round(
-						series.data.next_24_hours.details
-							.probability_of_heavy_precipitation / 10,
-					) * 10,
-				symbol,
+					Math.round(series.data.next_24_hours.details.probability_of_heavy_precipitation / 10) *
+					10,
+				symbol
 			};
 		}
 
@@ -137,7 +120,7 @@ export class Weather {
 					symbol: series.data.next_1_hours.summary?.symbol_code,
 					details: series.data.next_1_hours.details,
 					instant: series.data.instant.details,
-					hour: dt.hour.toString(),
+					hour: dt.hour.toString()
 				});
 			}
 		});
@@ -157,7 +140,7 @@ export class Weather {
 				severity: feature.properties.severity,
 				description: feature.properties.description,
 				headline: feature.properties.title,
-				instruction: feature.properties.instruction,
+				instruction: feature.properties.instruction
 			};
 		});
 	}
@@ -175,12 +158,12 @@ export class Weather {
 			if (forecastValidated.success) {
 				console.log("Long term forecast validated, let's go!");
 				console.log(
-					"Number of long term days",
-					forecastValidated.data.properties.timeseries.length,
+					'Number of long term days',
+					forecastValidated.data.properties.timeseries.length
 				);
 				this.longTermForecast = forecastValidated.data.properties.timeseries;
 			} else {
-				console.log("Could not validate long term forecast");
+				console.log('Could not validate long term forecast');
 			}
 		}
 	}
@@ -192,13 +175,13 @@ export class Weather {
 	async fetchForecastData() {
 		try {
 			// Fetch and decode JSON
-			console.log("Fetching forecast from yr.no", YR_URL_FORECAST);
+			console.log('Fetching forecast from yr.no', YR_URL_FORECAST);
 			const fetchResponse = await fetch(YR_URL_FORECAST, this.fetchOptions);
 
 			if (!fetchResponse.ok) {
 				// Log the fetch error message
 				console.log(fetchResponse.statusText);
-				console.error("Could not fetch forecast from yr.no");
+				console.error('Could not fetch forecast from yr.no');
 				setTimeout(() => {
 					this.fetchForecastData();
 				}, 1000 * 10);
@@ -212,14 +195,10 @@ export class Weather {
 
 			if (forecastValidated.success) {
 				console.log("Forecast validated, let's go!");
-				console.log(
-					"Number of forecasts",
-					forecastValidated.data.properties.timeseries.length,
-				);
+				console.log('Number of forecasts', forecastValidated.data.properties.timeseries.length);
 				this.forecast = forecastValidated.data.properties.timeseries;
-
 			} else {
-				console.log("Could not validate forecast");
+				console.log('Could not validate forecast');
 				console.log(forecastValidated);
 				setTimeout(() => {
 					this.fetchForecastData();
@@ -230,7 +209,6 @@ export class Weather {
 			setTimeout(() => {
 				this.fetchForecastData();
 			}, 1000 * 10);
-
 		}
 	}
 }

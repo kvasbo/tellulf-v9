@@ -1,7 +1,6 @@
 import { DateTime } from 'luxon';
 
 export class Days {
-
 	constructor(calendar, weather) {
 		this.weather = weather;
 		this.calendar = calendar;

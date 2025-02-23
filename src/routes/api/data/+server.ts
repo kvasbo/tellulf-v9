@@ -17,7 +17,6 @@ smart.startMqtt();
 // TODO: Separate concerns.
 export async function GET(): Promise<Response> {
 	try {
-
 		const out = {
 			days: days.generateComingDays(),
 			currentTemperature: weather.getCurrentWeather().temperature,
@@ -26,7 +25,7 @@ export async function GET(): Promise<Response> {
 			dangerData: weather.getDangerData(),
 			homey: smart.getData(),
 			currentWeather: weather.getCurrentWeather(),
-			longTermForecast:  weather.getDailyForecasts(),
+			longTermForecast: weather.getDailyForecasts(),
 			version: VERSION
 		};
 		return new Response(JSON.stringify(out), {

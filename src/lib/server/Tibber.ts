@@ -14,6 +14,7 @@ export interface PowerData {
 	maxPower: number;
 	powerProduction: number;
 	minPowerProduction: number;
+	maxPowerProduction: number;
 	currentPrice: number;
 }
 
@@ -29,6 +30,7 @@ const initValues: PowerData = {
 	maxPower: 0,
 	powerProduction: 0,
 	minPowerProduction: 0,
+	maxPowerProduction: 0,
 	currentPrice: 0
 };
 
@@ -107,6 +109,7 @@ export class Tibber {
 			this.data[where].averagePower = data.averagePower;
 			this.data[where].powerProduction = data.powerProduction;
 			this.data[where].minPowerProduction = data.minPowerProduction;
+			this.data[where].maxPowerProduction = data.maxPowerProduction;
 			this.data[where].accumulatedProduction = data.accumulatedProduction;
 			this.data[where].accumulatedCost = data.accumulatedCost;
 			this.data[where].accumulatedReward = data.accumulatedReward;

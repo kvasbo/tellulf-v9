@@ -10,7 +10,6 @@ const options = {
 
 // Singleton class to handle MQTT communication
 export class MqttClient {
-
 	private client: mqtt.MqttClient;
 	private static instance: MqttClient;
 
@@ -36,7 +35,7 @@ export class MqttClient {
 			.on('error', (error) => {
 				console.log('MQTT Error', error.message);
 				this.client.end();
-				console.log("MQTT client ended, reconnecting in 2 seconds", error.message);
+				console.log('MQTT client ended, reconnecting in 2 seconds', error.message);
 				setTimeout(() => this.client.reconnect(), 2000);
 			})
 			.on('reconnect', () => {
