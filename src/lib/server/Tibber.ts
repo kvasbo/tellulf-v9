@@ -112,7 +112,7 @@ export class Tibber {
 			this.data[where].minPowerProduction = data.minPowerProduction;
 			this.data[where].maxPowerProduction = data.maxPowerProduction;
 			this.data[where].accumulatedProduction = data.accumulatedProduction;
-			this.data[where].accumulatedCost = data.accumulatedCost;
+			this.data[where].accumulatedCost = data.accumulatedCost - data.accumulatedReward;
 			this.data[where].accumulatedReward = data.accumulatedReward;
 
 			if (where === 'cabin' && data.powerProduction !== null) {
