@@ -53,7 +53,12 @@
 		if (!powerData) {
 			return 0;
 		}
-		return Math.min(powerData.minPower, powerData.maxPowerProduction * -1);
+		let minPower = powerData.minPower;
+		if (powerData.maxPowerProduction > 0) {
+			// If we have production!
+			minPower = Math.min(powerData.minPower, powerData.maxPowerProduction * -1);
+		}
+		return minPower;
 	}
 </script>
 
