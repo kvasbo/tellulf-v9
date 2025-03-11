@@ -21,7 +21,7 @@
 
 	function getStrings(jsDate: Date): { date: string; time: string; week: string } {
 		const date = jsDate.toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric' });
-		const time = jsDate.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
+		const time = jsDate.toLocaleTimeString('nb-NO', { hour: 'numeric', minute: '2-digit' });
 		const week = getDateWeek(jsDate).toString();
 		return { date, time, week };
 	}
