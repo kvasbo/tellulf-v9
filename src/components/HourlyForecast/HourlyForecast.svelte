@@ -149,6 +149,8 @@
 				</div>
 			</forecast>
 		{/each}
+		<div class="minTemp">{min}</div>
+		<div class="maxTemp">{max}</div>
 	</div>
 </nowcast>
 
@@ -165,5 +167,19 @@
 		position: absolute;
 		width: 100%;
 		display: block;
+	}
+	.maxTemp {
+		position: absolute;
+		top: 0.1em;
+		right: 0.1em;
+		font-size: 3em;
+		opacity: 0.075;
+	}
+	.minTemp {
+		position: absolute;
+		bottom: 0.6em;
+		right: 0.1em;
+		font-size: 3em;
+		opacity: 0.075;
 	}
 </style>
