@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { hourlyForecastStore } from '$lib/client/store';
 	import { weatherIconMapping } from '$lib/client/weatherSymbolMapping';
+	import { calculateMinMaxTemps } from '$lib/weatherCalculations';
 
 	$: hourlyForecastStore;
 
@@ -13,24 +14,8 @@
 	}
 
 	function calculateMinMax() {
-		let min = 100;
-		let max = -100;
-
-		$hourlyForecastStore.slice(1, 19).forEach((forecast) => {
-			if (forecast.instant.air_temperature < min) {
-				min = forecast.instant.air_temperature;
-			}
-			if (forecast.instant.air_temperature > max) {
-				max = forecast.instant.air_temperature;
-			}
-		});
-
-		max = Math.max(Math.ceil((max + 5) / 5) * 5, 0);
-		min = Math.min(Math.floor((min - 5) / 5) * 5, 0);
-
-		if (max - min < 20) {
-			max = min + 20;
-		}
+		const forecasts = $hourlyForecastStore.slice(1, 19);
+		const { min, max } = calculateMinMaxTemps(forecasts);
 
 		const displayZeroLine = max > 0 && min < 0 ? 'block' : 'none';
 

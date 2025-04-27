@@ -9,7 +9,7 @@ type WeatherState = {
 export type HourlyForecastStore = HourlyForecast[];
 
 // TODO: THERE ARE MORE FIELDS IN THE FORECAST OBJECT
-type HourlyForecast = {
+export type HourlyForecast = {
 	hour: number;
 	symbol: string;
 	details: {
@@ -18,8 +18,8 @@ type HourlyForecast = {
 	};
 	instant: {
 		air_temperature: number;
-	}
-}
+	};
+};
 
 export const hourlyForecastStore = writable<HourlyForecastStore>([]);
 
