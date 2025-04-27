@@ -89,14 +89,19 @@ currentweather {
 }
 
 calendar {
+	container-type: size;
+	container-name: calendar-v;
 	grid-area: calendar;
 	width: 100%;
-	height: 100%;
+	height: 1000px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	overflow: hidden;
+	flex-wrap: nowrap;
+	gap: 10px;
 	day {
+		flex-shrink: 0;
 		.calendaricon {
 			height: $text_small;
 			margin-right: 0.3em;
@@ -108,8 +113,6 @@ calendar {
 			display: flex;
 			font-size: $text_subheader;
 			justify-content: space-between;
-			margin-bottom: 0.25rem;
-			margin-top: 0.5rem;
 			width: 100%;
 			.headerWeather {
 				align-items: center;

@@ -6,7 +6,7 @@ export class Days {
 		this.calendar = calendar;
 	}
 
-	generateComingDays(maxNumberOfDays = 10) {
+	generateComingDays(maxNumberOfDays = 14) {
 		const days = [];
 		for (let i = 0; i < maxNumberOfDays; i++) {
 			const dt = DateTime.now().plus({ days: i });
