@@ -168,18 +168,22 @@
 		width: 100%;
 		display: block;
 	}
-	.maxTemp {
+	.maxTemp,
+	.minTemp {
+		width: calc(100% / 18);
+		font-size: 30px;
+		opacity: 0.1;
 		position: absolute;
-		top: 0.1em;
-		right: 0.1em;
-		font-size: 3em;
-		opacity: 0.075;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.maxTemp {
+		top: 10px;
+		left: 0;
 	}
 	.minTemp {
-		position: absolute;
-		bottom: 0.6em;
-		right: 0.1em;
-		font-size: 3em;
-		opacity: 0.075;
+		bottom: 50px;
+		left: 0;
 	}
 </style>
