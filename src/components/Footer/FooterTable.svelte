@@ -4,7 +4,7 @@
 		tableData: string[][];
 	}
 
-	export let header: Props['header'] = "default name";
+	export let header: Props['header'] = 'default name';
 	export let tableData: Props['tableData'] = [];
 </script>
 

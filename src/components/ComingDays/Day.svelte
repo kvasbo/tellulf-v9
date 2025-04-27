@@ -6,8 +6,7 @@
 <svg width="0" height="0">
 	<defs>
 		<filter id="shape-shadow">
-			<feDropShadow dx="0" dy="0" stdDeviation="4"
-										flood-color="black" flood-opacity="0.4"/>
+			<feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="black" flood-opacity="0.4" />
 		</filter>
 	</defs>
 </svg>
@@ -69,9 +68,9 @@
 			{:else}
 				<div class="event">
 					<span class="event-time timespan">
-							{event.displayTime.start}
-							{event.displayTime.spacer}
-							{event.displayTime.end}
+						{event.displayTime.start}
+						{event.displayTime.spacer}
+						{event.displayTime.end}
 					</span>
 					{event.displayTitle}
 				</div>

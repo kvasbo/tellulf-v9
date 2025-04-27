@@ -6,7 +6,7 @@
 	// For now this gets pretty much everything.
 	async function updateCalendar() {
 		console.log('Updating calendar');
-		const data = await fetch("/api/data");
+		const data = await fetch('/api/data');
 		const json = await data.json();
 		days = json.days;
 	}
@@ -16,11 +16,10 @@
 		const interval = setInterval(updateCalendar, 15000);
 		return () => clearInterval(interval);
 	});
-
 </script>
 
 <calendar>
 	{#each days as day}
-		<Day day={day} />
+		<Day {day} />
 	{/each}
 </calendar>

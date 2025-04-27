@@ -9,7 +9,10 @@
 	function updateTrains() {
 		if (entur) {
 			let trains = entur.getTrains();
-			tableData = trains.map((train) => [new Date(train.time).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }), train.destination]);
+			tableData = trains.map((train) => [
+				new Date(train.time).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }),
+				train.destination
+			]);
 		}
 	}
 
@@ -26,4 +29,4 @@
 	});
 </script>
 
-<FooterTable header="Neste baner" tableData={tableData} />
+<FooterTable header="Neste baner" {tableData} />
