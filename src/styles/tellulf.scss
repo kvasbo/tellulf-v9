@@ -99,13 +99,18 @@ calendar {
 	justify-content: center;
 	overflow: hidden;
 	flex-wrap: nowrap;
-	gap: 10px;
+
 	day {
 		flex-shrink: 0;
+		padding-bottom: 10px;
+		box-sizing: border-box;
 		.calendaricon {
 			height: $text_small;
 			margin-right: 0.3em;
 			width: $text_small;
+		}
+		&.day-hidden {
+			display: none;
 		}
 		.dateHeader {
 			align-items: center;

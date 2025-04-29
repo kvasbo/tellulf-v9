@@ -11,7 +11,6 @@ export function calculateMinMaxTemps(data: HourlyForecast[]): { min: number; max
 		if (forecast.instant.air_temperature > max) {
 			max = forecast.instant.air_temperature;
 		}
-		console.log(min, max);
 	});
 
 	max = Math.max(Math.ceil((max + 5) / 5) * 5, 0);

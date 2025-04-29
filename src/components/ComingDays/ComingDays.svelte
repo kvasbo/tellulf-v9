@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { onMount, onDestroy, afterUpdate } from 'svelte';
+	import { onMount, afterUpdate } from 'svelte';
 	import Day from './Day.svelte'; // Your Day component
 
 	let days = [];
 	let calendarEl: HTMLElement; // Reference to the <calendar> element
 	let resizeObserver: ResizeObserver;
-	let gap = 10; // Default gap in pixels, adjust or match CSS
 
 	// --- Visibility Check Logic ---
 	function checkVisibility() {
@@ -31,18 +30,16 @@
 			if (!item.offsetHeight) continue;
 
 			const itemHeight = item.offsetHeight;
-			// Add the gap after the first item when calculating cumulative height
-			const heightWithGap = i > 0 ? itemHeight + gap : itemHeight;
 
 			// Check if adding this item would exceed the container height.
 			// We ensure at least the first item (i=0) is shown, even if it overflows alone.
-			if (cumulativeHeight + heightWithGap > containerHeight && i > 0) {
+			if (cumulativeHeight + itemHeight > containerHeight && i > 0) {
 				firstHiddenIndex = i; // Mark this one to be hidden
 				break; // No need to check further items
 			}
 
-			// If it fits, add its height (plus gap for next iteration)
-			cumulativeHeight += heightWithGap;
+			// If it fits, add its height
+			cumulativeHeight += itemHeight;
 		}
 
 		// Apply the 'day-hidden' class to the items that should be hidden
@@ -75,17 +72,6 @@
 	}
 
 	onMount(() => {
-		// Attempt to read the actual gap from CSS once mounted
-		if (calendarEl) {
-			try {
-				const styles = window.getComputedStyle(calendarEl);
-				// Use parseFloat as getComputedStyle returns string like "10px"
-				gap = parseFloat(styles.gap) || gap;
-			} catch (e) {
-				console.warn('Could not read gap from CSS styles.', e);
-			}
-		}
-
 		// Setup the ResizeObserver to call checkVisibility when container size changes
 		resizeObserver = new ResizeObserver(() => {
 			// Use requestAnimationFrame to avoid layout thrashing and check after paint
@@ -130,17 +116,3 @@
 		<Day {day} />
 	{/each}
 </calendar>
-
-<style>
-	/* Define the hidden state class */
-	/* This targets the root element rendered by Day.svelte when it's a child */
-	/* of <calendar> and has the .day-hidden class */
-	:global(calendar > .day-hidden) {
-		display: none;
-	}
-
-	/* Ensure the Day components themselves don't shrink */
-	:global(calendar > *) {
-		flex-shrink: 0;
-	}
-</style>
