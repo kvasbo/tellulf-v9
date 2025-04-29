@@ -61,9 +61,7 @@ export class Entur {
 			const xmlData = await fetch('https://api.entur.io/realtime/v1/rest/et?datasetId=RUT');
 			const text = await xmlData.text();
 			const parsed = parser.parse(text);
-			console.log(parsed);
 			const valid = enturSchema.safeParse(parsed);
-			console.log(valid);
 			if (!valid.success) {
 				console.error('Invalid data from Entur');
 				this.trains = [];

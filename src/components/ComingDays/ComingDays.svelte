@@ -56,7 +56,6 @@
 
 	// Your existing function to fetch and update data
 	async function updateCalendar() {
-		console.log('Updating calendar');
 		try {
 			const data = await fetch('/api/data');
 			if (!data.ok) {
