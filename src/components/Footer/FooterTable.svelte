@@ -14,7 +14,7 @@
 		<tbody>
 			{#each tableData.slice(0, 3) as line}
 				<tr>
-					<td>{line[0]}</td>
+					<td class="number">{line[0]}</td>
 					<td>{line[1]}</td>
 				</tr>
 			{/each}

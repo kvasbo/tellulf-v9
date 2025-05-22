@@ -123,6 +123,7 @@
 		margin-top: 10px;
 		overflow: visible;
 		break-inside: avoid;
+		font-variant-numeric: tabular-nums;
 	}
 	.minBar {
 		height: 5px;
