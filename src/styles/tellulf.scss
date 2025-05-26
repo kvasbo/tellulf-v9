@@ -143,12 +143,12 @@ calendar {
 				}
 			}
 		}
-		.event {
+		.event, .dinner, .birthday {
 			display: flex;
 			align-items: baseline;
 			justify-content: flex-start;
-			margin-bottom: 3px;
-			margin-top: 3px;
+			margin-bottom: 1px;
+			margin-top: 1px;
 
 			.event-time {
 				color: $gray;
