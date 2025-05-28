@@ -2,7 +2,7 @@ import { Calendar } from '$lib/server/Calendar';
 import { Days } from '$lib/server/Days.mjs';
 import { Smarthouse } from '$lib/server/Smarthouse.mjs';
 import { MqttClient } from '$lib/server/MQTT';
-import { Weather } from '$lib/server/Weather.mjs';
+import { Weather } from '$lib/server/Weather';
 import { VERSION } from '$lib/server/version';
 
 const weather = new Weather();

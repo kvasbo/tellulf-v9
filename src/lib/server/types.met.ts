@@ -154,3 +154,13 @@ export const LongTermForecastSchema = z.object({
 		timeseries: z.array(LongTermForecastDaySchema)
 	})
 });
+
+// Infer TypeScript types from Zod schemas
+export type Instant = z.infer<typeof InstantSchema>;
+export type Next1Hour = z.infer<typeof Next1HourSchema>;
+export type Next6Hours = z.infer<typeof Next6HoursSchema>;
+export type Next12Hours = z.infer<typeof Next12HoursSchema>;
+export type TimeSeries = z.infer<typeof TimeSeriesSchema>;
+export type YrCompleteResponse = z.infer<typeof YrCompleteResponseSchema>;
+export type LongTermForecastDay = z.infer<typeof LongTermForecastDaySchema>;
+export type LongTermForecast = z.infer<typeof LongTermForecastSchema>;

@@ -1,5 +1,5 @@
 import { DateTime, Settings } from 'luxon';
-import { YrCompleteResponseSchema, LongTermForecastSchema } from './types.met.mjs';
+import { YrCompleteResponseSchema, LongTermForecastSchema, type TimeSeries, type LongTermForecastDay } from './types.met';
 
 const YR_URL_FORECAST =
 	'https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=59.9508&lon=10.6848';
@@ -11,16 +11,69 @@ const YR_URL_DANGER =
 // Configure the time zone
 Settings.defaultZone = 'Europe/Oslo';
 
+interface CurrentWeather {
+	temperature: number;
+	symbol: string;
+}
+
+interface DailyForecast {
+	minTemp: number;
+	maxTemp: number;
+	meanTemp: number;
+	lightRainProbability: number;
+	heavyRainProbability: number;
+	symbol: string;
+}
+
+interface HourlyForecast {
+	symbol: string | undefined;
+	details: {
+		precipitation_amount: number;
+		precipitation_amount_max: number;
+		precipitation_amount_min: number;
+		probability_of_precipitation: number;
+		probability_of_thunder: number;
+	};
+	instant: {
+		air_pressure_at_sea_level?: number;
+		air_temperature?: number;
+		air_temperature_percentile_10?: number;
+		air_temperature_percentile_90?: number;
+		cloud_area_fraction?: number;
+		cloud_area_fraction_high?: number;
+		cloud_area_fraction_low?: number;
+		cloud_area_fraction_medium?: number;
+		dew_point_temperature?: number;
+		fog_area_fraction?: number;
+		relative_humidity?: number;
+		ultraviolet_index_clear_sky?: number;
+		wind_from_direction?: number;
+		wind_speed?: number;
+		wind_speed_of_gust?: number;
+		wind_speed_percentile_10?: number;
+		wind_speed_percentile_90?: number;
+	};
+	hour: string;
+}
+
+interface DangerData {
+	response: string;
+	severity: string;
+	description: string;
+	headline: string;
+	instruction: string;
+}
+
 /**
  * Weather data from Yr
  */
 export class Weather {
-	forecast = [];
-	longTermForecast = [];
-	dangerData = [];
+	private forecast: TimeSeries[] = [];
+	private longTermForecast: LongTermForecastDay[] = [];
+	private dangerData: DangerData[] = [];
 
 	// Common options for fetch
-	fetchOptions = {
+	private readonly fetchOptions: RequestInit = {
 		method: 'GET',
 		headers: {
 			'User-Agent': 'tellulf v6: audun@kvasbo.no'
@@ -39,15 +92,15 @@ export class Weather {
 		); // Every 30 minutes
 	}
 
-	updateForecasts() {
+	private updateForecasts(): void {
 		// Fetch forecast
 		this.fetchForecastData();
 		this.fetchLongTermForecast();
 		this.fetchDanger();
 	}
 
-	getCurrentWeather() {
-		const out = {
+	getCurrentWeather(): CurrentWeather {
+		const out: CurrentWeather = {
 			temperature: 999,
 			symbol: 'blank'
 		};
@@ -68,8 +121,8 @@ export class Weather {
 	 * Get the daily forecasts
 	 * @returns DailyForecasts
 	 */
-	getDailyForecasts() {
-		const dayForecasts = {};
+	getDailyForecasts(): Record<string, DailyForecast> {
+		const dayForecasts: Record<string, DailyForecast> = {};
 		for (const series of this.longTermForecast) {
 			const time = new Date(series.time);
 			const date = time.toISOString().slice(0, 10);
@@ -101,7 +154,7 @@ export class Weather {
 	/**
 	 * Return the danger data
 	 */
-	getDangerData() {
+	getDangerData(): DangerData[] {
 		return this.dangerData;
 	}
 
@@ -109,8 +162,8 @@ export class Weather {
 	 * Get the hourly forecasts
 	 * @returns HourlyForecast[]
 	 */
-	getHourlyForecasts() {
-		const out = [];
+	getHourlyForecasts(): HourlyForecast[] {
+		const out: HourlyForecast[] = [];
 
 		this.forecast.forEach((series) => {
 			if (series.data?.next_1_hours?.details) {
@@ -131,10 +184,10 @@ export class Weather {
 	 * Fetch the dangerous weather report.
 	 * @returns
 	 */
-	async fetchDanger() {
+	private async fetchDanger(): Promise<void> {
 		const data = await fetch(YR_URL_DANGER, this.fetchOptions);
 		const danger = await data.json();
-		this.dangerData = danger.features.map((feature) => {
+		this.dangerData = danger.features.map((feature: any) => {
 			return {
 				response: feature.properties.awarenessResponse,
 				severity: feature.properties.severity,
@@ -149,7 +202,7 @@ export class Weather {
 	 * Fetch the long term forecast
 	 * @returns LongTermForecast
 	 */
-	async fetchLongTermForecast() {
+	private async fetchLongTermForecast(): Promise<void> {
 		const forecast = await fetch(YR_URL_FORECAST_LONG, this.fetchOptions);
 
 		if (forecast.ok) {
@@ -172,7 +225,7 @@ export class Weather {
 	 * Do the fetching from Met api
 	 * @returns
 	 */
-	async fetchForecastData() {
+	private async fetchForecastData(): Promise<void> {
 		try {
 			// Fetch and decode JSON
 			console.log('Fetching forecast from yr.no', YR_URL_FORECAST);
