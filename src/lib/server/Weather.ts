@@ -1,15 +1,48 @@
 import { DateTime, Settings } from 'luxon';
-import { YrCompleteResponseSchema, LongTermForecastSchema, type TimeSeries, type LongTermForecastDay } from './types.met';
+import {
+	YrCompleteResponseSchema,
+	LongTermForecastSchema,
+	type TimeSeries,
+	type LongTermForecastDay
+} from './types.met';
 
-const YR_URL_FORECAST =
-	'https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=59.9508&lon=10.6848';
-const YR_URL_FORECAST_LONG =
-	'https://api.met.no/weatherapi/subseasonal/1.0/complete?lat=59.9508&lon=10.6848';
-const YR_URL_DANGER =
-	'https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=59.9508&lon=10.6848';
+interface Sted {
+	lat: number;
+	lon: number;
+}
+
+type StedNavn = 'oslo' | 'hytta';
+
+type Steder = {
+	[key in StedNavn]: Sted;
+};
+
+const steder: Steder = {
+	oslo: {
+		lat: 59.9508,
+		lon: 10.6848
+	},
+	hytta: {
+		lat: 59.1347,
+		lon: 10.3246
+	}
+};
 
 // Configure the time zone
 Settings.defaultZone = 'Europe/Oslo';
+
+// Helper functions to build URLs
+function buildForecastUrl(sted: Sted): string {
+	return `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${sted.lat}&lon=${sted.lon}`;
+}
+
+function buildLongTermForecastUrl(sted: Sted): string {
+	return `https://api.met.no/weatherapi/subseasonal/1.0/complete?lat=${sted.lat}&lon=${sted.lon}`;
+}
+
+function buildDangerUrl(sted: Sted): string {
+	return `https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=${sted.lat}&lon=${sted.lon}`;
+}
 
 interface CurrentWeather {
 	temperature: number;
@@ -64,13 +97,28 @@ interface DangerData {
 	instruction: string;
 }
 
+type LocationData = {
+	forecast: TimeSeries[];
+	longTermForecast: LongTermForecastDay[];
+	dangerData: DangerData[];
+};
+
 /**
  * Weather data from Yr
  */
 export class Weather {
-	private forecast: TimeSeries[] = [];
-	private longTermForecast: LongTermForecastDay[] = [];
-	private dangerData: DangerData[] = [];
+	private weatherData: Record<StedNavn, LocationData> = {
+		oslo: {
+			forecast: [],
+			longTermForecast: [],
+			dangerData: []
+		},
+		hytta: {
+			forecast: [],
+			longTermForecast: [],
+			dangerData: []
+		}
+	};
 
 	// Common options for fetch
 	private readonly fetchOptions: RequestInit = {
@@ -93,25 +141,25 @@ export class Weather {
 	}
 
 	private updateForecasts(): void {
-		// Fetch forecast
-		this.fetchForecastData();
-		this.fetchLongTermForecast();
-		this.fetchDanger();
+		// Fetch forecast for all locations
+		const locations: StedNavn[] = ['oslo', 'hytta'];
+		locations.forEach(location => {
+			this.fetchForecastData(location);
+			this.fetchLongTermForecast(location);
+			this.fetchDanger(location);
+		});
 	}
 
-	getCurrentWeather(): CurrentWeather {
+	getCurrentWeather(location: StedNavn = 'oslo'): CurrentWeather {
 		const out: CurrentWeather = {
 			temperature: 999,
 			symbol: 'blank'
 		};
 
-		if (this.forecast[0]) {
-			out.temperature = this.forecast[0]?.data?.instant?.details?.air_temperature
-				? this.forecast[0]?.data.instant.details.air_temperature
-				: 999;
-			out.symbol = this.forecast[0]?.data?.next_1_hours?.summary?.symbol_code
-				? this.forecast[0].data.next_1_hours.summary.symbol_code
-				: 'blank';
+		const forecast = this.weatherData[location].forecast;
+		if (forecast[0]) {
+			out.temperature = forecast[0]?.data?.instant?.details?.air_temperature ?? 999;
+			out.symbol = forecast[0]?.data?.next_1_hours?.summary?.symbol_code ?? 'blank';
 		}
 
 		return out;
@@ -121,9 +169,10 @@ export class Weather {
 	 * Get the daily forecasts
 	 * @returns DailyForecasts
 	 */
-	getDailyForecasts(): Record<string, DailyForecast> {
+	getDailyForecasts(location: StedNavn = 'oslo'): Record<string, DailyForecast> {
 		const dayForecasts: Record<string, DailyForecast> = {};
-		for (const series of this.longTermForecast) {
+		const longTermForecast = this.weatherData[location].longTermForecast;
+		for (const series of longTermForecast) {
 			const time = new Date(series.time);
 			const date = time.toISOString().slice(0, 10);
 			let symbol = 'blank';
@@ -154,18 +203,19 @@ export class Weather {
 	/**
 	 * Return the danger data
 	 */
-	getDangerData(): DangerData[] {
-		return this.dangerData;
+	getDangerData(location: StedNavn = 'oslo'): DangerData[] {
+		return this.weatherData[location].dangerData;
 	}
 
 	/**
 	 * Get the hourly forecasts
 	 * @returns HourlyForecast[]
 	 */
-	getHourlyForecasts(): HourlyForecast[] {
+	getHourlyForecasts(location: StedNavn = 'oslo'): HourlyForecast[] {
 		const out: HourlyForecast[] = [];
+		const forecast = this.weatherData[location].forecast;
 
-		this.forecast.forEach((series) => {
+		forecast.forEach((series) => {
 			if (series.data?.next_1_hours?.details) {
 				const dt = DateTime.fromISO(series.time);
 
@@ -184,10 +234,11 @@ export class Weather {
 	 * Fetch the dangerous weather report.
 	 * @returns
 	 */
-	private async fetchDanger(): Promise<void> {
-		const data = await fetch(YR_URL_DANGER, this.fetchOptions);
+	private async fetchDanger(location: StedNavn): Promise<void> {
+		const url = buildDangerUrl(steder[location]);
+		const data = await fetch(url, this.fetchOptions);
 		const danger = await data.json();
-		this.dangerData = danger.features.map((feature: any) => {
+		this.weatherData[location].dangerData = danger.features.map((feature: any) => {
 			return {
 				response: feature.properties.awarenessResponse,
 				severity: feature.properties.severity,
@@ -202,21 +253,22 @@ export class Weather {
 	 * Fetch the long term forecast
 	 * @returns LongTermForecast
 	 */
-	private async fetchLongTermForecast(): Promise<void> {
-		const forecast = await fetch(YR_URL_FORECAST_LONG, this.fetchOptions);
+	private async fetchLongTermForecast(location: StedNavn): Promise<void> {
+		const url = buildLongTermForecastUrl(steder[location]);
+		const forecast = await fetch(url, this.fetchOptions);
 
 		if (forecast.ok) {
 			const forecastJson = await forecast.json();
 			const forecastValidated = LongTermForecastSchema.safeParse(forecastJson);
 			if (forecastValidated.success) {
-				console.log("Long term forecast validated, let's go!");
+				console.log(`Long term forecast for ${location} validated, let's go!`);
 				console.log(
-					'Number of long term days',
+					`Number of long term days for ${location}`,
 					forecastValidated.data.properties.timeseries.length
 				);
-				this.longTermForecast = forecastValidated.data.properties.timeseries;
+				this.weatherData[location].longTermForecast = forecastValidated.data.properties.timeseries;
 			} else {
-				console.log('Could not validate long term forecast');
+				console.log(`Could not validate long term forecast for ${location}`);
 			}
 		}
 	}
@@ -225,18 +277,19 @@ export class Weather {
 	 * Do the fetching from Met api
 	 * @returns
 	 */
-	private async fetchForecastData(): Promise<void> {
+	private async fetchForecastData(location: StedNavn): Promise<void> {
 		try {
+			const url = buildForecastUrl(steder[location]);
 			// Fetch and decode JSON
-			console.log('Fetching forecast from yr.no', YR_URL_FORECAST);
-			const fetchResponse = await fetch(YR_URL_FORECAST, this.fetchOptions);
+			console.log(`Fetching forecast for ${location} from yr.no`, url);
+			const fetchResponse = await fetch(url, this.fetchOptions);
 
 			if (!fetchResponse.ok) {
 				// Log the fetch error message
 				console.log(fetchResponse.statusText);
-				console.error('Could not fetch forecast from yr.no');
+				console.error(`Could not fetch forecast for ${location} from yr.no`);
 				setTimeout(() => {
-					this.fetchForecastData();
+					this.fetchForecastData(location);
 				}, 1000 * 10);
 				return;
 			}
@@ -247,20 +300,20 @@ export class Weather {
 			const forecastValidated = YrCompleteResponseSchema.safeParse(forecast);
 
 			if (forecastValidated.success) {
-				console.log("Forecast validated, let's go!");
-				console.log('Number of forecasts', forecastValidated.data.properties.timeseries.length);
-				this.forecast = forecastValidated.data.properties.timeseries;
+				console.log(`Forecast for ${location} validated, let's go!`);
+				console.log(`Number of forecasts for ${location}`, forecastValidated.data.properties.timeseries.length);
+				this.weatherData[location].forecast = forecastValidated.data.properties.timeseries;
 			} else {
-				console.log('Could not validate forecast');
+				console.log(`Could not validate forecast for ${location}`);
 				console.log(forecastValidated);
 				setTimeout(() => {
-					this.fetchForecastData();
+					this.fetchForecastData(location);
 				}, 1000 * 10);
 			}
 		} catch (error) {
 			console.error(error);
 			setTimeout(() => {
-				this.fetchForecastData();
+				this.fetchForecastData(location);
 			}, 1000 * 10);
 		}
 	}
