@@ -165,6 +165,12 @@ calendar {
 	}
 }
 
+.hytta-weather {
+	color: $gray;
+	font-size: $text_small;
+	margin-left: 0.5em;
+}
+
 .number {
 	font-variant-numeric: tabular-nums;
 	font-size: 13pt;
@@ -231,6 +237,12 @@ nowcast {
 				.weather_icon {
 					height: 64px;
 					width: 64px;
+				}
+
+				.hytta-weather {
+					color: $gray;
+					font-size: $text_small;
+					margin-left: 0.5em;
 				}
 			}
 		}

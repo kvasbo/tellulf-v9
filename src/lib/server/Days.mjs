@@ -23,13 +23,31 @@ export class Days {
 		const date = dt.toISODate()?.toString();
 
 		const daily = this.weather.getDailyForecasts();
+		const dailyHytta = this.weather.getDailyForecasts('hytta');
+
+		// Get events and check for Hytta events
+		const events = this.calendar.getEventsForDate(jsDate);
+
+		// Check if any full day event has title "Hytta" and add weather data
+		const enrichedEvents = events.map((event) => {
+			if (event.fullDay && event.title.toLowerCase() === 'hytta' && dailyHytta[date]) {
+				return {
+					...event,
+					hyttaWeather: {
+						temperature: Math.round(dailyHytta[date].maxTemp),
+						rainProbability: dailyHytta[date].lightRainProbability
+					}
+				};
+			}
+			return event;
+		});
 
 		return {
 			isoDate: date,
 			date: Days.createNiceDate(jsDate),
 			weekday: Days.createNiceDate(jsDate, true),
 			daily_forecast: daily[date],
-			events: this.calendar.getEventsForDate(jsDate),
+			events: enrichedEvents,
 			birthdays: this.calendar.getBirthdaysForDate(jsDate),
 			dinner: this.calendar.getDinnerForDate(jsDate)
 		};

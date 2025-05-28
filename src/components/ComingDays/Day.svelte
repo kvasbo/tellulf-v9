@@ -64,7 +64,14 @@
 	<div class="events">
 		{#each day.events as event}
 			{#if event.fullDay === true}
-				<div class="event">{event.displayTitle}</div>
+				<div class="event">
+					{event.displayTitle}
+					{#if event.hyttaWeather}
+						<span class="hytta-weather">
+							({event.hyttaWeather.temperature}°, {event.hyttaWeather.rainProbability}% regn)
+						</span>
+					{/if}
+				</div>
 			{:else}
 				<div class="event">
 					<span class="event-time timespan">
