@@ -22,6 +22,7 @@ export class MqttClient {
 
 	// Connect to MQTT broker
 	private constructor() {
+		console.log('Connecting to MQTT host:', env.MQTT_HOST);
 		this.client = mqtt.connect(env.MQTT_HOST, options);
 		this.client
 			.on('connect', () => {
@@ -33,9 +34,10 @@ export class MqttClient {
 				this.log('Disconnected');
 			})
 			.on('error', (error) => {
-				console.log('MQTT Error', error.message);
+				console.log('MQTT Error:', error.message || error);
+				console.log('Full error:', error);
 				this.client.end();
-				console.log('MQTT client ended, reconnecting in 2 seconds', error.message);
+				console.log('MQTT client ended, reconnecting in 2 seconds');
 				setTimeout(() => this.client.reconnect(), 2000);
 			})
 			.on('reconnect', () => {
