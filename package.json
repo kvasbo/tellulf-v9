@@ -16,7 +16,7 @@
 		"db:push": "drizzle-kit push",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
-		"start": "node ./start.js"
+		"start": "node ./build/index.js"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.9",
@@ -40,7 +40,6 @@
 		"vitest": "^3.1.4"
 	},
 	"dependencies": {
-		"dotenv": "^17.2.1",
 		"fast-xml-parser": "^5.2.3",
 		"googleapis": "^149.0.0",
 		"lunarphase-js": "^2.0.3",
