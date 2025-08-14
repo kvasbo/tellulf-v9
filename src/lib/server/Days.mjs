@@ -30,7 +30,7 @@ export class Days {
 
 		// Check if any full day event has title "Hytta" and add weather data
 		const enrichedEvents = events.map((event) => {
-			if (event.fullDay && event.title.toLowerCase() === 'hytta' && dailyHytta[date]) {
+			if (event.fullDay && event.title.toLowerCase().indexOf('hytta') !== -1 && dailyHytta[date]) {
 				return {
 					...event,
 					hyttaWeather: {
