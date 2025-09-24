@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { type PowerData } from '$lib/server/Tibber';
+	import type { PowerData } from '$lib/server/Tibber';
 	import { onMount, onDestroy } from 'svelte';
 
 	let powerData: PowerData | null = $state(null);
@@ -48,6 +48,29 @@
 		return where === 'home' ? 'Hjemme' : 'Hytta';
 	}
 
+	function getMonthlyStatus(): string {
+		if (!powerData || powerData.monthlyConsumption === undefined || !powerData.cap) return '';
+		return `${Math.round(powerData.monthlyConsumption)}/${powerData.cap}`;
+	}
+
+	function isNorgesprisActive(): boolean {
+		return Date.now() >= new Date('2025-10-01').getTime();
+	}
+
+	function getPriceStatus(): string {
+		if (!powerData || powerData.monthlyConsumption === undefined || !powerData.cap) return '';
+		if (!isNorgesprisActive()) return 'Spotpris';
+		const isSubsidized = powerData.monthlyConsumption < powerData.cap;
+		return isSubsidized ? 'Norgespris' : 'Spotpris';
+	}
+
+	function getPriceColor(): string {
+		if (!powerData) return '#3ea4f0';
+		if (!isNorgesprisActive()) return '#f0a43e';
+		const isSubsidized = powerData.monthlyConsumption < powerData.cap;
+		return isSubsidized ? '#3ef0a4' : '#f0a43e';
+	}
+
 	// If we have production, return that as min
 	function getMinPower(): number {
 		if (!powerData) {
@@ -75,8 +98,14 @@
 				<tr>
 					<td>{getUsage(powerData.accumulatedConsumption)}</td>
 					<td>{powerData.accumulatedCost.toFixed(2)} kr</td>
-					<td>{powerData.currentPrice.toFixed(2)} kr</td>
+					<td>{powerData.effectivePrice ? powerData.effectivePrice.toFixed(2) : powerData.currentPrice.toFixed(2)} kr</td>
 				</tr>
+				{#if powerData.monthlyConsumption !== undefined && powerData.cap}
+				<tr class="monthlyStatus">
+					<td colspan="2">{getMonthlyStatus()}</td>
+					<td style="color: {getPriceColor()}">{getPriceStatus()}</td>
+				</tr>
+				{/if}
 			</tbody>
 		</table>
 		<div class="powerShow">
@@ -139,5 +168,13 @@
 		height: 5px;
 		background-color: #3ea4f077;
 		transition: width 0.5s linear;
+	}
+	.monthlyStatus {
+		font-size: 0.85em;
+		opacity: 0.7;
+	}
+	.monthlyStatus td {
+		padding-top: 2px;
+		white-space: nowrap;
 	}
 </style>

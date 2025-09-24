@@ -1,11 +1,20 @@
 import { Tibber } from '$lib/server/Tibber';
 import type { Places } from '$lib/Enums';
-const tibber = new Tibber();
+
+let tibber: Tibber | null = null;
+
+function getTibberInstance() {
+	if (!tibber) {
+		tibber = new Tibber();
+	}
+	return tibber;
+}
 
 export async function GET({ request }): Promise<Response> {
 	// Get params
 	const params = new URL(request.url).searchParams;
-	return new Response(JSON.stringify(tibber.getPowerData(params.get('where') as Places)), {
+	const tibberInstance = getTibberInstance();
+	return new Response(JSON.stringify(tibberInstance.getPowerData(params.get('where') as Places)), {
 		headers: {
 			'Content-Type': 'application/json'
 		}
