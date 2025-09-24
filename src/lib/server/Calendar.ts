@@ -17,9 +17,9 @@ function getGoogleKey() {
 export class Calendar {
 	private static instance: Calendar;
 
-	events = []; // RawEvents
-	birthdays = []; // RawEvents
-	dinners = []; // RawEvents
+	events: Event[] = []; // RawEvents
+	birthdays: Event[] = []; // RawEvents
+	dinners: Event[] = [];
 	// Display height of calendar events in pixels to ensure we don't overflow
 	displayHeights = {
 		event: 25,
@@ -107,7 +107,7 @@ export class Calendar {
 		return false;
 	}
 
-	enrichEvent(event: Event, type = '', forDate): EnrichedEvent {
+	enrichEvent(event: Event, type: 'birthday' | 'event' | 'dinner' = 'event', forDate: Date): EnrichedEvent {
 		const displayTitle = Calendar.getDisplayTitle(event, type);
 		const dayType = Calendar.getDayType(event, forDate);
 		const displayTime = Calendar.getEventDisplayTime(event, dayType);
@@ -191,7 +191,7 @@ export class Calendar {
 			auth: jwtClient
 		});
 
-		const out = []; // Rawevent
+		const out: Event[] = [];
 
 		const result = await calendar.events.list({
 			calendarId: calendarId,
@@ -218,7 +218,7 @@ export class Calendar {
 	}
 
 	// Get the correct display time for the event
-	static getEventDisplayTime(event: Event, dayType) {
+	static getEventDisplayTime(event: Event, dayType: string) {
 		if (dayType === 'middleDay') {
 			return {
 				start: '',
@@ -277,7 +277,7 @@ export class Calendar {
 	}
 
 	// Main parsing of an event from Google
-	static parseGoogleEvent(event) {
+	static parseGoogleEvent(event: any) {
 		const ev = event;
 
 		const title = event.summary ? event.summary : '';

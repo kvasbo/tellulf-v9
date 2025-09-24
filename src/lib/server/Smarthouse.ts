@@ -1,5 +1,7 @@
 export class Smarthouse {
-	constructor(mqttClient) {
+	private mqttClient: any;
+
+	constructor(mqttClient: any) {
 		this.mqttClient = mqttClient;
 	}
 
@@ -38,7 +40,7 @@ export class Smarthouse {
 		return output;
 	}
 
-	parseTibberData(message) {
+	parseTibberData(message: string) {
 		// Convert to object
 		const data = JSON.parse(message);
 		// Set internal status.
@@ -46,7 +48,7 @@ export class Smarthouse {
 	}
 
 	startMqtt() {
-		this.mqttClient.client.on('message', (topic, message) => {
+		this.mqttClient.client.on('message', (topic: string, message: Buffer) => {
 			const msg = message.toString();
 			switch (topic) {
 				// The big new one!

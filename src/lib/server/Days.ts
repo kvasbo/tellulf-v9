@@ -1,7 +1,10 @@
 import { DateTime } from 'luxon';
 
 export class Days {
-	constructor(calendar, weather) {
+	private weather: any;
+	private calendar: any;
+
+	constructor(calendar: any, weather: any) {
 		this.weather = weather;
 		this.calendar = calendar;
 	}
@@ -16,11 +19,11 @@ export class Days {
 		return days;
 	}
 
-	getDataForDate(jsDate) {
+	getDataForDate(jsDate: Date) {
 		// Create a Luxon DateTime object
 		const dt = DateTime.fromJSDate(jsDate).setLocale('nb');
 
-		const date = dt.toISODate()?.toString();
+		const date = dt.toISODate()?.toString() || '';
 
 		const daily = this.weather.getDailyForecasts();
 		const dailyHytta = this.weather.getDailyForecasts('hytta');
@@ -29,8 +32,8 @@ export class Days {
 		const events = this.calendar.getEventsForDate(jsDate);
 
 		// Check if any full day event has title "Hytta" and add weather data
-		const enrichedEvents = events.map((event) => {
-			if (event.fullDay && event.title.toLowerCase().indexOf('hytta') !== -1 && dailyHytta[date]) {
+		const enrichedEvents = events.map((event: any) => {
+			if (event.fullDay && event.title.toLowerCase().indexOf('hytta') !== -1 && date && dailyHytta[date]) {
 				return {
 					...event,
 					hyttaWeather: {
@@ -46,7 +49,7 @@ export class Days {
 			isoDate: date,
 			date: Days.createNiceDate(jsDate),
 			weekday: Days.createNiceDate(jsDate, true),
-			daily_forecast: daily[date],
+			daily_forecast: date ? daily[date] : undefined,
 			events: enrichedEvents,
 			birthdays: this.calendar.getBirthdaysForDate(jsDate),
 			dinner: this.calendar.getDinnerForDate(jsDate)
@@ -59,7 +62,7 @@ export class Days {
 	 * @param jsDate
 	 * @param relative
 	 */
-	static createNiceDate(jsDate, relative = false) {
+	static createNiceDate(jsDate: Date, relative = false) {
 		const dt = DateTime.fromJSDate(jsDate).setLocale('nb').startOf('day');
 		if (relative) {
 			if (dt.hasSame(DateTime.local(), 'day')) {

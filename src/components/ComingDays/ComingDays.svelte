@@ -2,7 +2,7 @@
 	import { onMount, afterUpdate } from 'svelte';
 	import Day from './Day.svelte'; // Your Day component
 
-	let days = [];
+	let days: any[] = [];
 	let calendarEl: HTMLElement; // Reference to the <calendar> element
 	let resizeObserver: ResizeObserver;
 
