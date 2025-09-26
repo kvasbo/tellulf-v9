@@ -50,7 +50,7 @@
 
 	function getMonthlyStatus(): string {
 		if (!powerData || powerData.monthlyConsumption === undefined || !powerData.cap) return '';
-		return `${Math.round(powerData.monthlyConsumption)}/${powerData.cap}`;
+		return `${powerData.monthlyConsumption.toFixed(1)}/${powerData.cap}`;
 	}
 
 	function isNorgesprisActive(): boolean {
