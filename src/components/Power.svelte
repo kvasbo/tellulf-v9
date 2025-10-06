@@ -50,7 +50,20 @@
 
 	function getMonthlyStatus(): string {
 		if (!powerData || powerData.monthlyConsumption === undefined || !powerData.cap) return '';
-		return `${powerData.monthlyConsumption.toFixed(1)}/${powerData.cap}`;
+		let status = `${powerData.monthlyConsumption.toFixed(1)}/${powerData.cap}`;
+
+		if (isNorgesprisActive()) {
+			const now = new Date();
+			const currentDay = now.getDate();
+			const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+			const expectedUsage = (currentDay / daysInMonth) * powerData.cap;
+			const difference = powerData.monthlyConsumption - expectedUsage;
+			const percentDiff = (difference / expectedUsage) * 100;
+			const sign = percentDiff > 0 ? '+' : '';
+			status += ` (${sign}${percentDiff.toFixed(0)}%)`;
+		}
+
+		return status;
 	}
 
 	function isNorgesprisActive(): boolean {
