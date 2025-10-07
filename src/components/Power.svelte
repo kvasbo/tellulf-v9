@@ -54,9 +54,12 @@
 
 		if (isNorgesprisActive()) {
 			const now = new Date();
-			const currentDay = now.getDate();
-			const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-			const expectedUsage = (currentDay / daysInMonth) * powerData.cap;
+			const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+			const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+			const totalMonthMs = monthEnd.getTime() - monthStart.getTime();
+			const elapsedMs = now.getTime() - monthStart.getTime();
+			const fractionOfMonth = elapsedMs / totalMonthMs;
+			const expectedUsage = fractionOfMonth * powerData.cap;
 			const difference = powerData.monthlyConsumption - expectedUsage;
 			const percentDiff = (difference / expectedUsage) * 100;
 			const sign = percentDiff > 0 ? '+' : '';
