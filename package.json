@@ -41,7 +41,7 @@
 	},
 	"dependencies": {
 		"fast-xml-parser": "^5.3.0",
-		"googleapis": "^149.0.0",
+		"googleapis": "^161.0.0",
 		"lunarphase-js": "^2.0.3",
 		"luxon": "^3.7.2",
 		"mqtt": "^5.14.1",

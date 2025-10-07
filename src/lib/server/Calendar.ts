@@ -179,12 +179,13 @@ export class Calendar {
 	 * @param calendarId
 	 */
 	static async getCalendarData(calendarId: string) {
-		const jwtClient = new google.auth.JWT(
-			getGoogleKey().client_email,
-			undefined,
-			getGoogleKey().private_key,
-			SCOPES
-		);
+		const jwtClient = new google.auth.JWT({
+			email: getGoogleKey().client_email,
+			key: getGoogleKey().private_key,
+			scopes: [SCOPES]
+		});
+
+		await jwtClient.authorize();
 
 		const calendar = google.calendar({
 			version: 'v3',
