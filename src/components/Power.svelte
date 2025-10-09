@@ -59,7 +59,7 @@
 			const totalMonthMs = monthEnd.getTime() - monthStart.getTime();
 			const elapsedMs = now.getTime() - monthStart.getTime();
 			const fractionOfMonth = elapsedMs / totalMonthMs;
-			const expectedUsage = fractionOfMonth * powerData.cap;
+			const expectedUsage = Math.max(fractionOfMonth * powerData.cap, 1);
 			const difference = powerData.monthlyConsumption - expectedUsage;
 			const percentDiff = (difference / expectedUsage) * 100;
 			const sign = percentDiff > 0 ? '+' : '';
