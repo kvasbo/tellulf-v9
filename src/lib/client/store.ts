@@ -4,6 +4,7 @@ type WeatherState = {
 	temperature: number;
 	humidity: number;
 	pressure: number;
+  lastTempTime: number;
 };
 
 export type HourlyForecastStore = HourlyForecast[];
@@ -26,5 +27,6 @@ export const hourlyForecastStore = writable<HourlyForecastStore>([]);
 export const weatherStore = writable<WeatherState>({
 	temperature: 9999,
 	humidity: 9999,
-	pressure: 9999
+	pressure: 9999,
+  lastTempTime: 0,
 });

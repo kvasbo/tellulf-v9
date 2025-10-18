@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon';
+
 export class Smarthouse {
 	private mqttClient: any;
 
@@ -15,6 +17,7 @@ export class Smarthouse {
 	};
 
 	temp = -9999;
+  lastTempTime = 0;
 	hum = -9999;
 	pressure = 0;
 
@@ -23,6 +26,7 @@ export class Smarthouse {
 		const costCabin = this.status.cabin.currentPrice.totalAfterSupport;
 		const output = {
 			tempOut: this.temp,
+      lastTempTime: this.lastTempTime,
 			humOut: this.hum,
 			pressure: this.pressure,
 			powerCostNowCabin: costCabin,
@@ -59,6 +63,10 @@ export class Smarthouse {
 					this.temp = parseFloat(message.toString());
 					this.mqttClient.log('Temperature set to:', this.temp);
 					break;
+        case 'tellulf/weather/tempOutTime':
+          this.lastTempTime = DateTime.fromFormat(message.toString(), 'dd-MM-yyyy HH:mm').toMillis();
+          this.mqttClient.log('Temperature set at time:', new Date(this.lastTempTime).toUTCString());
+          break;
 				case 'tellulf/weather/humidity':
 					this.hum = parseFloat(message.toString());
 					this.mqttClient.log('Humidity set to:', this.hum);

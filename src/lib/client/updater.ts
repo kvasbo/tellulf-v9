@@ -29,6 +29,7 @@ export class Updater {
 		if (data.homey) {
 			weatherStore.update((state) => {
 				state.temperature = data.homey.tempOut;
+        state.lastTempTime = data.homey.lastTempTime;
 				state.humidity = data.homey.humOut;
 				state.pressure = data.homey.pressure;
 				return state;
