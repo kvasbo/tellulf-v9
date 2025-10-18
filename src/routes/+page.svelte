@@ -9,6 +9,7 @@
 	import ComingDays from '../components/ComingDays/ComingDays.svelte';
 	import Power from '../components/Power.svelte';
 	import HourlyForecast from '../components/HourlyForecast/HourlyForecast.svelte';
+	import Haaa from '../components/Haaa.svelte';
 
 	let updater: Updater;
 	onMount(() => {
@@ -37,3 +38,5 @@
 	<Power where="cabin" />
 	<Entur />
 </footer>
+
+<Haaa />
