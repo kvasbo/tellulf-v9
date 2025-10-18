@@ -25,7 +25,8 @@
 	};
 
 	const isActiveTime = (date: Date): boolean => {
-		const hour = date.getHours();
+		const norwegianTime = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Oslo' }));
+		const hour = norwegianTime.getHours();
 		return hour >= 20 && hour < 23;
 	};
 
