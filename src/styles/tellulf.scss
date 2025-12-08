@@ -1,7 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
-$font_weight: 400;
-$bold_weight: 600;
+$light_weight: 100;
+$font_weight: 200;
+$bold_weight: 300;
 $text_huge: 170px;
 $text_large: 75px;
 $text_subheader: 25px;
@@ -28,7 +29,8 @@ body {
 		'time_and_date current_weather calendar'
 		'weather_nowcast weather_nowcast calendar'
 		'bottom-boxes bottom-boxes calendar';
-	font-family: 'Montserrat', sans-serif;
+	font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
 	font-weight: $font_weight;
 	font-size: $text_size;
 	text-rendering: optimizeLegibility;
@@ -56,7 +58,7 @@ currentweather {
 	display: flex;
 	flex: 3;
 	font-size: $text_huge;
-	font-weight: $bold_weight;
+	font-weight: $light_weight;
 	height: 100%;
 	justify-content: center;
 	width: 100%;
