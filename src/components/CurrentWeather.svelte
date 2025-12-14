@@ -4,8 +4,8 @@
 	const jsDate = new Date();
 	const sunRiseDate = getSunrise(59.9508, 10.6847, jsDate);
 	const sunSetDate = getSunset(59.9508, 10.6847, jsDate);
-	$: sunrise = sunRiseDate.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
-	$: sunset = sunSetDate.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
+	$: sunrise = sunRiseDate?.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
+	$: sunset = sunSetDate?.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
 	$: temperature = $weatherStore.temperature;
 	$: humidity = Math.round($weatherStore.humidity);
 	$: pressure = Math.round($weatherStore.pressure);
