@@ -28,14 +28,14 @@
 		"eslint": "^9.39.2",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.13.1",
-		"globals": "^16.5.0",
+		"globals": "^17.0",
 		"prettier": "^3.7.4",
 		"prettier-plugin-svelte": "^3.4.1",
 		"sass": "^1.97.1",
-		"svelte": "^5.46.0",
+		"svelte": "^5.46.1",
 		"svelte-check": "^4.3.5",
 		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.50.0",
+		"typescript-eslint": "^8.51.0",
 		"vite": "^7.3.0",
 		"vitest": "^4.0.16"
 	},
@@ -49,7 +49,7 @@
 		"tibber-api": "^5.5.2",
 		"twig": "^1.17.1",
 		"ws": "^8.18.3",
-		"zod": "^4.2.1"
+		"zod": "^4.3.5"
 	},
 	"packageManager": "pnpm@10.26.1"
 }
