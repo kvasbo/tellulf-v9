@@ -28,6 +28,7 @@ export interface PowerData {
 	maxPowerProduction: number;
 	currentPrice: number;
 	monthlyConsumption: number;
+	monthlyCost: number;
 	subsidizedConsumption: number;
 	marketConsumption: number;
 	effectivePrice: number;
@@ -49,6 +50,7 @@ const initValues: PowerData = {
 	maxPowerProduction: 0,
 	currentPrice: 0,
 	monthlyConsumption: 0,
+	monthlyCost: 0,
 	subsidizedConsumption: 0,
 	marketConsumption: 0,
 	effectivePrice: 0,
@@ -66,6 +68,7 @@ export class Tibber {
 	private readonly consumptionTracker: ConsumptionTracker;
 	private readonly norgesprisCalculator: NorgesprisCalculator;
 	private monthlyConsumptionCache: { home?: number; cabin?: number; lastFetch?: Date } = {};
+	private monthlyCostCache: { home?: number; cabin?: number } = {};
 
 	private lastCabinProduction = 0;
 
@@ -206,6 +209,11 @@ export class Tibber {
 
 			this.data[where].accumulatedReward = data.accumulatedReward;
 
+			if (this.monthlyCostCache[where] !== undefined) {
+				const monthlyCostBeforeToday = this.monthlyCostCache[where] || 0;
+				this.data[where].monthlyCost = monthlyCostBeforeToday + this.data[where].accumulatedCost;
+			}
+
 			if (where === 'cabin' && data.powerProduction !== null) {
 				this.lastCabinProduction = data.powerProduction;
 			}
@@ -240,45 +248,72 @@ export class Tibber {
 
 			if (!cacheValid) {
 				const id = where === 'home' ? env.TIBBER_ID_HOME : env.TIBBER_ID_CABIN;
-				const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 				const currentDay = now.getDate();
-				// Fetch a few extra hours to be safe
 				const hoursToFetch = currentDay * 24 + now.getHours() + 3;
 
 				const consumption = await this.query.getConsumption(EnergyResolution.HOURLY, hoursToFetch, id);
 
+				let monthlyCostBeforeToday = 0;
+
 				if (consumption && Array.isArray(consumption)) {
-					// Define boundaries for the current month
 					const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 					const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+					const cap = this.data[where].cap;
+					const norgesprisActive = this.norgesprisCalculator.isNorgesprisActive();
+					let accumulated = 0;
 
-					// Sum only the hours within this month but before today
-					monthlyTotalBeforeToday = consumption.reduce((sum: number, hour: any) => {
-						// Check if the hour has a timestamp or from field
-						const hourTimestamp = new Date(hour.from || hour.timestamp || hour.startsAt);
+					const monthHours = (consumption as any[])
+						.filter((hour) => {
+							const ts = new Date(hour.from || hour.timestamp || hour.startsAt);
+							return ts >= startOfMonth && ts < startOfToday;
+						})
+						.sort((a, b) => {
+							const tsA = new Date(a.from || a.timestamp || a.startsAt).getTime();
+							const tsB = new Date(b.from || b.timestamp || b.startsAt).getTime();
+							return tsA - tsB;
+						});
 
-						// Only include hours from this month but before today
-						if (hourTimestamp >= startOfMonth && hourTimestamp < startOfToday) {
-							return sum + (hour.consumption || 0);
+					for (const hour of monthHours) {
+						const hourConsumption = hour.consumption || 0;
+						const hourCost = hour.cost || 0;
+						monthlyTotalBeforeToday += hourConsumption;
+
+						if (norgesprisActive && cap > 0) {
+							const previousAccumulated = accumulated;
+							accumulated += hourConsumption;
+
+							if (previousAccumulated >= cap) {
+								monthlyCostBeforeToday += hourCost;
+							} else if (accumulated <= cap) {
+								monthlyCostBeforeToday += hourConsumption * 0.50;
+							} else {
+								const subsidizedPortion = cap - previousAccumulated;
+								const marketPortion = hourConsumption - subsidizedPortion;
+								const pricePerKwh = hourConsumption > 0 ? hourCost / hourConsumption : 0;
+								monthlyCostBeforeToday += (subsidizedPortion * 0.50) + (marketPortion * pricePerKwh);
+							}
+						} else {
+							monthlyCostBeforeToday += hourCost;
 						}
-						return sum;
-					}, 0);
+					}
 				}
 
-				// Cache only the historical data (before today)
 				this.monthlyConsumptionCache[where] = monthlyTotalBeforeToday;
+				this.monthlyCostCache[where] = monthlyCostBeforeToday;
 				this.monthlyConsumptionCache.lastFetch = now;
 			} else {
 				// Use cached value for consumption before today
 				monthlyTotalBeforeToday = this.monthlyConsumptionCache[where] || 0;
 			}
 
-			// Always add today's fresh realtime accumulated consumption
 			const currentDayConsumption = this.data[where].accumulatedConsumption || 0;
 			const monthlyTotal = monthlyTotalBeforeToday + currentDayConsumption;
 
 			this.consumptionTracker.updateConsumption(where, monthlyTotal);
 			this.data[where].monthlyConsumption = monthlyTotal;
+
+			const monthlyCostBeforeToday = this.monthlyCostCache[where] || 0;
+			this.data[where].monthlyCost = monthlyCostBeforeToday + this.data[where].accumulatedCost;
 		} catch (error) {
 			console.error(`Failed to update monthly consumption for ${where}:`, error);
 		}

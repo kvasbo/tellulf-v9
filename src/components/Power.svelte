@@ -49,10 +49,10 @@
 	}
 
 	function getMonthlyStatus(): string {
-		if (!powerData || powerData.monthlyConsumption === undefined || !powerData.cap) return '';
-		let status = `${powerData.monthlyConsumption.toFixed(1)}/${powerData.cap}`;
+		if (!powerData || powerData.monthlyConsumption === undefined) return '';
+		let status = `${powerData.monthlyConsumption.toFixed(1)} kWh`;
 
-		if (isNorgesprisActive()) {
+		if (isNorgesprisActive() && powerData.cap) {
 			const now = new Date();
 			const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 			const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -69,20 +69,25 @@
 		return status;
 	}
 
+	function getMonthlyCost(): string {
+		if (!powerData || powerData.monthlyCost === undefined) return '';
+		return `${powerData.monthlyCost.toFixed(0)} kr`;
+	}
+
 	function isNorgesprisActive(): boolean {
 		return Date.now() >= new Date('2025-10-01').getTime();
 	}
 
 	function getPriceStatus(): string {
-		if (!powerData || powerData.monthlyConsumption === undefined || !powerData.cap) return '';
-		if (!isNorgesprisActive()) return 'Spotpris';
+		if (!powerData || powerData.monthlyConsumption === undefined) return '';
+		if (!isNorgesprisActive() || !powerData.cap) return 'Spotpris';
 		const isSubsidized = powerData.monthlyConsumption < powerData.cap;
 		return isSubsidized ? 'Norgespris' : 'Spotpris';
 	}
 
 	function getPriceColor(): string {
 		if (!powerData) return '#3ea4f0';
-		if (!isNorgesprisActive()) return '#f0a43e';
+		if (!isNorgesprisActive() || !powerData.cap) return '#f0a43e';
 		const isSubsidized = powerData.monthlyConsumption < powerData.cap;
 		return isSubsidized ? '#3ef0a4' : '#f0a43e';
 	}
@@ -116,9 +121,10 @@
 					<td>{powerData.accumulatedCost.toFixed(2)} kr</td>
 					<td>{powerData.effectivePrice ? powerData.effectivePrice.toFixed(2) : powerData.currentPrice.toFixed(2)} kr</td>
 				</tr>
-				{#if powerData.monthlyConsumption !== undefined && powerData.cap}
+				{#if powerData.monthlyConsumption !== undefined}
 				<tr class="monthlyStatus">
-					<td colspan="2">{getMonthlyStatus()}</td>
+					<td>{getMonthlyStatus()}</td>
+					<td>{getMonthlyCost()}</td>
 					<td style="color: {getPriceColor()}">{getPriceStatus()}</td>
 				</tr>
 				{/if}
