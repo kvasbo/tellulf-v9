@@ -1,9 +1,10 @@
 import { DateTime } from 'luxon';
+import type { MqttClient } from './MQTT.js';
 
 export class Smarthouse {
-	private mqttClient: any;
+	private mqttClient: MqttClient;
 
-	constructor(mqttClient: any) {
+	constructor(mqttClient: MqttClient) {
 		this.mqttClient = mqttClient;
 	}
 
@@ -13,11 +14,11 @@ export class Smarthouse {
 
 	status = {
 		home: structuredClone(statusInitValues),
-		cabin: structuredClone(statusInitValues)
+		cabin: structuredClone(statusInitValues),
 	};
 
 	temp = -9999;
-  lastTempTime = 0;
+	lastTempTime = 0;
 	hum = -9999;
 	pressure = 0;
 
@@ -26,7 +27,7 @@ export class Smarthouse {
 		const costCabin = this.status.cabin.currentPrice.totalAfterSupport;
 		const output = {
 			tempOut: this.temp,
-      lastTempTime: this.lastTempTime,
+			lastTempTime: this.lastTempTime,
 			humOut: this.hum,
 			pressure: this.pressure,
 			powerCostNowCabin: costCabin,
@@ -39,7 +40,7 @@ export class Smarthouse {
 			costTodayCabin: this.status.cabin.day.accumulatedCost,
 			coolerRoomHumidity: this.coolerRoomHumidity,
 			coolerRoomTemp: this.coolerRoomTemp,
-			coolerRoomBattery: this.coolerRoomBattery
+			coolerRoomBattery: this.coolerRoomBattery,
 		};
 		return output;
 	}
@@ -63,10 +64,16 @@ export class Smarthouse {
 					this.temp = parseFloat(message.toString());
 					this.mqttClient.log('Temperature set to:', this.temp);
 					break;
-        case 'tellulf/weather/tempOutTime':
-          this.lastTempTime = DateTime.fromFormat(message.toString(), 'dd-MM-yyyy HH:mm').toMillis();
-          this.mqttClient.log('Temperature set at time:', new Date(this.lastTempTime).toUTCString());
-          break;
+				case 'tellulf/weather/tempOutTime':
+					this.lastTempTime = DateTime.fromFormat(
+						message.toString(),
+						'dd-MM-yyyy HH:mm',
+					).toMillis();
+					this.mqttClient.log(
+						'Temperature set at time:',
+						new Date(this.lastTempTime).toUTCString(),
+					);
+					break;
 				case 'tellulf/weather/humidity':
 					this.hum = parseFloat(message.toString());
 					this.mqttClient.log('Humidity set to:', this.hum);
@@ -96,12 +103,12 @@ const statusInitValues = {
 	day: {
 		accumulatedConsumption: 0,
 		accumulatedProduction: 0,
-		accumulatedCost: 0
+		accumulatedCost: 0,
 	},
 	month: {
 		accumulatedConsumption: 0,
 		accumulatedProduction: 0,
-		accumulatedCost: 0
+		accumulatedCost: 0,
 	},
 	minPower: 0,
 	averagePower: 0,
@@ -119,6 +126,6 @@ const statusInitValues = {
 		tax: 0,
 		transportCost: 0,
 		energyAfterSupport: 0,
-		totalAfterSupport: 0
-	}
+		totalAfterSupport: 0,
+	},
 };

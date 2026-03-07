@@ -1,4 +1,4 @@
-import { TibberFeed, TibberQuery, type IConfig } from 'tibber-api';
+import { type IConfig, TibberFeed, TibberQuery } from 'tibber-api';
 import { Places } from '../Enums.js';
 import { ConsumptionTracker } from './ConsumptionTracker.js';
 import { NorgesprisCalculator } from './NorgesprisCalculator.js';
@@ -9,7 +9,7 @@ enum EnergyResolution {
 	DAILY = 'DAILY',
 	WEEKLY = 'WEEKLY',
 	MONTHLY = 'MONTHLY',
-	ANNUAL = 'ANNUAL'
+	ANNUAL = 'ANNUAL',
 }
 
 export interface PowerData {
@@ -53,7 +53,7 @@ const initValues: PowerData = {
 	subsidizedConsumption: 0,
 	marketConsumption: 0,
 	effectivePrice: 0,
-	cap: 0
+	cap: 0,
 };
 
 export class Tibber {
@@ -61,12 +61,16 @@ export class Tibber {
 	private readonly feedCabin: TibberFeed;
 	private readonly data: { home: PowerData; cabin: PowerData } = {
 		home: { ...initValues },
-		cabin: { ...initValues }
+		cabin: { ...initValues },
 	};
 	private readonly query: TibberQuery;
 	private readonly consumptionTracker: ConsumptionTracker;
 	private readonly norgesprisCalculator: NorgesprisCalculator;
-	private monthlyConsumptionCache: { home?: number; cabin?: number; lastFetch?: Date } = {};
+	private monthlyConsumptionCache: {
+		home?: number;
+		cabin?: number;
+		lastFetch?: Date;
+	} = {};
 	private monthlyCostCache: { home?: number; cabin?: number } = {};
 
 	private lastCabinProduction = 0;
@@ -79,7 +83,7 @@ export class Tibber {
 		active: true,
 		apiEndpoint: {
 			apiKey: process.env.TIBBER_KEY!,
-			queryUrl: 'https://api.tibber.com/v1-beta/gql'
+			queryUrl: 'https://api.tibber.com/v1-beta/gql',
 		},
 		timestamp: true,
 		power: true,
@@ -92,7 +96,7 @@ export class Tibber {
 		maxPower: true,
 		powerProduction: true,
 		minPowerProduction: true,
-		maxPowerProduction: true
+		maxPowerProduction: true,
 	};
 
 	constructor() {
@@ -100,9 +104,11 @@ export class Tibber {
 		this.query = new TibberQuery(this.config);
 		this.consumptionTracker = new ConsumptionTracker();
 		this.norgesprisCalculator = new NorgesprisCalculator();
-		this.feedHome = new TibberFeed(new TibberQuery({ ...this.config, homeId: process.env.TIBBER_ID_HOME! }));
+		this.feedHome = new TibberFeed(
+			new TibberQuery({ ...this.config, homeId: process.env.TIBBER_ID_HOME! }),
+		);
 		this.feedCabin = new TibberFeed(
-			new TibberQuery({ ...this.config, homeId: process.env.TIBBER_ID_CABIN! })
+			new TibberQuery({ ...this.config, homeId: process.env.TIBBER_ID_CABIN! }),
 		);
 
 		// Set initial caps
@@ -159,8 +165,10 @@ export class Tibber {
 			// Update monthly consumption with realtime data
 			// Use cached historical data plus current day's realtime consumption
 			if (this.monthlyConsumptionCache[where] !== undefined) {
-				const monthlyTotalBeforeToday = this.monthlyConsumptionCache[where] || 0;
-				const currentDayConsumption = this.data[where].accumulatedConsumption || 0;
+				const monthlyTotalBeforeToday =
+					this.monthlyConsumptionCache[where] || 0;
+				const currentDayConsumption =
+					this.data[where].accumulatedConsumption || 0;
 				const monthlyTotal = monthlyTotalBeforeToday + currentDayConsumption;
 
 				this.data[where].monthlyConsumption = monthlyTotal;
@@ -171,13 +179,17 @@ export class Tibber {
 			if (this.norgesprisCalculator.isNorgesprisActive()) {
 				// For daily accumulated cost calculation with Norgespris
 				const dayConsumption = this.data[where].accumulatedConsumption;
-				const monthlyConsumption = this.consumptionTracker.getMonthlyConsumption(where);
+				const monthlyConsumption =
+					this.consumptionTracker.getMonthlyConsumption(where);
 				const spotPrice = this.data[where].currentPrice || 0;
 				const cap = this.data[where].cap;
 
 				// Calculate how much of today's consumption is subsidized vs market price
 				// This assumes monthly consumption includes today's consumption so far
-				const monthlyBeforeToday = Math.max(0, monthlyConsumption - dayConsumption);
+				const monthlyBeforeToday = Math.max(
+					0,
+					monthlyConsumption - dayConsumption,
+				);
 
 				let subsidizedToday: number;
 				let marketToday: number;
@@ -194,24 +206,28 @@ export class Tibber {
 				}
 
 				// Calculate total cost for today
-				this.data[where].accumulatedCost = subsidizedToday * 0.5 + marketToday * spotPrice;
+				this.data[where].accumulatedCost =
+					subsidizedToday * 0.5 + marketToday * spotPrice;
 
 				// Update the effective price for display
-				const effectivePrice = this.norgesprisCalculator.getEffectivePriceForCurrentHour(
-					where,
-					monthlyConsumption,
-					spotPrice
-				);
+				const effectivePrice =
+					this.norgesprisCalculator.getEffectivePriceForCurrentHour(
+						where,
+						monthlyConsumption,
+						spotPrice,
+					);
 				this.data[where].effectivePrice = effectivePrice;
 			} else {
-				this.data[where].accumulatedCost = data.accumulatedCost - data.accumulatedReward;
+				this.data[where].accumulatedCost =
+					data.accumulatedCost - data.accumulatedReward;
 			}
 
 			this.data[where].accumulatedReward = data.accumulatedReward;
 
 			if (this.monthlyCostCache[where] !== undefined) {
 				const monthlyCostBeforeToday = this.monthlyCostCache[where] || 0;
-				this.data[where].monthlyCost = monthlyCostBeforeToday + this.data[where].accumulatedCost;
+				this.data[where].monthlyCost =
+					monthlyCostBeforeToday + this.data[where].accumulatedCost;
 			}
 
 			if (where === 'cabin' && data.powerProduction !== null) {
@@ -243,39 +259,46 @@ export class Tibber {
 			const now = new Date();
 			const cacheValid =
 				this.monthlyConsumptionCache.lastFetch &&
-				now.getTime() - this.monthlyConsumptionCache.lastFetch.getTime() < 3600000;
+				now.getTime() - this.monthlyConsumptionCache.lastFetch.getTime() <
+					3600000;
 
 			let monthlyTotalBeforeToday = 0;
 
 			if (!cacheValid) {
-				const id = where === 'home' ? process.env.TIBBER_ID_HOME! : process.env.TIBBER_ID_CABIN!;
+				const id =
+					where === 'home'
+						? process.env.TIBBER_ID_HOME!
+						: process.env.TIBBER_ID_CABIN!;
 				const currentDay = now.getDate();
 				const hoursToFetch = currentDay * 24 + now.getHours() + 3;
 
 				const consumption = await this.query.getConsumption(
 					EnergyResolution.HOURLY,
 					hoursToFetch,
-					id
+					id,
 				);
 
 				let monthlyCostBeforeToday = 0;
 
 				if (consumption && Array.isArray(consumption)) {
 					const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-					const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+					const startOfToday = new Date(
+						now.getFullYear(),
+						now.getMonth(),
+						now.getDate(),
+					);
 					const cap = this.data[where].cap;
-					const norgesprisActive = this.norgesprisCalculator.isNorgesprisActive();
+					const norgesprisActive =
+						this.norgesprisCalculator.isNorgesprisActive();
 					let accumulated = 0;
 
-					const monthHours = (consumption as any[])
+					const monthHours = consumption
 						.filter((hour) => {
-							const ts = new Date(hour.from || hour.timestamp || hour.startsAt);
+							const ts = new Date(hour.from);
 							return ts >= startOfMonth && ts < startOfToday;
 						})
 						.sort((a, b) => {
-							const tsA = new Date(a.from || a.timestamp || a.startsAt).getTime();
-							const tsB = new Date(b.from || b.timestamp || b.startsAt).getTime();
-							return tsA - tsB;
+							return new Date(a.from).getTime() - new Date(b.from).getTime();
 						});
 
 					for (const hour of monthHours) {
@@ -294,8 +317,10 @@ export class Tibber {
 							} else {
 								const subsidizedPortion = cap - previousAccumulated;
 								const marketPortion = hourConsumption - subsidizedPortion;
-								const pricePerKwh = hourConsumption > 0 ? hourCost / hourConsumption : 0;
-								monthlyCostBeforeToday += subsidizedPortion * 0.5 + marketPortion * pricePerKwh;
+								const pricePerKwh =
+									hourConsumption > 0 ? hourCost / hourConsumption : 0;
+								monthlyCostBeforeToday +=
+									subsidizedPortion * 0.5 + marketPortion * pricePerKwh;
 							}
 						} else {
 							monthlyCostBeforeToday += hourCost;
@@ -311,22 +336,30 @@ export class Tibber {
 				monthlyTotalBeforeToday = this.monthlyConsumptionCache[where] || 0;
 			}
 
-			const currentDayConsumption = this.data[where].accumulatedConsumption || 0;
+			const currentDayConsumption =
+				this.data[where].accumulatedConsumption || 0;
 			const monthlyTotal = monthlyTotalBeforeToday + currentDayConsumption;
 
 			this.consumptionTracker.updateConsumption(where, monthlyTotal);
 			this.data[where].monthlyConsumption = monthlyTotal;
 
 			const monthlyCostBeforeToday = this.monthlyCostCache[where] || 0;
-			this.data[where].monthlyCost = monthlyCostBeforeToday + this.data[where].accumulatedCost;
+			this.data[where].monthlyCost =
+				monthlyCostBeforeToday + this.data[where].accumulatedCost;
 		} catch (error) {
-			console.error(`Failed to update monthly consumption for ${where}:`, error);
+			console.error(
+				`Failed to update monthly consumption for ${where}:`,
+				error,
+			);
 		}
 	}
 
 	private async updatePowerPrice(where: Places) {
 		try {
-			const id = where === 'home' ? process.env.TIBBER_ID_HOME! : process.env.TIBBER_ID_CABIN!;
+			const id =
+				where === 'home'
+					? process.env.TIBBER_ID_HOME!
+					: process.env.TIBBER_ID_CABIN!;
 			const price = await this.query.getCurrentEnergyPrice(id);
 			const spotPrice = price.total || 0;
 
@@ -337,17 +370,18 @@ export class Tibber {
 			const calculation = this.norgesprisCalculator.calculateCost(
 				where,
 				monthlyConsumption,
-				spotPrice
+				spotPrice,
 			);
 
 			// Update data with Norgespris calculations
 			this.data[where].currentPrice = spotPrice;
 			this.data[where].effectivePrice = calculation.effectivePrice;
-			this.data[where].subsidizedConsumption = calculation.subsidizedConsumption;
+			this.data[where].subsidizedConsumption =
+				calculation.subsidizedConsumption;
 			this.data[where].marketConsumption = calculation.marketConsumption;
 
 			console.log(
-				`Updated power price for ${where}: spot=${spotPrice.toFixed(2)}, effective=${calculation.effectivePrice.toFixed(2)}`
+				`Updated power price for ${where}: spot=${spotPrice.toFixed(2)}, effective=${calculation.effectivePrice.toFixed(2)}`,
 			);
 		} catch (error) {
 			console.error(`Failed to update power price for ${where}:`, error);

@@ -1,13 +1,15 @@
 import { calendar_v3 } from '@googleapis/calendar';
 import { JWT } from 'google-auth-library';
 import { DateTime } from 'luxon';
-import type { Event, EnrichedEvent } from './Calendar.d.js';
+import type { EnrichedEvent, Event } from './Calendar.d.js';
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
 function getGoogleKey() {
 	// Get the Google key from the environment variable
-	return JSON.parse(Buffer.from(process.env.GOOGLE_KEY_B64!, 'base64').toString('utf8'));
+	return JSON.parse(
+		Buffer.from(process.env.GOOGLE_KEY_B64!, 'base64').toString('utf8'),
+	);
 }
 
 /**
@@ -24,7 +26,7 @@ export class Calendar {
 	displayHeights = {
 		event: 25,
 		birthday: 25,
-		dayInfo: 51
+		dayInfo: 51,
 	};
 
 	public static getInstance() {
@@ -92,14 +94,17 @@ export class Calendar {
 	 * @param {Date} jsDate - The JavaScript Date object representing the date to check.
 	 * @returns {boolean} - Returns true if the event falls on the specified date, false otherwise.
 	 */
-	checkEventForDate(event: any, jsDate: Date) {
+	checkEventForDate(event: Event, jsDate: Date) {
 		// Find start of day for all the fuckers
 		const dt = DateTime.fromJSDate(jsDate).startOf('day');
 		const eventStart = DateTime.fromJSDate(event.start).startOf('day');
 		const eventEnd = DateTime.fromJSDate(event.end).startOf('day');
 
 		// It starts before or ends after!
-		if (eventStart.toMillis() <= dt.toMillis() && eventEnd.toMillis() >= dt.toMillis()) {
+		if (
+			eventStart.toMillis() <= dt.toMillis() &&
+			eventEnd.toMillis() >= dt.toMillis()
+		) {
 			return true;
 		}
 
@@ -107,7 +112,11 @@ export class Calendar {
 		return false;
 	}
 
-	enrichEvent(event: Event, type: 'birthday' | 'event' | 'dinner' = 'event', forDate: Date): EnrichedEvent {
+	enrichEvent(
+		event: Event,
+		type: 'birthday' | 'event' | 'dinner' = 'event',
+		forDate: Date,
+	): EnrichedEvent {
 		const displayTitle = Calendar.getDisplayTitle(event, type);
 		const dayType = Calendar.getDayType(event, forDate);
 		const displayTime = Calendar.getEventDisplayTime(event, dayType);
@@ -116,7 +125,7 @@ export class Calendar {
 			...event,
 			displayTitle: displayTitle,
 			dayType: dayType,
-			displayTime: displayTime
+			displayTime: displayTime,
 		};
 	}
 
@@ -127,7 +136,7 @@ export class Calendar {
 	 * @param {string} type The type of object. Either "event" or "birthday"
 	 * @returns {string} The display title
 	 */
-	static getDisplayTitle(event: any, type: 'birthday' | 'event' | 'dinner') {
+	static getDisplayTitle(event: Event, type: 'birthday' | 'event' | 'dinner') {
 		let title = event.title;
 		if (type === 'birthday') {
 			const regex = /[A-Za-z0-9 ]+\s[0-9]+/i;
@@ -146,7 +155,7 @@ export class Calendar {
 		if (process.env.CAL_ID_FELLES) {
 			this.events = await Calendar.getCalendarData(process.env.CAL_ID_FELLES);
 
-			console.log(this.events.length + ' events fetched.');
+			console.log(`${this.events.length} events fetched.`);
 		} else {
 			this.events = [];
 		}
@@ -156,7 +165,7 @@ export class Calendar {
 		if (process.env.CAL_ID_MIDDAG) {
 			this.dinners = await Calendar.getCalendarData(process.env.CAL_ID_MIDDAG);
 
-			console.log(this.dinners.length + ' dinners fetched.');
+			console.log(`${this.dinners.length} dinners fetched.`);
 		} else {
 			this.dinners = [];
 
@@ -166,9 +175,11 @@ export class Calendar {
 
 	async refreshBirthdays() {
 		if (process.env.CAL_ID_BURSDAG) {
-			this.birthdays = await Calendar.getCalendarData(process.env.CAL_ID_BURSDAG);
+			this.birthdays = await Calendar.getCalendarData(
+				process.env.CAL_ID_BURSDAG,
+			);
 
-			console.log(this.birthdays.length + ' birthdays fetched.');
+			console.log(`${this.birthdays.length} birthdays fetched.`);
 		} else {
 			this.birthdays = [];
 		}
@@ -182,7 +193,7 @@ export class Calendar {
 		const jwtClient = new JWT({
 			email: getGoogleKey().client_email,
 			key: getGoogleKey().private_key,
-			scopes: [SCOPES]
+			scopes: [SCOPES],
 		});
 
 		await jwtClient.authorize();
@@ -197,7 +208,7 @@ export class Calendar {
 			timeMax: DateTime.now().plus({ weeks: 2 }).toISO(),
 			maxResults: 2000,
 			singleEvents: true,
-			orderBy: 'startTime'
+			orderBy: 'startTime',
 		});
 
 		if (result?.data?.items?.length) {
@@ -208,8 +219,8 @@ export class Calendar {
 		} else {
 			console.log(
 				JSON.stringify({
-					message: `No upcoming events found for ${calendarId}`
-				})
+					message: `No upcoming events found for ${calendarId}`,
+				}),
 			);
 		}
 		return out;
@@ -221,7 +232,7 @@ export class Calendar {
 			return {
 				start: '',
 				end: '',
-				spacer: '...'
+				spacer: '...',
 			};
 		}
 
@@ -231,7 +242,7 @@ export class Calendar {
 			return {
 				start: '',
 				end: DateTime.fromJSDate(event.end).toFormat('HH:mm'),
-				spacer: arrow
+				spacer: arrow,
 			};
 		}
 
@@ -239,7 +250,7 @@ export class Calendar {
 			return {
 				start: DateTime.fromJSDate(event.start).toFormat('HH:mm'),
 				end: '',
-				spacer: arrow
+				spacer: arrow,
 			};
 		}
 
@@ -247,7 +258,7 @@ export class Calendar {
 		return {
 			start: DateTime.fromJSDate(event.start).toFormat('HH:mm'),
 			end: DateTime.fromJSDate(event.end).toFormat('HH:mm'),
-			spacer: arrow
+			spacer: arrow,
 		};
 	}
 
@@ -269,22 +280,22 @@ export class Calendar {
 	}
 
 	// Main parsing of an event from Google
-	static parseGoogleEvent(event: any) {
-		const ev = event;
-
+	static parseGoogleEvent(event: calendar_v3.Schema$Event) {
 		const title = event.summary ? event.summary : '';
 
-		if (ev.start.date && ev.end.date) {
+		if (event.start?.date && event.end?.date) {
 			// Fullday!
-			const dtStart = DateTime.fromISO(ev.start.date).startOf('day');
-			const dtEnd = DateTime.fromISO(ev.end.date).minus({ days: 1 }).startOf('day');
+			const dtStart = DateTime.fromISO(event.start.date).startOf('day');
+			const dtEnd = DateTime.fromISO(event.end.date)
+				.minus({ days: 1 })
+				.startOf('day');
 			const start = dtStart.toJSDate();
 			const end = dtEnd.toJSDate();
 			const fullDay = true;
 			return { title, start, end, fullDay };
-		} else if (ev.start.dateTime && ev.end.dateTime) {
-			const dtStart = DateTime.fromISO(ev.start.dateTime);
-			const dtEnd = DateTime.fromISO(ev.end.dateTime);
+		} else if (event.start?.dateTime && event.end?.dateTime) {
+			const dtStart = DateTime.fromISO(event.start.dateTime);
+			const dtEnd = DateTime.fromISO(event.end.dateTime);
 			const start = dtStart.toJSDate();
 			const end = dtEnd.toJSDate();
 			const fullDay = false;

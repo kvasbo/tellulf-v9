@@ -1,10 +1,13 @@
 import { DateTime } from 'luxon';
+import type { EnrichedEvent } from './Calendar.d.js';
+import type { Calendar } from './Calendar.js';
+import type { Weather } from './Weather.js';
 
 export class Days {
-	private weather: any;
-	private calendar: any;
+	private weather: Weather;
+	private calendar: Calendar;
 
-	constructor(calendar: any, weather: any) {
+	constructor(calendar: Calendar, weather: Weather) {
 		this.weather = weather;
 		this.calendar = calendar;
 	}
@@ -32,14 +35,19 @@ export class Days {
 		const events = this.calendar.getEventsForDate(jsDate);
 
 		// Check if any full day event has title "Hytta" and add weather data
-		const enrichedEvents = events.map((event: any) => {
-			if (event.fullDay && event.title.toLowerCase().indexOf('hytta') !== -1 && date && dailyHytta[date]) {
+		const enrichedEvents = events.map((event: EnrichedEvent) => {
+			if (
+				event.fullDay &&
+				event.title.toLowerCase().indexOf('hytta') !== -1 &&
+				date &&
+				dailyHytta[date]
+			) {
 				return {
 					...event,
 					hyttaWeather: {
 						temperature: Math.round(dailyHytta[date].maxTemp),
-						rainProbability: dailyHytta[date].lightRainProbability
-					}
+						rainProbability: dailyHytta[date].lightRainProbability,
+					},
 				};
 			}
 			return event;
@@ -52,7 +60,7 @@ export class Days {
 			daily_forecast: date ? daily[date] : undefined,
 			events: enrichedEvents,
 			birthdays: this.calendar.getBirthdaysForDate(jsDate),
-			dinner: this.calendar.getDinnerForDate(jsDate)
+			dinner: this.calendar.getDinnerForDate(jsDate),
 		};
 	}
 

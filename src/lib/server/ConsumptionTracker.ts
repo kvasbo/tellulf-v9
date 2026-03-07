@@ -25,7 +25,7 @@ export class ConsumptionTracker {
 				year: currentYear,
 				month: currentMonth,
 				consumption: 0,
-				lastUpdated: now
+				lastUpdated: now,
 			});
 		}
 	}
@@ -42,13 +42,13 @@ export class ConsumptionTracker {
 				year: currentYear,
 				month: currentMonth,
 				consumption: consumption,
-				lastUpdated: now
+				lastUpdated: now,
 			});
 		} else {
 			this.consumptionData.set(place, {
 				...data,
 				consumption: consumption,
-				lastUpdated: now
+				lastUpdated: now,
 			});
 		}
 	}

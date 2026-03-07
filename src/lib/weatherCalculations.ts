@@ -1,17 +1,21 @@
 interface HourlyForecastInput {
-	instant: { air_temperature: number };
+	instant: { air_temperature?: number };
 }
 
-export function calculateMinMaxTemps(data: HourlyForecastInput[]): { min: number; max: number } {
+export function calculateMinMaxTemps(data: HourlyForecastInput[]): {
+	min: number;
+	max: number;
+} {
 	let min = 100;
 	let max = -100;
 
 	data.forEach((forecast) => {
-		if (forecast.instant.air_temperature < min) {
-			min = forecast.instant.air_temperature;
+		const temp = forecast.instant.air_temperature ?? 0;
+		if (temp < min) {
+			min = temp;
 		}
-		if (forecast.instant.air_temperature > max) {
-			max = forecast.instant.air_temperature;
+		if (temp > max) {
+			max = temp;
 		}
 	});
 
@@ -24,6 +28,6 @@ export function calculateMinMaxTemps(data: HourlyForecastInput[]): { min: number
 
 	return {
 		min,
-		max
+		max,
 	};
 }

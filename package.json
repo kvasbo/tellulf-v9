@@ -6,8 +6,9 @@
 	"scripts": {
 		"dev": "tsx watch src/server.ts",
 		"start": "node dist/server.js",
-		"build": "eslint . && tsc",
-		"lint": "eslint .",
+		"build": "biome check . && tsc",
+		"lint": "biome check .",
+		"format": "biome check --write .",
 		"check": "tsc --noEmit"
 	},
 	"dependencies": {
@@ -29,12 +30,10 @@
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
-		"@eslint/js": "^10.0.1",
+		"@biomejs/biome": "^2.4.6",
 		"@types/express": "^5.0.6",
 		"@types/luxon": "^3.7.1",
-		"eslint": "^10.0.3",
 		"tsx": "^4.21.0",
-		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.56.1"
+		"typescript": "^5.9.3"
 	}
 }

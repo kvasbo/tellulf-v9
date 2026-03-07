@@ -2,23 +2,34 @@
 function getDateWeek(date) {
 	const currentDate = typeof date === 'object' ? date : new Date();
 	const januaryFirst = new Date(currentDate.getFullYear(), 0, 1);
-	const daysToNextMonday = januaryFirst.getDay() === 1 ? 0 : (7 - januaryFirst.getDay()) % 7;
+	const daysToNextMonday =
+		januaryFirst.getDay() === 1 ? 0 : (7 - januaryFirst.getDay()) % 7;
 	const nextMonday = new Date(
 		currentDate.getFullYear(),
 		0,
-		januaryFirst.getDate() + daysToNextMonday
+		januaryFirst.getDate() + daysToNextMonday,
 	);
 	return currentDate < nextMonday
 		? 52
 		: currentDate > nextMonday
-			? Math.ceil((currentDate.getTime() - nextMonday.getTime()) / (24 * 3600 * 1000) / 7)
+			? Math.ceil(
+					(currentDate.getTime() - nextMonday.getTime()) /
+						(24 * 3600 * 1000) /
+						7,
+				)
 			: 1;
 }
 
 function updateClock() {
 	const now = new Date();
-	const time = now.toLocaleTimeString('nb-NO', { hour: 'numeric', minute: '2-digit' });
-	const date = now.toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric' });
+	const time = now.toLocaleTimeString('nb-NO', {
+		hour: 'numeric',
+		minute: '2-digit',
+	});
+	const date = now.toLocaleDateString('nb-NO', {
+		weekday: 'long',
+		day: 'numeric',
+	});
 	const week = getDateWeek(now);
 
 	document.getElementById('now_time').textContent = time;
@@ -30,7 +41,9 @@ updateClock();
 setInterval(updateClock, 1000);
 
 // Reload page when clicking the clock
-document.getElementById('now_time').addEventListener('click', () => window.location.reload());
+document
+	.getElementById('now_time')
+	.addEventListener('click', () => window.location.reload());
 
 // Calendar visibility - hide days that overflow
 function checkCalendarVisibility() {
@@ -74,7 +87,9 @@ document.body.addEventListener('htmx:sseMessage', (evt) => {
 // Also run on resize
 const calendarEl = document.querySelector('calendar');
 if (calendarEl) {
-	new ResizeObserver(() => requestAnimationFrame(checkCalendarVisibility)).observe(calendarEl);
+	new ResizeObserver(() =>
+		requestAnimationFrame(checkCalendarVisibility),
+	).observe(calendarEl);
 }
 
 // Initial visibility check
@@ -88,7 +103,8 @@ const diff = startOfNextHour.getTime() - now.getTime();
 setTimeout(() => window.location.reload(), diff);
 
 // Version check - reload if server restarted
-const initialVersion = document.getElementById('server-version')?.dataset?.version;
+const initialVersion =
+	document.getElementById('server-version')?.dataset?.version;
 document.body.addEventListener('htmx:sseMessage', (evt) => {
 	if (evt.detail.type === 'version') {
 		const el = document.getElementById('server-version');

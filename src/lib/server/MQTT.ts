@@ -3,13 +3,13 @@ import * as mqtt from 'mqtt';
 const options = {
 	username: process.env.MQTT_USER,
 	password: process.env.MQTT_PASS,
-	clientId: 'tellulf-' + Math.random().toString(16).substring(2, 8),
-	keepalive: 15
+	clientId: `tellulf-${Math.random().toString(16).substring(2, 8)}`,
+	keepalive: 15,
 };
 
 // Singleton class to handle MQTT communication
 export class MqttClient {
-	private client: mqtt.MqttClient;
+	public client: mqtt.MqttClient;
 	private static instance: MqttClient;
 
 	public static getInstance(): MqttClient {
@@ -60,9 +60,9 @@ export class MqttClient {
 	 * @param message
 	 * @param value
 	 */
-	log(message: string, value = '') {
+	log(message: string, value: string | number = '') {
 		const d = new Date();
 		const t = d.toLocaleString('nb-NO', { timeZone: 'Europe/Oslo' });
-		console.log(t, 'MQTT ' + message, value);
+		console.log(t, `MQTT ${message}`, value);
 	}
 }

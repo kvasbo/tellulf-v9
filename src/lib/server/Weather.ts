@@ -1,9 +1,9 @@
 import { DateTime, Settings } from 'luxon';
 import {
-	YrCompleteResponseSchema,
+	type LongTermForecastDay,
 	LongTermForecastSchema,
 	type TimeSeries,
-	type LongTermForecastDay
+	YrCompleteResponseSchema,
 } from './types.met.js';
 
 interface Sted {
@@ -20,12 +20,12 @@ type Steder = {
 const steder: Steder = {
 	oslo: {
 		lat: 59.9508,
-		lon: 10.6848
+		lon: 10.6848,
 	},
 	hytta: {
 		lat: 59.1347,
-		lon: 10.3246
-	}
+		lon: 10.3246,
+	},
 };
 
 // Configure the time zone
@@ -58,7 +58,7 @@ interface DailyForecast {
 	symbol: string;
 }
 
-interface HourlyForecast {
+export interface HourlyForecast {
 	symbol: string | undefined;
 	details: {
 		precipitation_amount: number;
@@ -89,6 +89,22 @@ interface HourlyForecast {
 	hour: string;
 }
 
+interface MetAlertFeature {
+	properties: {
+		awarenessResponse: string;
+		severity: string;
+		description: string;
+		title: string;
+		instruction: string;
+		area: string;
+		event: string;
+		eventAwarenessName: string;
+		certainty: string;
+		consequences: string;
+		riskMatrixColor: string;
+	};
+}
+
 interface DangerData {
 	response: string;
 	severity: string;
@@ -111,21 +127,21 @@ export class Weather {
 		oslo: {
 			forecast: [],
 			longTermForecast: [],
-			dangerData: []
+			dangerData: [],
 		},
 		hytta: {
 			forecast: [],
 			longTermForecast: [],
-			dangerData: []
-		}
+			dangerData: [],
+		},
 	};
 
 	// Common options for fetch
 	private readonly fetchOptions: RequestInit = {
 		method: 'GET',
 		headers: {
-			'User-Agent': 'tellulf v6: audun@kvasbo.no'
-		}
+			'User-Agent': 'tellulf v6: audun@kvasbo.no',
+		},
 	};
 
 	constructor() {
@@ -136,14 +152,14 @@ export class Weather {
 			() => {
 				this.updateForecasts();
 			},
-			30 * 60 * 1000
+			30 * 60 * 1000,
 		); // Every 30 minutes
 	}
 
 	private updateForecasts(): void {
 		// Fetch forecast for all locations
 		const locations: StedNavn[] = ['oslo', 'hytta'];
-		locations.forEach(location => {
+		locations.forEach((location) => {
 			this.fetchForecastData(location);
 			this.fetchLongTermForecast(location);
 			this.fetchDanger(location);
@@ -153,13 +169,15 @@ export class Weather {
 	getCurrentWeather(location: StedNavn = 'oslo'): CurrentWeather {
 		const out: CurrentWeather = {
 			temperature: 999,
-			symbol: 'blank'
+			symbol: 'blank',
 		};
 
 		const forecast = this.weatherData[location].forecast;
 		if (forecast[0]) {
-			out.temperature = forecast[0]?.data?.instant?.details?.air_temperature ?? 999;
-			out.symbol = forecast[0]?.data?.next_1_hours?.summary?.symbol_code ?? 'blank';
+			out.temperature =
+				forecast[0]?.data?.instant?.details?.air_temperature ?? 999;
+			out.symbol =
+				forecast[0]?.data?.next_1_hours?.summary?.symbol_code ?? 'blank';
 		}
 
 		return out;
@@ -169,7 +187,9 @@ export class Weather {
 	 * Get the daily forecasts
 	 * @returns DailyForecasts
 	 */
-	getDailyForecasts(location: StedNavn = 'oslo'): Record<string, DailyForecast> {
+	getDailyForecasts(
+		location: StedNavn = 'oslo',
+	): Record<string, DailyForecast> {
 		const dayForecasts: Record<string, DailyForecast> = {};
 		const longTermForecast = this.weatherData[location].longTermForecast;
 		for (const series of longTermForecast) {
@@ -177,11 +197,21 @@ export class Weather {
 			const date = time.toISOString().slice(0, 10);
 			let symbol = 'blank';
 			// Define the symbol based on the data for precipitation
-			if (series.data.next_24_hours.details.probability_of_heavy_precipitation > 50) {
+			if (
+				series.data.next_24_hours.details.probability_of_heavy_precipitation >
+				50
+			) {
 				symbol =
-					series.data.next_24_hours.details.probability_of_frost > 50 ? 'heavysnow' : 'heavyrain';
-			} else if (series.data.next_24_hours.details.probability_of_precipitation > 50) {
-				symbol = series.data.next_24_hours.details.probability_of_frost > 50 ? 'snow' : 'rain';
+					series.data.next_24_hours.details.probability_of_frost > 50
+						? 'heavysnow'
+						: 'heavyrain';
+			} else if (
+				series.data.next_24_hours.details.probability_of_precipitation > 50
+			) {
+				symbol =
+					series.data.next_24_hours.details.probability_of_frost > 50
+						? 'snow'
+						: 'rain';
 			}
 
 			dayForecasts[date] = {
@@ -189,11 +219,15 @@ export class Weather {
 				maxTemp: series.data.next_24_hours.details.air_temperature_max,
 				meanTemp: series.data.next_24_hours.details.air_temperature_mean,
 				lightRainProbability:
-					Math.round(series.data.next_24_hours.details.probability_of_precipitation / 10) * 10,
+					Math.round(
+						series.data.next_24_hours.details.probability_of_precipitation / 10,
+					) * 10,
 				heavyRainProbability:
-					Math.round(series.data.next_24_hours.details.probability_of_heavy_precipitation / 10) *
-					10,
-				symbol
+					Math.round(
+						series.data.next_24_hours.details
+							.probability_of_heavy_precipitation / 10,
+					) * 10,
+				symbol,
 			};
 		}
 
@@ -223,7 +257,7 @@ export class Weather {
 					symbol: series.data.next_1_hours.summary?.symbol_code,
 					details: series.data.next_1_hours.details,
 					instant: series.data.instant.details,
-					hour: dt.hour.toString()
+					hour: dt.hour.toString(),
 				});
 			}
 		});
@@ -238,15 +272,17 @@ export class Weather {
 		const url = buildDangerUrl(steder[location]);
 		const data = await fetch(url, this.fetchOptions);
 		const danger = await data.json();
-		this.weatherData[location].dangerData = danger.features.map((feature: any) => {
-			return {
-				response: feature.properties.awarenessResponse,
-				severity: feature.properties.severity,
-				description: feature.properties.description,
-				headline: feature.properties.title,
-				instruction: feature.properties.instruction
-			};
-		});
+		this.weatherData[location].dangerData = danger.features.map(
+			(feature: MetAlertFeature) => {
+				return {
+					response: feature.properties.awarenessResponse,
+					severity: feature.properties.severity,
+					description: feature.properties.description,
+					headline: feature.properties.title,
+					instruction: feature.properties.instruction,
+				};
+			},
+		);
 	}
 
 	/**
@@ -264,9 +300,10 @@ export class Weather {
 				console.log(`Long term forecast for ${location} validated, let's go!`);
 				console.log(
 					`Number of long term days for ${location}`,
-					forecastValidated.data.properties.timeseries.length
+					forecastValidated.data.properties.timeseries.length,
 				);
-				this.weatherData[location].longTermForecast = forecastValidated.data.properties.timeseries;
+				this.weatherData[location].longTermForecast =
+					forecastValidated.data.properties.timeseries;
 			} else {
 				console.log(`Could not validate long term forecast for ${location}`);
 			}
@@ -301,8 +338,12 @@ export class Weather {
 
 			if (forecastValidated.success) {
 				console.log(`Forecast for ${location} validated, let's go!`);
-				console.log(`Number of forecasts for ${location}`, forecastValidated.data.properties.timeseries.length);
-				this.weatherData[location].forecast = forecastValidated.data.properties.timeseries;
+				console.log(
+					`Number of forecasts for ${location}`,
+					forecastValidated.data.properties.timeseries.length,
+				);
+				this.weatherData[location].forecast =
+					forecastValidated.data.properties.timeseries;
 			} else {
 				console.log(`Could not validate forecast for ${location}`);
 				console.log(forecastValidated);

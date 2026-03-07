@@ -1,12 +1,16 @@
 import { getSunrise, getSunset } from 'sunrise-sunset-js';
+import type { Entur } from './lib/Entur.js';
+import type { Smarthouse } from './lib/server/Smarthouse.js';
+import type { PowerData } from './lib/server/Tibber.js';
+import type { HourlyForecast } from './lib/server/Weather.js';
 import { calculateMinMaxTemps } from './lib/weatherCalculations.js';
 import { weatherIconMapping } from './lib/weatherSymbolMapping.js';
-import type { PowerData } from './lib/server/Tibber.js';
-import type { Entur } from './lib/Entur.js';
 
 // --- Current Weather ---
 
-export function buildCurrentWeatherData(homey: any) {
+export function buildCurrentWeatherData(
+	homey: ReturnType<Smarthouse['getData']>,
+) {
 	const jsDate = new Date();
 	const sunRiseDate = getSunrise(59.9508, 10.6847, jsDate);
 	const sunSetDate = getSunset(59.9508, 10.6847, jsDate);
@@ -14,8 +18,14 @@ export function buildCurrentWeatherData(homey: any) {
 
 	return {
 		temperature: homey.tempOut,
-		sunrise: sunRiseDate?.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }),
-		sunset: sunSetDate?.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }),
+		sunrise: sunRiseDate?.toLocaleTimeString('nb-NO', {
+			hour: '2-digit',
+			minute: '2-digit',
+		}),
+		sunset: sunSetDate?.toLocaleTimeString('nb-NO', {
+			hour: '2-digit',
+			minute: '2-digit',
+		}),
 		pressure: Math.round(homey.pressure),
 		humidity: Math.round(homey.humOut),
 		showTempTime: tempTime > 0 && Date.now() - tempTime > 20 * 60 * 1000,
@@ -27,7 +37,9 @@ export function buildCurrentWeatherData(homey: any) {
 
 function getWeatherIcon(symbol: string): string {
 	if (!weatherIconMapping[symbol]) return '';
-	const folder = ['clearsky_night', 'partly-cloudy-night'].includes(symbol) ? 'static' : 'animated';
+	const folder = ['clearsky_night', 'partly-cloudy-night'].includes(symbol)
+		? 'static'
+		: 'animated';
 	return `/weather-icons-${folder}/${weatherIconMapping[symbol]}.svg`;
 }
 
@@ -35,10 +47,18 @@ function getRainHeight(rain: number): number {
 	return Math.min(100, rain * 17);
 }
 
-export function buildHourlyForecastData(hourlyForecasts: any[]) {
+export function buildHourlyForecastData(hourlyForecasts: HourlyForecast[]) {
 	const forecasts = hourlyForecasts.slice(1, 19);
 	if (forecasts.length === 0) {
-		return { forecasts: [], min: 0, max: 0, background: '', displayZeroLine: 'none', mapToRange: () => 0, getRainHeight };
+		return {
+			forecasts: [],
+			min: 0,
+			max: 0,
+			background: '',
+			displayZeroLine: 'none',
+			mapToRange: () => 0,
+			getRainHeight,
+		};
 	}
 
 	const { min, max } = calculateMinMaxTemps(forecasts);
@@ -55,12 +75,20 @@ export function buildHourlyForecastData(hourlyForecasts: any[]) {
 	}
 
 	// Add icon src to each forecast
-	const enrichedForecasts = forecasts.map((f: any) => ({
+	const enrichedForecasts = forecasts.map((f) => ({
 		...f,
 		iconSrc: getWeatherIcon(f.symbol ?? ''),
 	}));
 
-	return { forecasts: enrichedForecasts, min, max, background, displayZeroLine, mapToRange, getRainHeight };
+	return {
+		forecasts: enrichedForecasts,
+		min,
+		max,
+		background,
+		displayZeroLine,
+		mapToRange,
+		getRainHeight,
+	};
 }
 
 // --- Power ---
@@ -84,9 +112,12 @@ function getMonthlyStatus(powerData: PowerData): string {
 		const now = new Date();
 		const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 		const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-		const fractionOfMonth = (now.getTime() - monthStart.getTime()) / (monthEnd.getTime() - monthStart.getTime());
+		const fractionOfMonth =
+			(now.getTime() - monthStart.getTime()) /
+			(monthEnd.getTime() - monthStart.getTime());
 		const expectedUsage = Math.max(fractionOfMonth * powerData.cap, 1);
-		const percentDiff = ((powerData.monthlyConsumption - expectedUsage) / expectedUsage) * 100;
+		const percentDiff =
+			((powerData.monthlyConsumption - expectedUsage) / expectedUsage) * 100;
 		const sign = percentDiff > 0 ? '+' : '';
 		status += ` (${sign}${percentDiff.toFixed(0)}%)`;
 	}
@@ -101,7 +132,9 @@ function getMonthlyCost(powerData: PowerData): string {
 function getPriceStatus(powerData: PowerData): string {
 	if (powerData.monthlyConsumption === undefined) return '';
 	if (!isNorgesprisActive() || !powerData.cap) return 'Spotpris';
-	return powerData.monthlyConsumption < powerData.cap ? 'Norgespris' : 'Spotpris';
+	return powerData.monthlyConsumption < powerData.cap
+		? 'Norgespris'
+		: 'Spotpris';
 }
 
 function getPriceColor(powerData: PowerData): string {
@@ -142,9 +175,15 @@ export function buildPowerData(powerData: PowerData, where: string) {
 // --- Entur ---
 
 export function buildEnturData(entur: Entur) {
-	const trains = entur.getTrains().slice(0, 3).map((train) => ({
-		time: new Date(train.time).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }),
-		destination: train.destination,
-	}));
+	const trains = entur
+		.getTrains()
+		.slice(0, 3)
+		.map((train) => ({
+			time: new Date(train.time).toLocaleTimeString('nb-NO', {
+				hour: '2-digit',
+				minute: '2-digit',
+			}),
+			destination: train.destination,
+		}));
 	return { trains };
 }
