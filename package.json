@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "tsx watch src/server.ts",
 		"start": "node dist/server.js",
-		"build": "biome check . && tsc",
+		"build": "biome check . && tsc && tsc -p tsconfig.client.json",
 		"lint": "biome check .",
 		"format": "biome check --write .",
 		"check": "tsc --noEmit"

@@ -15,5 +15,5 @@
 		"rootDir": "./src"
 	},
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "static", "public", "views"]
+	"exclude": ["node_modules", "static", "public", "views", "src/client.ts"]
 }

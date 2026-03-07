@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!**/dist", "!public", "!.claude", "!static"]
+		"includes": ["**", "!**/dist", "!.claude", "!static"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -18,6 +18,9 @@
 			"recommended": true,
 			"style": {
 				"noNonNullAssertion": "off"
+			},
+			"correctness": {
+				"noUnknownTypeSelector": "off"
 			}
 		}
 	},
