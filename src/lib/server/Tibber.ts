@@ -179,11 +179,12 @@ export class Tibber {
 				// This assumes monthly consumption includes today's consumption so far
 				const monthlyBeforeToday = Math.max(0, monthlyConsumption - dayConsumption);
 
-				let subsidizedToday = 0;
-				let marketToday = 0;
+				let subsidizedToday: number;
+				let marketToday: number;
 
 				if (monthlyBeforeToday >= cap) {
 					// Already over cap before today, all of today is at market price
+					subsidizedToday = 0;
 					marketToday = dayConsumption;
 				} else {
 					// Some or all of today might be subsidized

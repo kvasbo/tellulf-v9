@@ -257,21 +257,15 @@ export class Calendar {
 		const dtEnd = DateTime.fromJSDate(event.end);
 		const dtDate = DateTime.fromJSDate(date);
 
-		let dayType = 'singleDay';
-
-		// Single day event
 		if (dtStart.hasSame(dtEnd, 'day')) {
-			dayType = 'singleDay';
+			return 'singleDay';
 		} else if (dtStart.hasSame(dtDate, 'day')) {
-			dayType = 'firstDay';
+			return 'firstDay';
 		} else if (dtEnd.hasSame(dtDate, 'day')) {
-			dayType = 'lastDay';
+			return 'lastDay';
 		} else {
-			// Neither first nor last day
-			dayType = 'middleDay';
+			return 'middleDay';
 		}
-
-		return dayType;
 	}
 
 	// Main parsing of an event from Google

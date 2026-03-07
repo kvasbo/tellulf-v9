@@ -36,7 +36,6 @@ export class NorgesprisCalculator {
 		place: Places,
 		monthlyConsumption: number,
 		spotPrice: number,
-		accumulatedDayConsumption?: number
 	): NorgesprisCalculation {
 		if (!this.isNorgesprisActive()) {
 			return {

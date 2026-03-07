@@ -5,7 +5,10 @@
 	"type": "module",
 	"scripts": {
 		"dev": "tsx watch src/server.ts",
-		"start": "tsx src/server.ts"
+		"start": "node dist/server.js",
+		"build": "eslint . && tsc",
+		"lint": "eslint .",
+		"check": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@googleapis/calendar": "^14.2.0",
@@ -25,9 +28,12 @@
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
+		"@eslint/js": "^10.0.1",
 		"@types/express": "^5.0.6",
 		"@types/luxon": "^3.7.1",
+		"eslint": "^10.0.3",
 		"tsx": "^4.21.0",
-		"typescript": "^5.9.3"
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.56.1"
 	}
 }

@@ -4,7 +4,7 @@ import {
 	LongTermForecastSchema,
 	type TimeSeries,
 	type LongTermForecastDay
-} from './types.met';
+} from './types.met.js';
 
 interface Sted {
 	lat: number;
