@@ -29,6 +29,9 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 1000);
 
+// Reload page when clicking the clock
+document.getElementById('now_time').addEventListener('click', () => window.location.reload());
+
 // Calendar visibility - hide days that overflow
 function checkCalendarVisibility() {
 	const calendarEl = document.querySelector('calendar');
