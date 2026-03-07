@@ -1,6 +1,8 @@
-import type { HourlyForecast } from '$lib/client/store';
+interface HourlyForecastInput {
+	instant: { air_temperature: number };
+}
 
-export function calculateMinMaxTemps(data: HourlyForecast[]): { min: number; max: number } {
+export function calculateMinMaxTemps(data: HourlyForecastInput[]): { min: number; max: number } {
 	let min = 100;
 	let max = -100;
 

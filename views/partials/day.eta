@@ -1,0 +1,54 @@
+<day>
+	<div class="dateHeader">
+		<%= it.day.weekday %>
+		<% if (it.day.daily_forecast) { %>
+		<div class="headerWeather">
+			<div class="headerWeatherPrepArea">
+				<% if (it.day.daily_forecast.lightRainProbability > 10) { %>
+				<div class="weatherPrep light">
+					<img alt="light rain" class="headerWeatherIconPrep light" style="filter: url(#shape-shadow);" src="weather-icons-animated/rain.svg" />
+					<span class="rainProb"><%= it.day.daily_forecast.lightRainProbability %>%</span>
+				</div>
+				<% } %>
+				<% if (it.day.daily_forecast.heavyRainProbability > 10) { %>
+				<div class="weatherPrep heavy">
+					<img alt="heavy rain" class="headerWeatherIconPrep heavy" style="filter: url(#shape-shadow);" src="weather-icons-animated/extreme-rain.svg" />
+					<span class="rainProb"><%= it.day.daily_forecast.heavyRainProbability %>%</span>
+				</div>
+				<% } %>
+			</div>
+			<img alt="cold" class="headerWeatherTempIcon" src="low-temperature.png" />
+			<%= Math.round(it.day.daily_forecast.minTemp) %>&deg;
+			<img alt="warm" class="headerWeatherTempIcon" src="high-temperature.png" />
+			<%= Math.round(it.day.daily_forecast.maxTemp) %>&deg;
+		</div>
+		<% } %>
+	</div>
+	<div class="dinner">
+		<% (it.day.dinner || []).forEach((d) => { %>
+		<div class="dinner"><img alt="dinner" class="calendaricon birthday" src="dinner.svg" /><%= d.displayTitle %></div>
+		<% }) %>
+	</div>
+	<div class="birthdays">
+		<% (it.day.birthdays || []).forEach((b) => { %>
+		<div class="birthday"><img alt="cake" class="calendaricon birthday" src="birthday.svg" /><%= b.displayTitle %></div>
+		<% }) %>
+	</div>
+	<div class="events">
+		<% (it.day.events || []).forEach((event) => { %>
+			<% if (event.fullDay) { %>
+			<div class="event">
+				<%= event.displayTitle %>
+				<% if (event.hyttaWeather) { %>
+				<span class="hytta-weather">(<%= event.hyttaWeather.temperature %>&deg;, <%= event.hyttaWeather.rainProbability %>% regn)</span>
+				<% } %>
+			</div>
+			<% } else { %>
+			<div class="event">
+				<span class="event-time timespan"><%= event.displayTime.start %> <%= event.displayTime.spacer %> <%= event.displayTime.end %></span>
+				<%= event.displayTitle %>
+			</div>
+			<% } %>
+		<% }) %>
+	</div>
+</day>

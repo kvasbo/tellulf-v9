@@ -1,0 +1,28 @@
+<% if (it.forecasts.length === 0) { %>
+<div class="weather"></div>
+<% } else { %>
+<div class="weather" style="background: <%= it.background %>">
+	<% it.forecasts.forEach((f) => { %>
+	<forecast>
+		<div class="zeroLine" style="bottom: <%= it.mapToRange(0) %>%; display: <%= it.displayZeroLine %>;"></div>
+		<div class="rain" style="height: <%= it.getRainHeight(f.details.precipitation_amount) %>%;"></div>
+		<div class="forecastMovablePart" style="bottom: <%= it.mapToRange(f.instant.air_temperature || 0) %>%;">
+			<% if (f.iconSrc) { %>
+			<img class="weather_icon" alt="symbol" src="<%= f.iconSrc %>" style="filter: url(#shape-shadow);" />
+			<% } %>
+			<div class="temperature"><%= f.instant.air_temperature || 0 %>&deg;</div>
+			<div class="forecastProb">
+				<% if (f.details.probability_of_precipitation !== 0) { %>
+					<%= f.details.probability_of_precipitation %>%<br /><%= f.details.precipitation_amount %>mm
+				<% } else { %>
+					&nbsp;<br />&nbsp;
+				<% } %>
+			</div>
+		</div>
+		<div class="time"><%= f.hour %></div>
+	</forecast>
+	<% }) %>
+	<div class="minTemp"><%= it.min %></div>
+	<div class="maxTemp"><%= it.max %></div>
+</div>
+<% } %>

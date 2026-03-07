@@ -1,4 +1,4 @@
-import { Places } from '$lib/Enums';
+import { Places } from '../Enums.js';
 
 interface MonthlyConsumption {
 	year: number;

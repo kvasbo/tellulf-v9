@@ -2,16 +2,39 @@
 
 ## What this is?
 
-This is a status display used in a home, to show weather, calendars, subway departures and power usage (via APIs).
+A home status display showing weather, calendars, subway departures and power usage. Runs as a kiosk display at 1920x1080.
 
-### APIs
+## Architecture
 
-Tibber: Power usage and cost. Used via the https://github.com/bisand/tibber-api package.
+- **Express** server (`src/server.ts`) with SSE for live updates
+- **Eta** templates (`views/`) for server-side HTML rendering
+- **HTMX** + SSE extension on the client for reactive DOM updates
+- **Client JS** (`public/client.js`) for clock, calendar overflow, version check
+- Run directly with `tsx` — no build step
 
-## Current tasks
+## Running
 
-On October 1st 2025, "Norgespris" will go live in norway. This means that for the "Home" location in Tibber will pay 0.50 kroner per kwh up to 5000kwh/month and the market (spot) price thereafter, while the "cabin" location will have a cap at 1000 kwh before it pays the spot price after paying .50 kroner up to that point. That means we need an all new cost calculation function.
+- `pnpm dev` — development with file watching
+- `pnpm start` — production
 
-We have access to both live usage and historical per hour/day, but not all is implemented in the current version (src/lib/server/Tibber.ts).
+## APIs
 
-What we need to do is to calculate the power usage up until this second, and then calculate the cost based on the price of 50 øre kwh for all power usage up to 5000/1000kwh and then use the spot price thereafter.
+- **Tibber**: Power usage and cost via `tibber-api` package (WebSocket real-time feed)
+- **yr.no**: Weather forecasts (MET Norway API)
+- **Google Calendar**: Events, birthdays, dinners (only use of `googleapis`)
+- **Entur**: Train departures (RUT Line 1, Slemdal station)
+- **MQTT**: Sensor data (temperature, humidity, pressure)
+
+## Norgespris (active from 2025-10-01)
+
+- Home cap: 5000 kWh/month @ 0.50 kr/kWh, spot price above
+- Cabin cap: 1000 kWh/month @ 0.50 kr/kWh, spot price above
+
+## Environment Variables
+
+CAL_ID_BURSDAG, CAL_ID_FELLES, CAL_ID_MIDDAG, EXPOSE_PORT,
+GOOGLE_KEY_B64, MQTT_HOST, MQTT_PASS, MQTT_USER,
+TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY
+
+# currentDate
+Today's date is 2026-03-07.

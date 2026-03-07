@@ -1,13 +1,13 @@
-import { google } from 'googleapis';
+import { calendar_v3 } from '@googleapis/calendar';
+import { JWT } from 'google-auth-library';
 import { DateTime } from 'luxon';
-import { env } from '$env/dynamic/private';
-import type { Event, EnrichedEvent } from './Calendar.d';
+import type { Event, EnrichedEvent } from './Calendar.d.js';
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
 function getGoogleKey() {
 	// Get the Google key from the environment variable
-	return JSON.parse(Buffer.from(env.GOOGLE_KEY_B64, 'base64').toString('utf8'));
+	return JSON.parse(Buffer.from(process.env.GOOGLE_KEY_B64!, 'base64').toString('utf8'));
 }
 
 /**
@@ -143,8 +143,8 @@ export class Calendar {
 	}
 
 	async refreshEvents() {
-		if (env.CAL_ID_FELLES) {
-			this.events = await Calendar.getCalendarData(env.CAL_ID_FELLES);
+		if (process.env.CAL_ID_FELLES) {
+			this.events = await Calendar.getCalendarData(process.env.CAL_ID_FELLES);
 
 			console.log(this.events.length + ' events fetched.');
 		} else {
@@ -153,8 +153,8 @@ export class Calendar {
 	}
 
 	async refreshDinners() {
-		if (env.CAL_ID_MIDDAG) {
-			this.dinners = await Calendar.getCalendarData(env.CAL_ID_MIDDAG);
+		if (process.env.CAL_ID_MIDDAG) {
+			this.dinners = await Calendar.getCalendarData(process.env.CAL_ID_MIDDAG);
 
 			console.log(this.dinners.length + ' dinners fetched.');
 		} else {
@@ -165,8 +165,8 @@ export class Calendar {
 	}
 
 	async refreshBirthdays() {
-		if (env.CAL_ID_BURSDAG) {
-			this.birthdays = await Calendar.getCalendarData(env.CAL_ID_BURSDAG);
+		if (process.env.CAL_ID_BURSDAG) {
+			this.birthdays = await Calendar.getCalendarData(process.env.CAL_ID_BURSDAG);
 
 			console.log(this.birthdays.length + ' birthdays fetched.');
 		} else {
@@ -179,7 +179,7 @@ export class Calendar {
 	 * @param calendarId
 	 */
 	static async getCalendarData(calendarId: string) {
-		const jwtClient = new google.auth.JWT({
+		const jwtClient = new JWT({
 			email: getGoogleKey().client_email,
 			key: getGoogleKey().private_key,
 			scopes: [SCOPES]
@@ -187,10 +187,7 @@ export class Calendar {
 
 		await jwtClient.authorize();
 
-		const calendar = google.calendar({
-			version: 'v3',
-			auth: jwtClient
-		});
+		const calendar = new calendar_v3.Calendar({ auth: jwtClient });
 
 		const out: Event[] = [];
 

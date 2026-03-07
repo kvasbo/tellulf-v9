@@ -1,4 +1,4 @@
-export const enum Places {
+export enum Places {
 	Home = 'home',
 	Cabin = 'cabin'
 }
