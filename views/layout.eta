@@ -7,8 +7,9 @@
 	<link rel="stylesheet" href="/styles.css" />
 	<script src="/vendor/htmx.min.js"></script>
 	<script src="/vendor/sse.js"></script>
+	<script src="/vendor/idiomorph-ext.min.js"></script>
 </head>
-<body hx-ext="sse" sse-connect="/sse">
+<body hx-ext="sse,morph" sse-connect="/sse">
 	<clock>
 		<div id="now_time"></div>
 		<div id="date_week">
@@ -41,10 +42,10 @@
 	</calendar>
 
 	<footer>
-		<div id="power-home-content" sse-swap="power-home" hx-swap="innerHTML">
+		<div id="power-home-content" sse-swap="power-home" hx-swap="morph:innerHTML">
 			<%~ it.powerHomeHtml %>
 		</div>
-		<div id="power-cabin-content" sse-swap="power-cabin" hx-swap="innerHTML">
+		<div id="power-cabin-content" sse-swap="power-cabin" hx-swap="morph:innerHTML">
 			<%~ it.powerCabinHtml %>
 		</div>
 		<div id="entur-content" sse-swap="entur" hx-swap="innerHTML">

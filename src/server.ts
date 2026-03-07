@@ -42,6 +42,9 @@ app.get('/vendor/htmx.min.js', (_req, res) => {
 app.get('/vendor/sse.js', (_req, res) => {
 	res.sendFile(path.resolve(__dirname, '../node_modules/htmx-ext-sse/sse.js'));
 });
+app.get('/vendor/idiomorph-ext.min.js', (_req, res) => {
+	res.sendFile(path.resolve(__dirname, '../node_modules/idiomorph/dist/idiomorph-ext.min.js'));
+});
 
 // Render a partial to string
 function renderPartial(name: string, data: any): string {
