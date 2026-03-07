@@ -1,0 +1,30 @@
+<div class="footerBox">
+	<strong><%= it.header %></strong>
+	<% if (it.powerData && it.powerData.timestamp) { %>
+	<table class="footerTable">
+		<tbody>
+			<tr><td>Forbruk</td><td>Kost</td><td>Pris</td></tr>
+			<tr>
+				<td><%= it.usage %></td>
+				<td><%= it.powerData.accumulatedCost.toFixed(2) %> kr</td>
+				<td><%= (it.powerData.effectivePrice || it.powerData.currentPrice).toFixed(2) %> kr</td>
+			</tr>
+			<% if (it.powerData.monthlyConsumption !== undefined) { %>
+			<tr class="monthlyStatus">
+				<td><%= it.monthlyStatus %></td>
+				<td><%= it.monthlyCost %></td>
+				<td style="color: <%= it.priceColor %>"><%= it.priceStatus %></td>
+			</tr>
+			<% } %>
+		</tbody>
+	</table>
+	<div class="powerShow">
+		<div class="powerBar" style="background-color: <%= it.bgColor %>; width: <%= it.powerWidth %>%">
+			<%= it.powerDisplay %>&nbsp;kW
+		</div>
+		<div class="maxBar" style="width: <%= it.maxWidth %>%"></div>
+		<div class="avgBar" style="width: <%= it.avgWidth %>%"></div>
+		<div class="minBar" style="background-color: <%= it.minBgColor %>; width: <%= it.minWidth %>%"></div>
+	</div>
+	<% } %>
+</div>

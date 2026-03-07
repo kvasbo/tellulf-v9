@@ -1,9 +1,8 @@
 import * as mqtt from 'mqtt';
-import { env } from '$env/dynamic/private';
 
 const options = {
-	username: process.env.MQTT_USER || env.MQTT_USER,
-	password: process.env.MQTT_PASS || env.MQTT_PASS,
+	username: process.env.MQTT_USER,
+	password: process.env.MQTT_PASS,
 	clientId: 'tellulf-' + Math.random().toString(16).substring(2, 8),
 	keepalive: 15
 };
@@ -22,7 +21,7 @@ export class MqttClient {
 
 	// Connect to MQTT broker
 	private constructor() {
-		const mqttHost = process.env.MQTT_HOST || env.MQTT_HOST;
+		const mqttHost = process.env.MQTT_HOST!;
 		console.log('Connecting to MQTT host:', mqttHost);
 		this.client = mqtt.connect(mqttHost, options);
 		this.client

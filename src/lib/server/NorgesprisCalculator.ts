@@ -1,4 +1,4 @@
-import { Places } from '$lib/Enums';
+import { Places } from '../Enums.js';
 
 export interface NorgesprisConfig {
 	subsidizedPrice: number;

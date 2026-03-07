@@ -1,0 +1,13 @@
+<div class="footerBox">
+	<strong>Neste baner</strong>
+	<table class="footerTable">
+		<tbody>
+			<% it.trains.forEach((train) => { %>
+			<tr>
+				<td class="number"><%= train.time %></td>
+				<td><%= train.destination %></td>
+			</tr>
+			<% }) %>
+		</tbody>
+	</table>
+</div>

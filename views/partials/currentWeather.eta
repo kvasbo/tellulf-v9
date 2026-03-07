@@ -1,0 +1,11 @@
+<div id="current_temperature"><%= it.temperature %>&deg;</div>
+<div id="aux-weather-info">
+	<div id="day_info_sun">
+		<img alt="" src="/sunrise.png" width="22" />&nbsp;<%= it.sunrise %>&nbsp;&nbsp;<img alt="" src="/sunset.png" width="22" />&nbsp;<%= it.sunset %>
+	</div>
+	<div id="current_pressure"><%= it.pressure %> hPa</div>
+	<div id="current_humidity"><%= it.humidity %>% hum</div>
+	<% if (it.showTempTime) { %>
+		<div id="current_temperature_time" style="color: rgba(255, 0, 0, 0.35)"><%= it.tempTimeStr %></div>
+	<% } %>
+</div>

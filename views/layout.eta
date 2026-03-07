@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Tellulf</title>
+	<link rel="stylesheet" href="/styles.css" />
+	<script src="/vendor/htmx.min.js"></script>
+	<script src="/vendor/sse.js"></script>
+</head>
+<body hx-ext="sse" sse-connect="/sse">
+	<clock>
+		<div id="now_time"></div>
+		<div id="date_week">
+			<div id="now_date"></div>
+			<div id="now_week"></div>
+		</div>
+	</clock>
+
+	<currentweather>
+		<div id="current-weather-content" sse-swap="current-weather" hx-swap="innerHTML">
+			<%~ it.currentWeatherHtml %>
+		</div>
+	</currentweather>
+
+	<nowcast>
+		<svg width="0" height="0">
+			<defs>
+				<filter id="shape-shadow">
+					<feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#333333" flood-opacity="0.2" />
+				</filter>
+			</defs>
+		</svg>
+		<div id="hourly-forecast-content" sse-swap="hourly-forecast" hx-swap="innerHTML">
+			<%~ it.hourlyForecastHtml %>
+		</div>
+	</nowcast>
+
+	<calendar id="calendar-content" sse-swap="calendar" hx-swap="innerHTML">
+		<%~ it.calendarHtml %>
+	</calendar>
+
+	<footer>
+		<div id="power-home-content" sse-swap="power-home" hx-swap="innerHTML">
+			<%~ it.powerHomeHtml %>
+		</div>
+		<div id="power-cabin-content" sse-swap="power-cabin" hx-swap="innerHTML">
+			<%~ it.powerCabinHtml %>
+		</div>
+		<div id="entur-content" sse-swap="entur" hx-swap="innerHTML">
+			<%~ it.enturHtml %>
+		</div>
+	</footer>
+
+	<span id="server-version" data-version="<%= it.version %>"></span>
+	<script src="/client.js"></script>
+</body>
+</html>

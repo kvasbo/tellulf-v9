@@ -1,0 +1,3 @@
+<% it.days.forEach((day) => { %>
+<%~ include("./day", { day }) %>
+<% }) %>
