@@ -83,7 +83,7 @@ if (calendarEl) {
 requestAnimationFrame(checkCalendarVisibility);
 
 // Reload page once per day (midnight) - robust against NTP clock adjustments
-let lastDayForReload = new Date().getDate();
+const lastDayForReload = new Date().getDate();
 setInterval(() => {
 	if (new Date().getDate() !== lastDayForReload) {
 		window.location.reload();
