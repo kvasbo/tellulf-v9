@@ -8,24 +8,38 @@ import { weatherIconMapping } from './lib/weatherSymbolMapping.js';
 
 // --- Current Weather ---
 
+// Cache sunrise/sunset per day (only changes daily, involves trig calculations)
+const sunTimeFmt = new Intl.DateTimeFormat('nb-NO', {
+	hour: '2-digit',
+	minute: '2-digit',
+});
+let sunCache: { date: string; rise: string; set: string } | null = null;
+
+function getCachedSunTimes(): { rise: string; set: string } {
+	const today = new Date().toDateString();
+	if (!sunCache || sunCache.date !== today) {
+		const d = new Date();
+		const rise = getSunrise(59.9508, 10.6847, d);
+		const set = getSunset(59.9508, 10.6847, d);
+		sunCache = {
+			date: today,
+			rise: rise ? sunTimeFmt.format(rise) : '',
+			set: set ? sunTimeFmt.format(set) : '',
+		};
+	}
+	return sunCache;
+}
+
 export function buildCurrentWeatherData(
 	homey: ReturnType<Smarthouse['getData']>,
 ) {
-	const jsDate = new Date();
-	const sunRiseDate = getSunrise(59.9508, 10.6847, jsDate);
-	const sunSetDate = getSunset(59.9508, 10.6847, jsDate);
+	const sun = getCachedSunTimes();
 	const tempTime = homey.lastTempTime;
 
 	return {
 		temperature: homey.tempOut,
-		sunrise: sunRiseDate?.toLocaleTimeString('nb-NO', {
-			hour: '2-digit',
-			minute: '2-digit',
-		}),
-		sunset: sunSetDate?.toLocaleTimeString('nb-NO', {
-			hour: '2-digit',
-			minute: '2-digit',
-		}),
+		sunrise: sun.rise,
+		sunset: sun.set,
 		pressure: Math.round(homey.pressure),
 		humidity: Math.round(homey.humOut),
 		showTempTime: tempTime > 0 && Date.now() - tempTime > 20 * 60 * 1000,
@@ -93,9 +107,8 @@ export function buildHourlyForecastData(hourlyForecasts: HourlyForecast[]) {
 
 // --- Power ---
 
-function isNorgesprisActive(): boolean {
-	return Date.now() >= new Date('2025-10-01').getTime();
-}
+// Norgespris activated 2025-10-01, permanently true now — no need to recompute
+const NORGESPRIS_ACTIVE = Date.now() >= new Date('2025-10-01').getTime();
 
 function getUsage(used: number): string {
 	if (new Date().getDate() === 30 && new Date().getMonth() === 10) {
@@ -108,7 +121,7 @@ function getMonthlyStatus(powerData: PowerData): string {
 	if (powerData.monthlyConsumption === undefined) return '';
 	let status = `${powerData.monthlyConsumption.toFixed(1)} kWh`;
 
-	if (isNorgesprisActive() && powerData.cap) {
+	if (NORGESPRIS_ACTIVE && powerData.cap) {
 		const now = new Date();
 		const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 		const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -131,14 +144,14 @@ function getMonthlyCost(powerData: PowerData): string {
 
 function getPriceStatus(powerData: PowerData): string {
 	if (powerData.monthlyConsumption === undefined) return '';
-	if (!isNorgesprisActive() || !powerData.cap) return 'Spotpris';
+	if (!NORGESPRIS_ACTIVE || !powerData.cap) return 'Spotpris';
 	return powerData.monthlyConsumption < powerData.cap
 		? 'Norgespris'
 		: 'Spotpris';
 }
 
 function getPriceColor(powerData: PowerData): string {
-	if (!isNorgesprisActive() || !powerData.cap) return '#f0a43e';
+	if (!NORGESPRIS_ACTIVE || !powerData.cap) return '#f0a43e';
 	return powerData.monthlyConsumption < powerData.cap ? '#3ef0a4' : '#f0a43e';
 }
 

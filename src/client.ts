@@ -1,25 +1,41 @@
-// Clock
+// Pre-create Intl formatters (expensive to construct, cheap to call)
+const timeFmt = new Intl.DateTimeFormat('nb-NO', {
+	hour: 'numeric',
+	minute: '2-digit',
+});
+const dateFmt = new Intl.DateTimeFormat('nb-NO', {
+	weekday: 'long',
+	day: 'numeric',
+});
+
+// Cache DOM refs
+const elTime = document.getElementById('now_time')!;
+const elDate = document.getElementById('now_date')!;
+const elWeek = document.getElementById('now_week')!;
+
+// Clock - update on the minute, then schedule next update
+let lastDay = -1;
+
 function updateClock() {
 	const now = new Date();
-	document.getElementById('now_time')!.textContent = now.toLocaleTimeString(
-		'nb-NO',
-		{ hour: 'numeric', minute: '2-digit' },
-	);
-	document.getElementById('now_date')!.textContent = now.toLocaleDateString(
-		'nb-NO',
-		{ weekday: 'long', day: 'numeric' },
-	);
-	const week = Temporal.Now.plainDateISO().weekOfYear;
-	document.getElementById('now_week')!.textContent = `Uke ${week}`;
-}
+	elTime.textContent = timeFmt.format(now);
 
+	const day = now.getDate();
+	if (day !== lastDay) {
+		lastDay = day;
+		elDate.textContent = dateFmt.format(now);
+		elWeek.textContent = `Uke ${Temporal.Now.plainDateISO().weekOfYear}`;
+	}
+
+	// Schedule next update at the start of the next minute
+	const msUntilNextMinute =
+		(60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+	setTimeout(updateClock, msUntilNextMinute);
+}
 updateClock();
-setInterval(updateClock, 1000);
 
 // Reload page when clicking the clock
-document
-	.getElementById('now_time')!
-	.addEventListener('click', () => window.location.reload());
+elTime.addEventListener('click', () => window.location.reload());
 
 // Calendar visibility - hide days that overflow
 function checkCalendarVisibility() {
@@ -66,11 +82,10 @@ if (calendarEl) {
 // Initial visibility check
 requestAnimationFrame(checkCalendarVisibility);
 
-// Reload page on the hour
-const now = new Date();
-const startOfNextHour = new Date();
-startOfNextHour.setUTCHours(now.getUTCHours() + 1, 0, 1, 0);
-setTimeout(
-	() => window.location.reload(),
-	startOfNextHour.getTime() - now.getTime(),
-);
+// Reload page once per day (midnight) - robust against NTP clock adjustments
+let lastDayForReload = new Date().getDate();
+setInterval(() => {
+	if (new Date().getDate() !== lastDayForReload) {
+		window.location.reload();
+	}
+}, 30000);

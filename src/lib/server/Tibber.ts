@@ -249,8 +249,12 @@ export class Tibber {
 
 		feed.on('disconnected', () => {
 			console.log(`${where} disconnected from Tibber`);
-			const reconnectTimer = setTimeout(() => feed.connect(), 10000); // Reconnect attempt in 10 seconds
-			this.reconnectionTimers.push(reconnectTimer); // Track the timer for later cleanup
+			const reconnectTimer = setTimeout(() => {
+				feed.connect();
+				const idx = this.reconnectionTimers.indexOf(reconnectTimer);
+				if (idx !== -1) this.reconnectionTimers.splice(idx, 1);
+			}, 10000);
+			this.reconnectionTimers.push(reconnectTimer);
 		});
 	}
 

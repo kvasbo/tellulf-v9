@@ -107,9 +107,9 @@ app.get('/sse', (req, res) => {
 
 	sendAllData(res);
 
-	// Power updates every 1s
+	// Power updates every 1s - skip if unchanged
 	const powerInterval = setInterval(() => {
-		sendEvent(
+		sendEventIfChanged(
 			res,
 			'power-home',
 			renderPartial(
@@ -117,7 +117,7 @@ app.get('/sse', (req, res) => {
 				buildPowerData(tibber.getPowerData(Places.Home), 'home'),
 			),
 		);
-		sendEvent(
+		sendEventIfChanged(
 			res,
 			'power-cabin',
 			renderPartial(
@@ -127,14 +127,14 @@ app.get('/sse', (req, res) => {
 		);
 	}, 1000);
 
-	// General data updates every 15s
+	// General data updates every 15s - skip if unchanged
 	const dataInterval = setInterval(() => {
-		sendEvent(
+		sendEventIfChanged(
 			res,
 			'current-weather',
 			renderPartial('currentWeather', buildCurrentWeatherData(smart.getData())),
 		);
-		sendEvent(
+		sendEventIfChanged(
 			res,
 			'hourly-forecast',
 			renderPartial(
@@ -142,16 +142,20 @@ app.get('/sse', (req, res) => {
 				buildHourlyForecastData(weather.getHourlyForecasts()),
 			),
 		);
-		sendEvent(
+		sendEventIfChanged(
 			res,
 			'calendar',
 			renderPartial('calendar', { days: days.generateComingDays() }),
 		);
 	}, 15000);
 
-	// Entur updates every 30s
+	// Entur updates every 30s - skip if unchanged
 	const enturInterval = setInterval(() => {
-		sendEvent(res, 'entur', renderPartial('entur', buildEnturData(entur)));
+		sendEventIfChanged(
+			res,
+			'entur',
+			renderPartial('entur', buildEnturData(entur)),
+		);
 	}, 30000);
 
 	// Version check every 60s
@@ -174,6 +178,18 @@ app.get('/sse', (req, res) => {
 function sendEvent(res: express.Response, event: string, data: string) {
 	const lines = data.replace(/\n/g, '\ndata: ');
 	res.write(`event: ${event}\ndata: ${lines}\n\n`);
+}
+
+// Skip sending if data hasn't changed since last send
+const lastSent: Record<string, string> = {};
+function sendEventIfChanged(
+	res: express.Response,
+	event: string,
+	data: string,
+) {
+	if (lastSent[event] === data) return;
+	lastSent[event] = data;
+	sendEvent(res, event, data);
 }
 
 function sendAllData(res: express.Response) {
