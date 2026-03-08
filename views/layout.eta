@@ -42,13 +42,13 @@
 	</calendar>
 
 	<footer>
-		<div id="power-home-content" sse-swap="power-home" hx-swap="morph:innerHTML">
+		<div id="power-home-content" class="footerBox" sse-swap="power-home" hx-swap="morph:innerHTML">
 			<%~ it.powerHomeHtml %>
 		</div>
-		<div id="power-cabin-content" sse-swap="power-cabin" hx-swap="morph:innerHTML">
+		<div id="power-cabin-content" class="footerBox" sse-swap="power-cabin" hx-swap="morph:innerHTML">
 			<%~ it.powerCabinHtml %>
 		</div>
-		<div id="entur-content" sse-swap="entur" hx-swap="innerHTML">
+		<div id="entur-content" class="footerBox" sse-swap="entur" hx-swap="innerHTML">
 			<%~ it.enturHtml %>
 		</div>
 	</footer>

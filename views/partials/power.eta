@@ -1,4 +1,3 @@
-<div class="footerBox">
 	<strong><%= it.header %></strong>
 	<% if (it.powerData && it.powerData.timestamp) { %>
 	<table class="footerTable">
@@ -27,4 +26,3 @@
 		<div class="minBar" style="background-color: <%= it.minBgColor %>; width: <%= it.minWidth %>%"></div>
 	</div>
 	<% } %>
-</div>
