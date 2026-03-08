@@ -63,9 +63,8 @@ document.body.addEventListener('htmx:sseMessage', ((evt: CustomEvent) => {
 	if (evt.detail.type === 'calendar') {
 		requestAnimationFrame(checkCalendarVisibility);
 	}
-	if (evt.detail.type === 'version') {
-		const el = document.getElementById('server-version');
-		if (el && initialVersion && el.dataset.version !== initialVersion) {
+	if (evt.detail.type === 'version' && initialVersion) {
+		if (evt.detail.data && evt.detail.data !== initialVersion) {
 			window.location.reload();
 		}
 	}

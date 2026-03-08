@@ -160,11 +160,7 @@ app.get('/sse', (req, res) => {
 
 	// Version check every 60s
 	const versionInterval = setInterval(() => {
-		sendEvent(
-			res,
-			'version',
-			`<span id="server-version" data-version="${VERSION}"></span>`,
-		);
+		sendEvent(res, 'version', VERSION);
 	}, 60000);
 
 	req.on('close', () => {
