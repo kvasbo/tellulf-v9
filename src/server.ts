@@ -1,8 +1,5 @@
-import 'dotenv/config';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { Eta } from 'eta';
-import express from 'express';
 import { Entur } from './lib/Entur.js';
 import { Places } from './lib/Enums.js';
 import { Calendar } from './lib/server/Calendar.js';
@@ -19,13 +16,12 @@ import {
 	buildPowerData,
 } from './viewdata.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const app = express();
-const port = process.env.EXPOSE_PORT || 3000;
+const port = Number(process.env.EXPOSE_PORT) || 3000;
+const projectRoot = path.resolve(import.meta.dir, '..');
 
 // Eta setup
 const eta = new Eta({
-	views: path.resolve(__dirname, '../views'),
+	views: path.resolve(projectRoot, 'views'),
 	cache: true,
 });
 
@@ -39,35 +35,44 @@ smart.startMqtt();
 const tibber = new Tibber();
 const entur = new Entur();
 
-// Serve static files
-app.use(express.static(path.resolve(__dirname, '../static')));
-app.use(express.static(path.resolve(__dirname, '../public')));
+// Vendor file mapping
+const vendorFiles: Record<string, string> = {
+	'/vendor/htmx.min.js': path.resolve(
+		projectRoot,
+		'node_modules/htmx.org/dist/htmx.min.js',
+	),
+	'/vendor/sse.js': path.resolve(
+		projectRoot,
+		'node_modules/htmx-ext-sse/sse.js',
+	),
+	'/vendor/idiomorph-ext.min.js': path.resolve(
+		projectRoot,
+		'node_modules/idiomorph/dist/idiomorph-ext.min.js',
+	),
+};
 
-// Serve vendor JS from node_modules
-app.get('/vendor/htmx.min.js', (_req, res) => {
-	res.sendFile(
-		path.resolve(__dirname, '../node_modules/htmx.org/dist/htmx.min.js'),
-	);
-});
-app.get('/vendor/sse.js', (_req, res) => {
-	res.sendFile(path.resolve(__dirname, '../node_modules/htmx-ext-sse/sse.js'));
-});
-app.get('/vendor/idiomorph-ext.min.js', (_req, res) => {
-	res.sendFile(
-		path.resolve(
-			__dirname,
-			'../node_modules/idiomorph/dist/idiomorph-ext.min.js',
-		),
-	);
-});
+// Static directories to search (in order)
+const staticDirs = [
+	path.resolve(projectRoot, 'static'),
+	path.resolve(projectRoot, 'public'),
+];
 
 // Render a partial to string
 function renderPartial(name: string, data: Record<string, unknown>): string {
 	return eta.render(`partials/${name}`, data);
 }
 
-// Main page
-app.get('/', (_req, res) => {
+// SSE helpers
+const encoder = new TextEncoder();
+const lastSent: Record<string, string> = {};
+
+function formatSSE(event: string, data: string): Uint8Array {
+	const lines = data.replace(/\n/g, '\ndata: ');
+	return encoder.encode(`event: ${event}\ndata: ${lines}\n\n`);
+}
+
+// Main page handler
+function handleIndex(): Response {
 	const homey = smart.getData();
 	const hourly = weather.getHourlyForecasts();
 	const comingDays = days.generateComingDays();
@@ -93,139 +98,167 @@ app.get('/', (_req, res) => {
 		),
 		enturHtml: renderPartial('entur', buildEnturData(entur)),
 	});
-	res.type('html').send(html);
-});
-
-// SSE endpoint
-app.get('/sse', (req, res) => {
-	res.writeHead(200, {
-		'Content-Type': 'text/event-stream',
-		'Cache-Control': 'no-cache',
-		Connection: 'keep-alive',
+	return new Response(html, {
+		headers: { 'Content-Type': 'text/html; charset=utf-8' },
 	});
-	res.flushHeaders();
+}
 
-	sendAllData(res);
+// SSE handler
+function handleSSE(req: Request): Response {
+	const stream = new ReadableStream({
+		start(controller) {
+			function sendEvent(event: string, data: string) {
+				controller.enqueue(formatSSE(event, data));
+			}
 
-	// Power updates every 1s - skip if unchanged
-	const powerInterval = setInterval(() => {
-		sendEventIfChanged(
-			res,
-			'power-home',
-			renderPartial(
-				'power',
-				buildPowerData(tibber.getPowerData(Places.Home), 'home'),
-			),
-		);
-		sendEventIfChanged(
-			res,
-			'power-cabin',
-			renderPartial(
-				'power',
-				buildPowerData(tibber.getPowerData(Places.Cabin), 'cabin'),
-			),
-		);
-	}, 1000);
+			function sendEventIfChanged(event: string, data: string) {
+				if (lastSent[event] === data) return;
+				lastSent[event] = data;
+				sendEvent(event, data);
+			}
 
-	// General data updates every 15s - skip if unchanged
-	const dataInterval = setInterval(() => {
-		sendEventIfChanged(
-			res,
-			'current-weather',
-			renderPartial('currentWeather', buildCurrentWeatherData(smart.getData())),
-		);
-		sendEventIfChanged(
-			res,
-			'hourly-forecast',
-			renderPartial(
-				'hourlyForecast',
-				buildHourlyForecastData(weather.getHourlyForecasts()),
-			),
-		);
-		sendEventIfChanged(
-			res,
-			'calendar',
-			renderPartial('calendar', { days: days.generateComingDays() }),
-		);
-	}, 15000);
+			// Send initial data
+			sendEvent(
+				'current-weather',
+				renderPartial(
+					'currentWeather',
+					buildCurrentWeatherData(smart.getData()),
+				),
+			);
+			sendEvent(
+				'hourly-forecast',
+				renderPartial(
+					'hourlyForecast',
+					buildHourlyForecastData(weather.getHourlyForecasts()),
+				),
+			);
+			sendEvent(
+				'calendar',
+				renderPartial('calendar', { days: days.generateComingDays() }),
+			);
+			sendEvent(
+				'power-home',
+				renderPartial(
+					'power',
+					buildPowerData(tibber.getPowerData(Places.Home), 'home'),
+				),
+			);
+			sendEvent(
+				'power-cabin',
+				renderPartial(
+					'power',
+					buildPowerData(tibber.getPowerData(Places.Cabin), 'cabin'),
+				),
+			);
+			sendEvent('entur', renderPartial('entur', buildEnturData(entur)));
 
-	// Entur updates every 30s - skip if unchanged
-	const enturInterval = setInterval(() => {
-		sendEventIfChanged(
-			res,
-			'entur',
-			renderPartial('entur', buildEnturData(entur)),
-		);
-	}, 30000);
+			// Power updates every 1s - skip if unchanged
+			const powerInterval = setInterval(() => {
+				sendEventIfChanged(
+					'power-home',
+					renderPartial(
+						'power',
+						buildPowerData(tibber.getPowerData(Places.Home), 'home'),
+					),
+				);
+				sendEventIfChanged(
+					'power-cabin',
+					renderPartial(
+						'power',
+						buildPowerData(tibber.getPowerData(Places.Cabin), 'cabin'),
+					),
+				);
+			}, 1000);
 
-	// Version check every 60s
-	const versionInterval = setInterval(() => {
-		sendEvent(res, 'version', VERSION);
-	}, 60000);
+			// General data updates every 15s - skip if unchanged
+			const dataInterval = setInterval(() => {
+				sendEventIfChanged(
+					'current-weather',
+					renderPartial(
+						'currentWeather',
+						buildCurrentWeatherData(smart.getData()),
+					),
+				);
+				sendEventIfChanged(
+					'hourly-forecast',
+					renderPartial(
+						'hourlyForecast',
+						buildHourlyForecastData(weather.getHourlyForecasts()),
+					),
+				);
+				sendEventIfChanged(
+					'calendar',
+					renderPartial('calendar', { days: days.generateComingDays() }),
+				);
+			}, 15000);
 
-	req.on('close', () => {
-		clearInterval(powerInterval);
-		clearInterval(dataInterval);
-		clearInterval(enturInterval);
-		clearInterval(versionInterval);
+			// Entur updates every 30s - skip if unchanged
+			const enturInterval = setInterval(() => {
+				sendEventIfChanged(
+					'entur',
+					renderPartial('entur', buildEnturData(entur)),
+				);
+			}, 30000);
+
+			// Version check every 60s
+			const versionInterval = setInterval(() => {
+				sendEvent('version', VERSION);
+			}, 60000);
+
+			// Cleanup on client disconnect
+			req.signal.addEventListener('abort', () => {
+				clearInterval(powerInterval);
+				clearInterval(dataInterval);
+				clearInterval(enturInterval);
+				clearInterval(versionInterval);
+				controller.close();
+			});
+		},
 	});
+
+	return new Response(stream, {
+		headers: {
+			'Content-Type': 'text/event-stream',
+			'Cache-Control': 'no-cache',
+			Connection: 'keep-alive',
+		},
+	});
+}
+
+// Start server
+Bun.serve({
+	port,
+	async fetch(req) {
+		const url = new URL(req.url);
+		const pathname = url.pathname;
+
+		// Main page
+		if (pathname === '/') {
+			return handleIndex();
+		}
+
+		// SSE endpoint
+		if (pathname === '/sse') {
+			return handleSSE(req);
+		}
+
+		// Vendor JS from node_modules
+		if (vendorFiles[pathname]) {
+			return new Response(Bun.file(vendorFiles[pathname]));
+		}
+
+		// Static files: try static/ then public/
+		const safePath = path.normalize(pathname).replace(/^(\.\.[/\\])+/, '');
+		for (const dir of staticDirs) {
+			const filePath = path.join(dir, safePath);
+			const file = Bun.file(filePath);
+			if (await file.exists()) {
+				return new Response(file);
+			}
+		}
+
+		return new Response('Not Found', { status: 404 });
+	},
 });
 
-function sendEvent(res: express.Response, event: string, data: string) {
-	const lines = data.replace(/\n/g, '\ndata: ');
-	res.write(`event: ${event}\ndata: ${lines}\n\n`);
-}
-
-// Skip sending if data hasn't changed since last send
-const lastSent: Record<string, string> = {};
-function sendEventIfChanged(
-	res: express.Response,
-	event: string,
-	data: string,
-) {
-	if (lastSent[event] === data) return;
-	lastSent[event] = data;
-	sendEvent(res, event, data);
-}
-
-function sendAllData(res: express.Response) {
-	sendEvent(
-		res,
-		'current-weather',
-		renderPartial('currentWeather', buildCurrentWeatherData(smart.getData())),
-	);
-	sendEvent(
-		res,
-		'hourly-forecast',
-		renderPartial(
-			'hourlyForecast',
-			buildHourlyForecastData(weather.getHourlyForecasts()),
-		),
-	);
-	sendEvent(
-		res,
-		'calendar',
-		renderPartial('calendar', { days: days.generateComingDays() }),
-	);
-	sendEvent(
-		res,
-		'power-home',
-		renderPartial(
-			'power',
-			buildPowerData(tibber.getPowerData(Places.Home), 'home'),
-		),
-	);
-	sendEvent(
-		res,
-		'power-cabin',
-		renderPartial(
-			'power',
-			buildPowerData(tibber.getPowerData(Places.Cabin), 'cabin'),
-		),
-	);
-	sendEvent(res, 'entur', renderPartial('entur', buildEnturData(entur)));
-}
-
-app.listen(port, () => {
-	console.log(`Tellulf running on port ${port}`);
-});
+console.log(`Tellulf running on port ${port}`);

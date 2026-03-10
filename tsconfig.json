@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"target": "ES2022",
+		"target": "ES2024",
 		"module": "ES2022",
 		"moduleResolution": "bundler",
 		"allowJs": true,
@@ -9,10 +9,9 @@
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
-		"sourceMap": true,
 		"strict": true,
-		"outDir": "./dist",
-		"rootDir": "./src"
+		"noEmit": true,
+		"types": ["bun-types"]
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "static", "public", "views", "src/client.ts"]
