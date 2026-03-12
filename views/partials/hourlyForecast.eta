@@ -18,6 +18,14 @@
 					&nbsp;<br />&nbsp;
 				<% } %>
 			</div>
+			<% if (f.showWind) { %>
+			<div class="wind-indicator">
+				<svg class="wind-arrow" viewBox="0 0 24 24" style="transform: rotate(<%= f.windDirection %>deg);">
+					<path d="M12 2 L8 10 L11 9 L11 22 L13 22 L13 9 L16 10 Z" fill="currentColor"/>
+				</svg>
+				<span class="wind-speed"><%= f.windSpeed %><% if (f.windGust > f.windSpeed + 3) { %>&nbsp;(<%= f.windGust %>)<% } %></span>
+			</div>
+			<% } %>
 		</div>
 		<div class="time"><%= f.hour %></div>
 	</forecast>

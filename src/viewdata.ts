@@ -49,12 +49,12 @@ export function buildCurrentWeatherData(
 
 // --- Hourly Forecast ---
 
+// Wind speed threshold in m/s — only show wind indicator above this value
+const WIND_DISPLAY_THRESHOLD_MS = 5;
+
 function getWeatherIcon(symbol: string): string {
 	if (!weatherIconMapping[symbol]) return '';
-	const folder = ['clearsky_night', 'partly-cloudy-night'].includes(symbol)
-		? 'static'
-		: 'animated';
-	return `/weather-icons-${folder}/${weatherIconMapping[symbol]}.svg`;
+	return `/weather-icons-static/${weatherIconMapping[symbol]}.svg`;
 }
 
 function getRainHeight(rain: number): number {
@@ -88,10 +88,14 @@ export function buildHourlyForecastData(hourlyForecasts: HourlyForecast[]) {
 		background = 'linear-gradient(180deg, #ff8a8022 0%, #e3f2fd99 100%)';
 	}
 
-	// Add icon src to each forecast
+	// Add icon src and wind data to each forecast
 	const enrichedForecasts = forecasts.map((f) => ({
 		...f,
 		iconSrc: getWeatherIcon(f.symbol ?? ''),
+		showWind: (f.instant.wind_speed ?? 0) >= WIND_DISPLAY_THRESHOLD_MS,
+		windSpeed: Math.round(f.instant.wind_speed ?? 0),
+		windGust: Math.round(f.instant.wind_speed_of_gust ?? 0),
+		windDirection: f.instant.wind_from_direction ?? 0,
 	}));
 
 	return {
