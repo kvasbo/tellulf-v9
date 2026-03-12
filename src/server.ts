@@ -22,7 +22,7 @@ const projectRoot = path.resolve(import.meta.dir, '..');
 // Eta setup
 const eta = new Eta({
 	views: path.resolve(projectRoot, 'views'),
-	cache: true,
+	cache: false,
 });
 
 // Initialize server-side services
