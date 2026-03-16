@@ -199,6 +199,7 @@ export function buildEnturData(entur: Entur) {
 			time: new Date(train.time).toLocaleTimeString('nb-NO', {
 				hour: '2-digit',
 				minute: '2-digit',
+				timeZone: 'Europe/Oslo',
 			}),
 			destination: train.destination,
 		}));
