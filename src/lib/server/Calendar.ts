@@ -198,7 +198,9 @@ export class Calendar {
 
 		await jwtClient.authorize();
 
-		const calendar = new calendar_v3.Calendar({ auth: jwtClient as any });
+		const calendar = new calendar_v3.Calendar({
+			auth: jwtClient as unknown as string,
+		});
 
 		const out: Event[] = [];
 
