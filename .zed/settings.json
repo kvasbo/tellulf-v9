@@ -1,0 +1,20 @@
+{
+	"languages": {
+		"TypeScript": {
+			"language_servers": ["biome", "typescript-language-server", "..."],
+			"formatter": "language_server"
+		},
+		"TSX": {
+			"language_servers": ["biome", "typescript-language-server", "..."],
+			"formatter": "language_server"
+		},
+		"JavaScript": {
+			"language_servers": ["biome", "typescript-language-server", "..."],
+			"formatter": "language_server"
+		},
+		"JSON": {
+			"language_servers": ["biome", "..."],
+			"formatter": "language_server"
+		}
+	}
+}
