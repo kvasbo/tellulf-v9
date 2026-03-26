@@ -75,8 +75,7 @@ export class Entur {
 			const filteredTrips = trips.filter((trip) => {
 				// Check if the trip has any EstimatedCalls
 				if (
-					!trip.EstimatedCalls ||
-					!trip.EstimatedCalls.EstimatedCall ||
+					!trip.EstimatedCalls?.EstimatedCall ||
 					!Array.isArray(trip.EstimatedCalls.EstimatedCall) ||
 					trip.EstimatedCalls.EstimatedCall.length === 0
 				) {
