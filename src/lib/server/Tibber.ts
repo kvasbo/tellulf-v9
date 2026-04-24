@@ -75,35 +75,7 @@ export class Tibber {
 
 	private lastCabinProduction = 0;
 
-	// Connection management constants
-	private static readonly STALE_THRESHOLD_MS = 5 * 60 * 1000;
-	private static readonly HEALTH_CHECK_MS = 60 * 1000;
-	private static readonly RECONNECT_VERIFY_MS = 45 * 1000;
-	private static readonly HOURLY_RESET_MS = 60 * 60 * 1000;
-	private static readonly RECONNECT_BASE_MS = 30 * 1000;
-	private static readonly RECONNECT_MAX_MS = 10 * 60 * 1000;
-	private static readonly MIN_CONNECT_GAP_MS = 60 * 1000;
-	private static readonly HOURLY_RESET_FRESH_MS = 60 * 1000;
-
-	// Resources that need cleanup
 	private readonly priceUpdateInterval: NodeJS.Timeout;
-	private readonly healthCheckInterval: NodeJS.Timeout;
-	private readonly hourlyResetInterval: NodeJS.Timeout;
-	private pendingReconnect: { home?: NodeJS.Timeout; cabin?: NodeJS.Timeout } =
-		{};
-	private verifyTimers: { home?: NodeJS.Timeout; cabin?: NodeJS.Timeout } = {};
-	private reconnectAttempts: { home: number; cabin: number } = {
-		home: 0,
-		cabin: 0,
-	};
-	private lastDataReceived: { home: number; cabin: number } = {
-		home: Date.now(),
-		cabin: Date.now(),
-	};
-	private lastConnectAttempt: { home: number; cabin: number } = {
-		home: 0,
-		cabin: 0,
-	};
 
 	private readonly config: IConfig = {
 		active: true,
@@ -132,9 +104,17 @@ export class Tibber {
 		this.norgesprisCalculator = new NorgesprisCalculator();
 		this.feedHome = new TibberFeed(
 			new TibberQuery({ ...this.config, homeId: process.env.TIBBER_ID_HOME! }),
+			60000,
+			false,
+			30000,
+			true,
 		);
 		this.feedCabin = new TibberFeed(
 			new TibberQuery({ ...this.config, homeId: process.env.TIBBER_ID_CABIN! }),
+			60000,
+			false,
+			30000,
+			true,
 		);
 
 		// Set initial caps
@@ -144,9 +124,8 @@ export class Tibber {
 		this.setupFeed(this.feedHome, Places.Home);
 		this.setupFeed(this.feedCabin, Places.Cabin);
 
-		// Connect feeds (with verification)
-		this.connectFeed(this.feedHome, Places.Home);
-		this.connectFeed(this.feedCabin, Places.Cabin);
+		this.feedHome.connect();
+		this.feedCabin.connect();
 
 		// Start power price fetching loop
 		this.updatePowerPrice(Places.Home);
@@ -157,32 +136,6 @@ export class Tibber {
 			this.updateMonthlyConsumption(Places.Home);
 			this.updateMonthlyConsumption(Places.Cabin);
 		}, 2000);
-
-		// Health check: if no data received recently, force reconnect
-		this.healthCheckInterval = setInterval(() => {
-			const now = Date.now();
-			if (now - this.lastDataReceived.home > Tibber.STALE_THRESHOLD_MS) {
-				console.warn('Home feed stale, forcing reconnect');
-				this.forceReconnect(this.feedHome, Places.Home);
-			}
-			if (now - this.lastDataReceived.cabin > Tibber.STALE_THRESHOLD_MS) {
-				console.warn('Cabin feed stale, forcing reconnect');
-				this.forceReconnect(this.feedCabin, Places.Cabin);
-			}
-		}, Tibber.HEALTH_CHECK_MS);
-
-		// Hourly belt-and-suspenders: only reset feeds that haven't seen data recently
-		this.hourlyResetInterval = setInterval(() => {
-			const now = Date.now();
-			if (now - this.lastDataReceived.home > Tibber.HOURLY_RESET_FRESH_MS) {
-				console.log('Hourly Tibber reset (home stale)');
-				this.forceReconnect(this.feedHome, Places.Home);
-			}
-			if (now - this.lastDataReceived.cabin > Tibber.HOURLY_RESET_FRESH_MS) {
-				console.log('Hourly Tibber reset (cabin stale)');
-				this.forceReconnect(this.feedCabin, Places.Cabin);
-			}
-		}, Tibber.HOURLY_RESET_MS);
 
 		// Save the interval ID for power price updates
 		this.priceUpdateInterval = setInterval(() => {
@@ -200,84 +153,8 @@ export class Tibber {
 		return this.data[where];
 	}
 
-	private forceReconnect(feed: TibberFeed, where: Places) {
-		try {
-			feed.close();
-		} catch {
-			// Ignore close errors
-		}
-		// Don't reset reconnectAttempts here — let the data handler reset it
-		// once data actually flows. This preserves backoff during a ban.
-		this.scheduleReconnect(feed, where);
-	}
-
-	private scheduleReconnect(feed: TibberFeed, where: Places) {
-		// Coalesce: if a reconnect is already pending, leave it
-		if (this.pendingReconnect[where]) return;
-
-		const attempt = this.reconnectAttempts[where];
-		// Backoff: 5s, 10s, 20s, 40s, 60s max
-		const delay = Math.min(
-			Tibber.RECONNECT_BASE_MS * 2 ** attempt,
-			Tibber.RECONNECT_MAX_MS,
-		);
-		console.log(
-			`Scheduling ${where} reconnect attempt ${attempt + 1} in ${delay / 1000}s`,
-		);
-		this.pendingReconnect[where] = setTimeout(() => {
-			this.pendingReconnect[where] = undefined;
-			this.reconnectAttempts[where]++;
-			console.log(
-				`Attempting ${where} reconnect (attempt ${this.reconnectAttempts[where]})`,
-			);
-			this.connectFeed(feed, where);
-		}, delay);
-	}
-
-	private connectFeed(feed: TibberFeed, where: Places) {
-		// Throttle: never call feed.connect() more than once per MIN_CONNECT_GAP_MS
-		const now = Date.now();
-		const elapsed = now - this.lastConnectAttempt[where];
-		if (
-			this.lastConnectAttempt[where] > 0 &&
-			elapsed < Tibber.MIN_CONNECT_GAP_MS
-		) {
-			const wait = Tibber.MIN_CONNECT_GAP_MS - elapsed;
-			console.log(
-				`${where} connect throttled, deferring ${Math.round(wait / 1000)}s`,
-			);
-			if (this.pendingReconnect[where]) {
-				clearTimeout(this.pendingReconnect[where]);
-			}
-			this.pendingReconnect[where] = setTimeout(() => {
-				this.pendingReconnect[where] = undefined;
-				this.connectFeed(feed, where);
-			}, wait);
-			return;
-		}
-
-		// Cancel any pending verification from a prior attempt
-		if (this.verifyTimers[where]) {
-			clearTimeout(this.verifyTimers[where]);
-		}
-		this.lastConnectAttempt[where] = now;
-		feed.connect();
-		// Verify data starts flowing; if not, schedule another reconnect
-		this.verifyTimers[where] = setTimeout(() => {
-			this.verifyTimers[where] = undefined;
-			if (this.lastDataReceived[where] < this.lastConnectAttempt[where]) {
-				console.warn(
-					`${where} reconnect produced no data within ${Tibber.RECONNECT_VERIFY_MS / 1000}s, retrying`,
-				);
-				this.scheduleReconnect(feed, where);
-			}
-		}, Tibber.RECONNECT_VERIFY_MS);
-	}
-
 	private setupFeed(feed: TibberFeed, where: Places) {
 		feed.on('data', (data) => {
-			this.lastDataReceived[where] = Date.now();
-			this.reconnectAttempts[where] = 0;
 			this.data[where].timestamp = new Date().toISOString();
 			this.data[where].accumulatedConsumption =
 				data.accumulatedConsumption - data.accumulatedProduction;
@@ -377,7 +254,6 @@ export class Tibber {
 
 		feed.on('disconnected', () => {
 			console.log(`${where} disconnected from Tibber`);
-			this.scheduleReconnect(feed, where);
 		});
 	}
 
@@ -515,22 +391,11 @@ export class Tibber {
 		}
 	}
 
-	// Add a destroy method for cleanup
 	public destroy() {
-		// Clear intervals
 		clearInterval(this.priceUpdateInterval);
-		clearInterval(this.healthCheckInterval);
-		clearInterval(this.hourlyResetInterval);
 
-		// Clear pending reconnect and verify timers
-		if (this.pendingReconnect.home) clearTimeout(this.pendingReconnect.home);
-		if (this.pendingReconnect.cabin) clearTimeout(this.pendingReconnect.cabin);
-		if (this.verifyTimers.home) clearTimeout(this.verifyTimers.home);
-		if (this.verifyTimers.cabin) clearTimeout(this.verifyTimers.cabin);
-
-		// Disconnect feeds and remove event listeners
-		this.feedCabin.close();
-		this.feedHome.close();
+		this.feedHome.active = false;
+		this.feedCabin.active = false;
 		this.feedHome.removeAllListeners();
 		this.feedCabin.removeAllListeners();
 
