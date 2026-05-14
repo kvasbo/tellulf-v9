@@ -112,6 +112,14 @@ day .calendaricon {
 	width: 14px;
 }
 
+day .dateHeader .calendaricon.kids {
+	height: 22px;
+	margin-right: 0;
+	margin-left: 0.3em;
+	width: 22px;
+	vertical-align: middle;
+}
+
 day.day-hidden {
 	display: none;
 }

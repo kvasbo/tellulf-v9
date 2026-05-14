@@ -61,6 +61,7 @@ export class Days {
 			events: enrichedEvents,
 			birthdays: this.calendar.getBirthdaysForDate(jsDate),
 			dinner: this.calendar.getDinnerForDate(jsDate),
+			hasKids: this.calendar.hasKidsForDate(jsDate),
 		};
 	}
 

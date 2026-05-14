@@ -22,6 +22,7 @@ export class Calendar {
 	events: Event[] = []; // RawEvents
 	birthdays: Event[] = []; // RawEvents
 	dinners: Event[] = [];
+	barneuker: Event[] = [];
 	// Display height of calendar events in pixels to ensure we don't overflow
 	displayHeights = {
 		event: 25,
@@ -44,6 +45,7 @@ export class Calendar {
 		this.refreshEvents();
 		this.refreshBirthdays();
 		this.refreshDinners();
+		this.refreshBarneuker();
 
 		setInterval(() => {
 			this.refreshEvents();
@@ -52,6 +54,7 @@ export class Calendar {
 		setInterval(() => {
 			this.refreshBirthdays();
 			this.refreshDinners();
+			this.refreshBarneuker();
 		}, 900 * 1000);
 	}
 
@@ -171,6 +174,30 @@ export class Calendar {
 
 			console.log('Dinner calendar ID not found :(');
 		}
+	}
+
+	async refreshBarneuker() {
+		if (process.env.CAL_ID_BARNEUKER) {
+			this.barneuker = await Calendar.getCalendarData(
+				process.env.CAL_ID_BARNEUKER,
+			);
+
+			console.log(`${this.barneuker.length} barneuker fetched.`);
+		} else {
+			this.barneuker = [];
+		}
+	}
+
+	/**
+	 * Returns true if any full-day barneuker event on the given date contains "audun".
+	 */
+	hasKidsForDate(jsDate: Date) {
+		return this.barneuker.some(
+			(e) =>
+				e.fullDay &&
+				e.title.toLowerCase().includes('audun') &&
+				this.checkEventForDate(e, jsDate),
+		);
 	}
 
 	async refreshBirthdays() {

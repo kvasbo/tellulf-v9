@@ -1,6 +1,11 @@
 <day>
 	<div class="dateHeader">
-		<%= it.day.weekday %>
+		<span class="dateLabel">
+			<%= it.day.weekday %>
+			<% if (it.day.hasKids) { %>
+			<img alt="kids" class="calendaricon kids" src="kids.svg" />
+			<% } %>
+		</span>
 		<% if (it.day.daily_forecast) { %>
 		<div class="headerWeather">
 			<div class="headerWeatherPrepArea">
