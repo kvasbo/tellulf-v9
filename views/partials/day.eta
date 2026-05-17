@@ -4,7 +4,7 @@
 		    <span>
 			<%= it.day.weekday %>
 			</span>
-			<% if (it.day.hasKids) { %>
+			<% if (false && it.day.hasKids) { %>
 			<img alt="kids" class="calendaricon kids" src="kids.svg" />
 			<% } %>
 		</span>
