@@ -150,18 +150,28 @@ export class Calendar {
 				const age = now.year - y;
 				title = `${event.title.substring(0, event.title.length - 5)} (${age} år)`;
 			}
+		} else if (type === 'event' && title.length > 50) {
+			title = `${title.slice(0, 49)}…`;
 		}
 		return title;
 	}
 
 	async refreshEvents() {
-		if (process.env.CAL_ID_FELLES) {
-			this.events = await Calendar.getCalendarData(process.env.CAL_ID_FELLES);
+		const sources = [process.env.CAL_ID_FELLES, process.env.CAL_ID_AUDUN].filter(
+			(id): id is string => Boolean(id),
+		);
 
-			console.log(`${this.events.length} events fetched.`);
-		} else {
+		if (sources.length === 0) {
 			this.events = [];
+			return;
 		}
+
+		const results = await Promise.all(
+			sources.map((id) => Calendar.getCalendarData(id)),
+		);
+		this.events = results.flat();
+
+		console.log(`${this.events.length} events fetched.`);
 	}
 
 	async refreshDinners() {
