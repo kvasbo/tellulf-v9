@@ -157,9 +157,10 @@ export class Calendar {
 	}
 
 	async refreshEvents() {
-		const sources = [process.env.CAL_ID_FELLES, process.env.CAL_ID_AUDUN].filter(
-			(id): id is string => Boolean(id),
-		);
+		const sources = [
+			process.env.CAL_ID_FELLES,
+			process.env.CAL_ID_AUDUN,
+		].filter((id): id is string => Boolean(id));
 
 		if (sources.length === 0) {
 			this.events = [];
