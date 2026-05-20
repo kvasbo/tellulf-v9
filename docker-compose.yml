@@ -8,6 +8,7 @@ services:
       - "${EXPOSE_PORT}:3000"
     environment:
       - CAL_ID_FELLES=${CAL_ID_FELLES}
+      - CAL_ID_AUDUN=${CAL_ID_AUDUN}
       - CAL_ID_BARNEUKER=${CAL_ID_BARNEUKER}
       - CAL_ID_BURSDAG=${CAL_ID_BURSDAG}
       - CAL_ID_MIDDAG=${CAL_ID_MIDDAG}
