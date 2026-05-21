@@ -170,7 +170,9 @@ export class Calendar {
 		const results = await Promise.all(
 			sources.map((id) => Calendar.getCalendarData(id)),
 		);
-		this.events = results.flat();
+		this.events = results
+			.flat()
+			.sort((a, b) => a.start.getTime() - b.start.getTime());
 
 		console.log(`${this.events.length} events fetched.`);
 	}
