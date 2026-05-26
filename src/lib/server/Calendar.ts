@@ -153,7 +153,7 @@ export class Calendar {
 		} else if (type === 'event' && title.length > 50) {
 			title = `${title.slice(0, 49)}…`;
 		}
-		return title;
+		return title || '(uten tittel)';
 	}
 
 	async refreshEvents() {
