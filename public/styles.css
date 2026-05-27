@@ -125,6 +125,12 @@ day .dateHeader .calendaricon.kids {
 	flex: 1;
 }
 
+day .dateHeader .kids-arrow {
+	margin-left: 0.3em;
+	align-self: center;
+	color: #999;
+}
+
 day.day-hidden {
 	display: none;
 }

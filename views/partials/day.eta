@@ -4,7 +4,11 @@
 		    <span>
 			<%= it.day.weekday %>
 			</span>
-			<% if (it.day.hasKids) { %>
+			<% if (it.day.kidsStatus === 'arriving') { %>
+			<span class="kids-arrow">→</span><img alt="kids" class="calendaricon kids" src="kids.svg" />
+			<% } else if (it.day.kidsStatus === 'leaving') { %>
+			<img alt="kids" class="calendaricon kids" src="kids.svg" /><span class="kids-arrow">→</span>
+			<% } else if (it.day.kidsStatus) { %>
 			<img alt="kids" class="calendaricon kids" src="kids.svg" />
 			<% } %>
 		</span>

@@ -202,15 +202,30 @@ export class Calendar {
 	}
 
 	/**
-	 * Returns true if any full-day barneuker event on the given date contains "audun".
+	 * Returns the kids status for a given date based on full-day barneuker events.
+	 * - 'leaving'  when title has both names and "audun" appears first
+	 * - 'arriving' when title has both names and "hanne" appears first
+	 * - 'full'     when title contains only "audun"
+	 * - null       when there is no matching event
 	 */
-	hasKidsForDate(jsDate: Date) {
-		return this.barneuker.some(
-			(e) =>
-				e.fullDay &&
-				e.title.toLowerCase().includes('audun') &&
-				this.checkEventForDate(e, jsDate),
+	getKidsStatusForDate(
+		jsDate: Date,
+	): 'full' | 'leaving' | 'arriving' | null {
+		const events = this.barneuker.filter(
+			(e) => e.fullDay && this.checkEventForDate(e, jsDate),
 		);
+		for (const e of events) {
+			const t = e.title.toLowerCase();
+			const a = t.indexOf('audun');
+			const h = t.indexOf('hanne');
+			if (a !== -1 && h !== -1) {
+				return a < h ? 'leaving' : 'arriving';
+			}
+		}
+		for (const e of events) {
+			if (e.title.toLowerCase().includes('audun')) return 'full';
+		}
+		return null;
 	}
 
 	async refreshBirthdays() {
