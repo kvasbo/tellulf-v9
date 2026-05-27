@@ -208,9 +208,7 @@ export class Calendar {
 	 * - 'full'     when title contains only "audun"
 	 * - null       when there is no matching event
 	 */
-	getKidsStatusForDate(
-		jsDate: Date,
-	): 'full' | 'leaving' | 'arriving' | null {
+	getKidsStatusForDate(jsDate: Date): 'full' | 'leaving' | 'arriving' | null {
 		const events = this.barneuker.filter(
 			(e) => e.fullDay && this.checkEventForDate(e, jsDate),
 		);
