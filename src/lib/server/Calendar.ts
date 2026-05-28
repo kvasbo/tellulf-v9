@@ -38,7 +38,8 @@ export class Calendar {
 	}
 
 	/**
-	 * Constructor for the Calendar class, that refreshes events, birthdays and dinners every 15 minutes.
+	 * Constructor for the Calendar class. Refreshes events every minute, and
+	 * birthdays, dinners and barneuker every 15 minutes.
 	 * @class
 	 */
 	private constructor() {
@@ -49,7 +50,7 @@ export class Calendar {
 
 		setInterval(() => {
 			this.refreshEvents();
-		}, 15 * 1000);
+		}, 60 * 1000);
 
 		setInterval(() => {
 			this.refreshBirthdays();
