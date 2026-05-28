@@ -6,16 +6,17 @@ A home status display showing weather, calendars, subway departures and power us
 
 ## Architecture
 
-- **Express** server (`src/server.ts`) with SSE for live updates
+- **Bun.serve** HTTP server (`src/server.ts`) with SSE for live updates
 - **Eta** templates (`views/`) for server-side HTML rendering
 - **HTMX** + SSE extension on the client for reactive DOM updates
-- **Client JS** (`public/client.js`) for clock, calendar overflow, version check
-- Run directly with `tsx` — no build step
+- **Client JS** (`src/client.ts`, bundled to `public/client.js`) for clock, calendar overflow, version check
+- Server runs directly under `bun`; the client is bundled via `bun build` (see `build` script)
 
 ## Running
 
-- `pnpm dev` — development with file watching
-- `pnpm start` — production
+- `bun dev` — development with file watching (`bun --watch src/server.ts`)
+- `bun start` — production
+- `bun run build` — lint + typecheck + bundle the client
 
 ## APIs
 

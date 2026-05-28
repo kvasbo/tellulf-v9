@@ -64,7 +64,6 @@ function renderPartial(name: string, data: Record<string, unknown>): string {
 
 // SSE helpers
 const encoder = new TextEncoder();
-const lastSent: Record<string, string> = {};
 
 function formatSSE(event: string, data: string): Uint8Array {
 	const lines = data.replace(/\n/g, '\ndata: ');
@@ -107,6 +106,9 @@ function handleIndex(): Response {
 function handleSSE(req: Request): Response {
 	const stream = new ReadableStream({
 		start(controller) {
+			// Per-connection dedup state so every client receives its own updates.
+			const lastSent: Record<string, string> = {};
+
 			function sendEvent(event: string, data: string) {
 				controller.enqueue(formatSSE(event, data));
 			}

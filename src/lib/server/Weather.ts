@@ -40,15 +40,6 @@ function buildLongTermForecastUrl(sted: Sted): string {
 	return `https://api.met.no/weatherapi/subseasonal/1.0/complete?lat=${sted.lat}&lon=${sted.lon}`;
 }
 
-function buildDangerUrl(sted: Sted): string {
-	return `https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=${sted.lat}&lon=${sted.lon}`;
-}
-
-interface CurrentWeather {
-	temperature: number;
-	symbol: string;
-}
-
 interface DailyForecast {
 	minTemp: number;
 	maxTemp: number;
@@ -89,34 +80,9 @@ export interface HourlyForecast {
 	hour: string;
 }
 
-interface MetAlertFeature {
-	properties: {
-		awarenessResponse: string;
-		severity: string;
-		description: string;
-		title: string;
-		instruction: string;
-		area: string;
-		event: string;
-		eventAwarenessName: string;
-		certainty: string;
-		consequences: string;
-		riskMatrixColor: string;
-	};
-}
-
-interface DangerData {
-	response: string;
-	severity: string;
-	description: string;
-	headline: string;
-	instruction: string;
-}
-
 type LocationData = {
 	forecast: TimeSeries[];
 	longTermForecast: LongTermForecastDay[];
-	dangerData: DangerData[];
 };
 
 /**
@@ -127,12 +93,10 @@ export class Weather {
 		oslo: {
 			forecast: [],
 			longTermForecast: [],
-			dangerData: [],
 		},
 		hytta: {
 			forecast: [],
 			longTermForecast: [],
-			dangerData: [],
 		},
 	};
 
@@ -140,7 +104,7 @@ export class Weather {
 	private readonly fetchOptions: RequestInit = {
 		method: 'GET',
 		headers: {
-			'User-Agent': 'tellulf v6: audun@kvasbo.no',
+			'User-Agent': 'tellulf v9: audun@kvasbo.no',
 		},
 	};
 
@@ -162,25 +126,7 @@ export class Weather {
 		locations.forEach((location) => {
 			this.fetchForecastData(location);
 			this.fetchLongTermForecast(location);
-			this.fetchDanger(location);
 		});
-	}
-
-	getCurrentWeather(location: StedNavn = 'oslo'): CurrentWeather {
-		const out: CurrentWeather = {
-			temperature: 999,
-			symbol: 'blank',
-		};
-
-		const forecast = this.weatherData[location].forecast;
-		if (forecast[0]) {
-			out.temperature =
-				forecast[0]?.data?.instant?.details?.air_temperature ?? 999;
-			out.symbol =
-				forecast[0]?.data?.next_1_hours?.summary?.symbol_code ?? 'blank';
-		}
-
-		return out;
 	}
 
 	/**
@@ -235,13 +181,6 @@ export class Weather {
 	}
 
 	/**
-	 * Return the danger data
-	 */
-	getDangerData(location: StedNavn = 'oslo'): DangerData[] {
-		return this.weatherData[location].dangerData;
-	}
-
-	/**
 	 * Get the hourly forecasts
 	 * @returns HourlyForecast[]
 	 */
@@ -262,27 +201,6 @@ export class Weather {
 			}
 		});
 		return out;
-	}
-
-	/**
-	 * Fetch the dangerous weather report.
-	 * @returns
-	 */
-	private async fetchDanger(location: StedNavn): Promise<void> {
-		const url = buildDangerUrl(steder[location]);
-		const data = await fetch(url, this.fetchOptions);
-		const danger = await data.json();
-		this.weatherData[location].dangerData = danger.features.map(
-			(feature: MetAlertFeature) => {
-				return {
-					response: feature.properties.awarenessResponse,
-					severity: feature.properties.severity,
-					description: feature.properties.description,
-					headline: feature.properties.title,
-					instruction: feature.properties.instruction,
-				};
-			},
-		);
 	}
 
 	/**

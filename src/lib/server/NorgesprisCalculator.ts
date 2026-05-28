@@ -11,7 +11,6 @@ export interface NorgesprisCalculation {
 	subsidizedConsumption: number;
 	marketConsumption: number;
 	effectivePrice: number;
-	totalCost: number;
 	isActive: boolean;
 }
 
@@ -32,6 +31,14 @@ export class NorgesprisCalculator {
 		return Date.now() >= this.config.startDate.getTime();
 	}
 
+	public getCap(place: Places): number {
+		return place === Places.Home ? this.config.homeCap : this.config.cabinCap;
+	}
+
+	public getSubsidizedPrice(): number {
+		return this.config.subsidizedPrice;
+	}
+
 	public calculateCost(
 		place: Places,
 		monthlyConsumption: number,
@@ -42,13 +49,11 @@ export class NorgesprisCalculator {
 				subsidizedConsumption: 0,
 				marketConsumption: monthlyConsumption,
 				effectivePrice: spotPrice,
-				totalCost: 0,
 				isActive: false,
 			};
 		}
 
-		const cap =
-			place === Places.Home ? this.config.homeCap : this.config.cabinCap;
+		const cap = this.getCap(place);
 
 		const subsidizedConsumption = Math.min(monthlyConsumption, cap);
 		const marketConsumption = Math.max(0, monthlyConsumption - cap);
@@ -56,13 +61,10 @@ export class NorgesprisCalculator {
 		const effectivePrice =
 			monthlyConsumption > cap ? spotPrice : this.config.subsidizedPrice;
 
-		const totalCost = 0;
-
 		return {
 			subsidizedConsumption,
 			marketConsumption,
 			effectivePrice,
-			totalCost,
 			isActive: true,
 		};
 	}
@@ -83,8 +85,7 @@ export class NorgesprisCalculator {
 			);
 		}
 
-		const cap =
-			place === Places.Home ? this.config.homeCap : this.config.cabinCap;
+		const cap = this.getCap(place);
 		let accumulatedConsumption = 0;
 		let totalCost = 0;
 
@@ -118,26 +119,12 @@ export class NorgesprisCalculator {
 			return spotPrice;
 		}
 
-		const cap =
-			place === Places.Home ? this.config.homeCap : this.config.cabinCap;
+		const cap = this.getCap(place);
 
 		if (monthlyConsumption >= cap) {
 			return spotPrice;
 		}
 
 		return this.config.subsidizedPrice;
-	}
-
-	public getRemainingSubsidizedKwh(
-		place: Places,
-		monthlyConsumption: number,
-	): number {
-		if (!this.isNorgesprisActive()) {
-			return 0;
-		}
-
-		const cap =
-			place === Places.Home ? this.config.homeCap : this.config.cabinCap;
-		return Math.max(0, cap - monthlyConsumption);
 	}
 }

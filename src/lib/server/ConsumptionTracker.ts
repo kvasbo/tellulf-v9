@@ -67,16 +67,4 @@ export class ConsumptionTracker {
 
 		return data.consumption;
 	}
-
-	public resetIfNewMonth(place: Places): void {
-		const now = new Date();
-		const currentYear = now.getFullYear();
-		const currentMonth = now.getMonth() + 1;
-
-		const data = this.consumptionData.get(place);
-
-		if (!data || data.year !== currentYear || data.month !== currentMonth) {
-			this.updateConsumption(place, 0);
-		}
-	}
 }

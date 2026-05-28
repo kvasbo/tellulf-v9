@@ -27,7 +27,7 @@ export class MqttClient {
 		this.client
 			.on('connect', () => {
 				this.log(`${options.clientId} connected to ${mqttHost}`);
-				this.client.subscribe('#');
+				this.client.subscribe('tellulf/weather/#');
 				this.client.publish('tellulf/poll', 'Tellulf is online and polling');
 			})
 			.on('disconnect', () => {
@@ -42,17 +42,6 @@ export class MqttClient {
 			.on('reconnect', () => {
 				console.log(`MQTT reconnecting to ${mqttHost}`);
 			});
-	}
-
-	/**
-	 * Publish a message to the MQTT broker
-	 * @param topic
-	 * @param message
-	 */
-	publish(topic: string, message: string) {
-		if (message !== null && message !== undefined) {
-			this.client.publish(topic, message.toString());
-		}
 	}
 
 	/**
