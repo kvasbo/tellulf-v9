@@ -5,11 +5,23 @@ import type { EnrichedEvent, Event } from './Calendar.d.js';
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
-function getGoogleKey() {
-	// Get the Google key from the environment variable
-	return JSON.parse(
-		Buffer.from(process.env.GOOGLE_KEY_B64!, 'base64').toString('utf8'),
-	);
+let jwtClient: JWT | null = null;
+
+// Build the JWT client once from the base64-encoded service-account key.
+// Reused across all calendar fetches so the key is only parsed once and the
+// auth library can cache/refresh tokens internally.
+function getJwtClient(): JWT {
+	if (!jwtClient) {
+		const key = JSON.parse(
+			Buffer.from(process.env.GOOGLE_KEY_B64!, 'base64').toString('utf8'),
+		);
+		jwtClient = new JWT({
+			email: key.client_email,
+			key: key.private_key,
+			scopes: [SCOPES],
+		});
+	}
+	return jwtClient;
 }
 
 /**
@@ -244,16 +256,8 @@ export class Calendar {
 	 * @param calendarId
 	 */
 	static async getCalendarData(calendarId: string) {
-		const jwtClient = new JWT({
-			email: getGoogleKey().client_email,
-			key: getGoogleKey().private_key,
-			scopes: [SCOPES],
-		});
-
-		await jwtClient.authorize();
-
 		const calendar = new calendar_v3.Calendar({
-			auth: jwtClient as unknown as string,
+			auth: getJwtClient() as unknown as string,
 		});
 
 		const out: Event[] = [];
