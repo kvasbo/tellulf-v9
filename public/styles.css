@@ -316,6 +316,48 @@ nowcast .weather forecast .forecastMovablePart .weather_icon {
 	width: 100%;
 }
 
+/* Discreet rain drops falling through the air above the bar.
+   The opaque .rain bar hides the lower part, so drops only show in
+   the empty space and appear to fall into the water.
+   Each layer is one drop column with its own width position, vertical
+   spacing (background-size) and start offset, so they fall at different
+   speeds and never line up into rows or columns. */
+nowcast .weather forecast.raining::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background-image:
+		radial-gradient(1px 5px at 8% 0, rgba(62, 164, 240, 0.32), transparent),
+		radial-gradient(1px 6px at 19% 0, rgba(62, 164, 240, 0.26), transparent),
+		radial-gradient(1px 4px at 28% 0, rgba(62, 164, 240, 0.36), transparent),
+		radial-gradient(1px 5px at 41% 0, rgba(62, 164, 240, 0.28), transparent),
+		radial-gradient(1px 6px at 53% 0, rgba(62, 164, 240, 0.34), transparent),
+		radial-gradient(1px 4px at 64% 0, rgba(62, 164, 240, 0.24), transparent),
+		radial-gradient(1px 5px at 76% 0, rgba(62, 164, 240, 0.3), transparent),
+		radial-gradient(1px 6px at 89% 0, rgba(62, 164, 240, 0.33), transparent);
+	background-size:
+		100% 40px,
+		100% 57px,
+		100% 33px,
+		100% 63px,
+		100% 45px,
+		100% 37px,
+		100% 59px,
+		100% 48px;
+	background-position-y: 0, 12px, 25px, 8px, 30px, 18px, 5px, 22px;
+	background-repeat: repeat-y;
+	animation: rainDrops 1s linear infinite;
+	pointer-events: none;
+}
+
+/* Each layer travels exactly one tile (its background-size height) per
+   cycle, so the loop is seamless but every column falls at its own speed. */
+@keyframes rainDrops {
+	to {
+		background-position-y: 40px, 69px, 58px, 71px, 75px, 55px, 64px, 70px;
+	}
+}
+
 .rainWave {
 	position: absolute;
 	width: 100%;

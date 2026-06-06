@@ -3,7 +3,7 @@
 <% } else { %>
 <div class="weather" style="background: <%= it.background %>">
 	<% it.forecasts.forEach((f) => { %>
-	<forecast>
+	<forecast class="<%= f.details.precipitation_amount > 0 ? 'raining' : '' %>">
 		<div class="zeroLine" style="bottom: <%= it.mapToRange(0) %>%; display: <%= it.displayZeroLine %>;"></div>
 		<div class="rain" style="height: <%= it.getRainHeight(f.details.precipitation_amount) %>%;"></div>
 		<% if (f.details.precipitation_amount > 0) { %>
