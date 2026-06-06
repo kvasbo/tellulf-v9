@@ -95,6 +95,8 @@ export function buildHourlyForecastData(hourlyForecasts: HourlyForecast[]) {
 	const enrichedForecasts = forecasts.map((f) => ({
 		...f,
 		iconSrc: getWeatherIcon(f.symbol ?? ''),
+		// Deterministic wave pick (1-3) so re-renders stay identical and dedup holds
+		waveSrc: `/wave${((Number(f.hour) || 0) % 3) + 1}.svg`,
 		showWind: (f.instant.wind_speed ?? 0) >= WIND_DISPLAY_THRESHOLD_MS,
 		windSpeed: Math.round(f.instant.wind_speed ?? 0),
 		windGust: Math.round(f.instant.wind_speed_of_gust ?? 0),

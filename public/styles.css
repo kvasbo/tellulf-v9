@@ -316,6 +316,12 @@ nowcast .weather forecast .forecastMovablePart .weather_icon {
 	width: 100%;
 }
 
+.rainWave {
+	position: absolute;
+	width: 100%;
+	display: block;
+}
+
 .maxTemp,
 .minTemp {
 	width: calc(100% / 18);

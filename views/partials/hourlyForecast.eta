@@ -6,6 +6,9 @@
 	<forecast>
 		<div class="zeroLine" style="bottom: <%= it.mapToRange(0) %>%; display: <%= it.displayZeroLine %>;"></div>
 		<div class="rain" style="height: <%= it.getRainHeight(f.details.precipitation_amount) %>%;"></div>
+		<% if (f.details.precipitation_amount > 0) { %>
+		<img class="rainWave" alt="rain" src="<%= f.waveSrc %>" style="bottom: <%= it.getRainHeight(f.details.precipitation_amount) %>%;" />
+		<% } %>
 		<div class="forecastMovablePart" style="bottom: <%= it.mapToRange(f.instant.air_temperature || 0) %>%;">
 			<% if (f.iconSrc) { %>
 			<img class="weather_icon" alt="symbol" src="<%= f.iconSrc %>" style="filter: url(#shape-shadow);" />
