@@ -54,7 +54,10 @@ const WIND_DISPLAY_THRESHOLD_MS = 5;
 
 function getWeatherIcon(symbol: string): string {
 	if (!weatherIconMapping[symbol]) return '';
-	return `/weather-icons-static/${weatherIconMapping[symbol]}.svg`;
+	const folder = ['clearsky_night', 'partly-cloudy-night'].includes(symbol)
+		? 'static'
+		: 'animated';
+	return `/weather-icons-${folder}/${weatherIconMapping[symbol]}.svg`;
 }
 
 function getRainHeight(rain: number): number {
