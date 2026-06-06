@@ -21,7 +21,7 @@ body {
 	width: 100vw;
 	padding: 15px;
 	margin: 0;
-	background-color: #fdf6e3;
+	background-color: #ffffff;
 }
 
 /* CSS containment for SSE swap targets - isolates reflows */
