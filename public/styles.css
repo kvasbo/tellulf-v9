@@ -123,11 +123,11 @@ topbar > currentweather {
 }
 
 clock {
-  padding-right: 20px;
+	padding-right: 20px;
 }
 
 currentweather {
-  padding-left: 20px;
+	padding-left: 20px;
 }
 
 clock #now_date {
