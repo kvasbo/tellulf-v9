@@ -42,7 +42,7 @@ float noise(vec2 p) {
 float fbm(vec2 p) {
 	float v = 0.0;
 	float a = 0.5;
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 4; i++) {
 		v += a * noise(p);
 		p *= 2.0;
 		a *= 0.5;
@@ -196,10 +196,12 @@ export function initSky(): void {
 		precipAmt: gl.getUniformLocation(program, 'uPrecipAmt'),
 	};
 
-	const dpr = Math.min(window.devicePixelRatio || 1, 2);
+	// Render below display resolution: the sky is all soft gradients, glow and
+	// clouds, so the CSS upscale is invisible but the GPU does ~3x less work.
+	const RENDER_SCALE = 0.6;
 	function resize() {
-		cv.width = Math.round(window.innerWidth * dpr);
-		cv.height = Math.round(window.innerHeight * dpr);
+		cv.width = Math.round(window.innerWidth * RENDER_SCALE);
+		cv.height = Math.round(window.innerHeight * RENDER_SCALE);
 		gl.viewport(0, 0, cv.width, cv.height);
 	}
 	resize();
@@ -258,10 +260,16 @@ export function initSky(): void {
 	readTargets();
 
 	const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+	const FPS = 30;
+	const frameInterval = 1000 / FPS;
 	let last = 0;
 	const start = performance.now();
 
 	function frame(now: number) {
+		requestAnimationFrame(frame);
+		// Cap the framerate: ambient sky motion looks identical at 30fps and it
+		// halves both shader draws and the panels' backdrop-filter reblur.
+		if (last && now - last < frameInterval) return;
 		const dt = last ? Math.min((now - last) / 1000, 0.1) : 0.016;
 		last = now;
 		const k = 1 - Math.exp(-dt / 0.6); // ~2s settle
@@ -292,7 +300,6 @@ export function initSky(): void {
 		gl.uniform1f(u.precipAmt, current.precipAmt);
 
 		gl.drawArrays(gl.TRIANGLES, 0, 3);
-		requestAnimationFrame(frame);
 	}
 	requestAnimationFrame(frame);
 }

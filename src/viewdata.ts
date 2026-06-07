@@ -247,10 +247,13 @@ export function buildPowerData(powerData: PowerData, where: string) {
 		priceColor: getPriceColor(powerData),
 		bgColor: powerData.currentPower < 0 ? '#3ef0a4' : '#3ea4f0',
 		powerDisplay: (powerData.currentPower / 1000).toFixed(1),
-		powerWidth: Math.abs(powerData.currentPower / maxPower),
-		maxWidth: powerData.maxPower / maxPower,
-		avgWidth: powerData.averagePower / maxPower,
-		minWidth: Math.abs(minP / maxPower),
+		// Round bar widths to whole percent so per-second watt jitter doesn't
+		// produce new HTML every tick (defeats sendEventIfChanged dedup and
+		// forces a needless backdrop-filter reblur on the glass panel).
+		powerWidth: Math.round(Math.abs(powerData.currentPower / maxPower)),
+		maxWidth: Math.round(powerData.maxPower / maxPower),
+		avgWidth: Math.round(powerData.averagePower / maxPower),
+		minWidth: Math.round(Math.abs(minP / maxPower)),
 		minBgColor: minP < 0 ? '#3ef0a4' : '#3ea4f033',
 	};
 }

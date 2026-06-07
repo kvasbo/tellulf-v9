@@ -30,8 +30,8 @@ currentweather,
 calendar,
 .footerBox {
 	background: var(--glass-bg);
-	backdrop-filter: blur(20px) saturate(1.4);
-	-webkit-backdrop-filter: blur(20px) saturate(1.4);
+	backdrop-filter: blur(12px) saturate(1.4);
+	-webkit-backdrop-filter: blur(12px) saturate(1.4);
 	border: 1px solid var(--glass-border);
 	border-radius: 18px;
 	box-shadow: 0 8px 30px var(--glass-shadow);
@@ -101,9 +101,10 @@ currentweather {
 #aux-weather-info {
 	align-items: center;
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	flex: 2;
-	justify-content: center;
+	width: 100%;
+	justify-content: space-evenly;
 }
 
 clock {
@@ -111,12 +112,11 @@ clock {
 }
 
 clock #now_date {
-	font-size: 75px;
+	font-size: 50px;
 }
 
 clock #now_week {
-	margin-top: 0.5em;
-	font-size: 25px;
+	font-size: 50px;
 }
 
 currentweather {

@@ -29,7 +29,7 @@ function updateClock() {
 	if (day !== lastDay) {
 		lastDay = day;
 		elDate.textContent = dateFmt.format(now);
-		elWeek.textContent = `Uke ${Temporal.Now.plainDateISO().weekOfYear}`;
+		elWeek.textContent = `uke ${Temporal.Now.plainDateISO().weekOfYear}`;
 	}
 
 	// Schedule next update at the start of the next minute
