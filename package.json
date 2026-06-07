@@ -7,7 +7,7 @@
 		"dev": "bun --watch src/server.ts",
 		"start": "bun src/server.ts",
 		"build": "biome check . && tsc --noEmit && bun build src/client.ts --outdir public --target browser",
-		"lint": "biome check .",
+		"lint": "biome check . --write",
 		"format": "biome check --write .",
 		"check": "tsc --noEmit"
 	},
