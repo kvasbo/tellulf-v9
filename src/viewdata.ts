@@ -22,6 +22,7 @@ const OSLO_LON = 10.6847;
 const sunTimeFmt = new Intl.DateTimeFormat('nb-NO', {
 	hour: '2-digit',
 	minute: '2-digit',
+	timeZone: 'Europe/Oslo',
 });
 let sunCache: { date: string; rise: string; set: string } | null = null;
 
