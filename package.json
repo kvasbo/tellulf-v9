@@ -12,17 +12,17 @@
 		"check": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@googleapis/calendar": "^14.3.0",
+		"@googleapis/calendar": "^15.0.0",
 		"eta": "^4.6.0",
 		"fast-xml-parser": "^5.8.0",
-		"google-auth-library": "^10.6.2",
+		"google-auth-library": "^10.7.0",
 		"htmx-ext-sse": "^2.2.4",
 		"htmx.org": "^2.0.10",
 		"idiomorph": "^0.7.4",
 		"lunarphase-js": "^2.0.3",
 		"luxon": "^3.7.2",
 		"mqtt": "^5.15.1",
-		"sunrise-sunset-js": "^3.2.1",
+		"sunrise-sunset-js": "^3.3.0",
 		"tibber-api": "^5.5.2",
 		"zod": "^4.4.3"
 	},
