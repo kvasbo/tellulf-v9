@@ -107,14 +107,7 @@ export function buildHourlyForecastData(hourlyForecasts: HourlyForecast[]) {
 	const mapToRange = (value: number) => ((value - min) / (max - min)) * 100;
 	const displayZeroLine = max > 0 && min < 0 ? 'block' : 'none';
 
-	let background: string;
-	if (max <= 0) {
-		background = 'linear-gradient(180deg, #e3f2fd00 0%, #e3f2fdFF 100%)';
-	} else if (min >= 0) {
-		background = 'linear-gradient(180deg, #ff8a8022 0%, #ff8a8000 100%)';
-	} else {
-		background = 'linear-gradient(180deg, #ff8a8022 0%, #e3f2fd99 100%)';
-	}
+	const background: string = 'none';
 
 	// Add icon src and wind data to each forecast
 	const enrichedForecasts = forecasts.map((f) => ({
