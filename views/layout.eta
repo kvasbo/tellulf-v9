@@ -18,19 +18,21 @@
 		<%~ it.skyHtml %>
 	</div>
 
-	<clock>
-		<div id="now_time"></div>
-		<div id="date_week">
-			<div id="now_date"></div>
-			<div id="now_week"></div>
-		</div>
-	</clock>
+	<topbar>
+		<clock>
+			<div id="now_time"></div>
+			<div id="date_week">
+				<div id="now_date"></div>
+				<div id="now_week"></div>
+			</div>
+		</clock>
 
-	<currentweather>
-		<div id="current-weather-content" sse-swap="current-weather" hx-swap="innerHTML">
-			<%~ it.currentWeatherHtml %>
-		</div>
-	</currentweather>
+		<currentweather>
+			<div id="current-weather-content" sse-swap="current-weather" hx-swap="innerHTML">
+				<%~ it.currentWeatherHtml %>
+			</div>
+		</currentweather>
+	</topbar>
 
 	<nowcast>
 		<svg width="0" height="0">

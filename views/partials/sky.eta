@@ -1,2 +1,2 @@
-<style>:root{--fg:<%= it.css.fg %>;--fg-muted:<%= it.css.fgMuted %>;--fg-faint:<%= it.css.fgFaint %>;--line:<%= it.css.line %>;--glass-bg:<%= it.css.glassBg %>;--glass-border:<%= it.css.glassBorder %>;--glass-shadow:<%= it.css.glassShadow %>;}</style>
+<style>:root{--fg:<%= it.css.fg %>;--fg-muted:<%= it.css.fgMuted %>;--fg-faint:<%= it.css.fgFaint %>;--line:<%= it.css.line %>;--glass-bg:<%= it.css.glassBg %>;--glass-border:<%= it.css.glassBorder %>;--glass-shadow:<%= it.css.glassShadow %>;--icon-filter:<%= it.css.iconFilter %>;}</style>
 <i id="sky-uniforms" data-c1="<%= it.c1 %>" data-c2="<%= it.c2 %>" data-c3="<%= it.c3 %>" data-arc="<%= it.arc %>" data-precip="<%= it.precip %>" data-cloud="<%= it.cloud %>" data-night="<%= it.night %>"></i>

@@ -27,6 +27,8 @@ export interface SkyState {
 		glassBg: string;
 		glassBorder: string;
 		glassShadow: string;
+		/** filter() to recolor monochrome icons to the muted foreground. */
+		iconFilter: string;
 	};
 }
 
@@ -153,6 +155,8 @@ const LIGHT_UI = {
 	glassBg: 'rgba(255, 255, 255, 0.16)',
 	glassBorder: 'rgba(255, 255, 255, 0.38)',
 	glassShadow: 'rgba(30, 50, 80, 0.18)',
+	// kids.svg ships as #999 grey; darken it to sit with the dark muted text.
+	iconFilter: 'brightness(0.45)',
 };
 
 const DARK_UI = {
@@ -163,6 +167,8 @@ const DARK_UI = {
 	glassBg: 'rgba(18, 26, 44, 0.32)',
 	glassBorder: 'rgba(150, 170, 210, 0.22)',
 	glassShadow: 'rgba(0, 0, 10, 0.35)',
+	// Lighten the grey icon to match the light muted text at night.
+	iconFilter: 'brightness(1.25)',
 };
 
 // Dawn/day use dark text on light glass; dusk/night use light text on dark glass.

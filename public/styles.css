@@ -12,6 +12,7 @@
 	--glass-bg: rgba(255, 255, 255, 0.16);
 	--glass-border: rgba(255, 255, 255, 0.38);
 	--glass-shadow: rgba(30, 50, 80, 0.18);
+	--icon-filter: brightness(0.45);
 }
 
 /* Living-sky WebGL canvas, behind everything. */
@@ -25,15 +26,14 @@ canvas.sky {
 }
 
 /* Shared frosted-glass card treatment. */
-clock,
-currentweather,
+topbar,
 calendar,
 .footerBox {
 	background: var(--glass-bg);
 	backdrop-filter: blur(12px) saturate(1.4);
 	-webkit-backdrop-filter: blur(12px) saturate(1.4);
 	border: 1px solid var(--glass-border);
-	border-radius: 18px;
+	border-radius: 12px;
 	box-shadow: 0 8px 30px var(--glass-shadow);
 	padding: 16px 22px;
 	transition:
@@ -52,7 +52,7 @@ body {
 	row-gap: 15px;
 	column-gap: 15px;
 	grid-template-areas:
-		"time_and_date current_weather calendar"
+		"topbar topbar calendar"
 		"weather_nowcast weather_nowcast calendar"
 		"bottom-boxes bottom-boxes calendar";
 	font-family: "Lato", sans-serif;
@@ -78,15 +78,25 @@ body {
 	contain: layout style;
 }
 
+topbar {
+	grid-area: topbar;
+	display: flex;
+}
+
 clock,
 currentweather {
 	display: flex;
+	flex: 1;
 	flex-direction: column;
 	justify-content: flex-start;
 	align-items: center;
 	width: 100%;
 	height: 100%;
-	padding: 10px 0 40px 0;
+}
+
+/* Subtle divider between the clock and temperature halves of the one card. */
+topbar > currentweather {
+	border-left: 1px solid var(--line);
 }
 
 #now_time,
@@ -113,19 +123,19 @@ currentweather {
 }
 
 clock {
-	grid-area: time_and_date;
+  padding-right: 20px;
+}
+
+currentweather {
+  padding-left: 20px;
 }
 
 clock #now_date {
-	font-size: 60px;
+	font-size: 50px;
 }
 
 clock #now_week {
 	font-size: 50px;
-}
-
-currentweather {
-	grid-area: current_weather;
 }
 
 #current-weather-content,
@@ -170,6 +180,8 @@ day .dateHeader .calendaricon.kids {
 	height: 28px;
 	width: auto;
 	flex: 1;
+	filter: var(--icon-filter);
+	transition: filter 1.5s linear;
 }
 
 day .dateHeader .kids-arrow {
@@ -261,8 +273,8 @@ nowcast {
 	grid-area: weather_nowcast;
 	display: flex;
 	flex: 1;
-	margin-top: 2em;
-	margin-bottom: 2em;
+	margin-top: 1em;
+	margin-bottom: 0.5em;
 	flex-direction: column;
 	justify-content: space-evenly;
 	align-items: flex-start;
