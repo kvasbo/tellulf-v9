@@ -14,6 +14,7 @@ import {
 	buildEnturData,
 	buildHourlyForecastData,
 	buildPowerData,
+	buildSkyData,
 } from './viewdata.js';
 
 const port = Number(process.env.EXPOSE_PORT) || 3000;
@@ -78,6 +79,7 @@ function handleIndex(): Response {
 
 	const html = eta.render('layout', {
 		version: VERSION,
+		skyHtml: renderPartial('sky', buildSkyData(hourly)),
 		currentWeatherHtml: renderPartial(
 			'currentWeather',
 			buildCurrentWeatherData(homey),
@@ -120,6 +122,10 @@ function handleSSE(req: Request): Response {
 			}
 
 			// Send initial data
+			sendEvent(
+				'sky',
+				renderPartial('sky', buildSkyData(weather.getHourlyForecasts())),
+			);
 			sendEvent(
 				'current-weather',
 				renderPartial(
@@ -174,6 +180,10 @@ function handleSSE(req: Request): Response {
 
 			// General data updates every 15s - skip if unchanged
 			const dataInterval = setInterval(() => {
+				sendEventIfChanged(
+					'sky',
+					renderPartial('sky', buildSkyData(weather.getHourlyForecasts())),
+				);
 				sendEventIfChanged(
 					'current-weather',
 					renderPartial(

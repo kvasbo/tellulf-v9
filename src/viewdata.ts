@@ -3,8 +3,18 @@ import type { Entur } from './lib/Entur.js';
 import type { Smarthouse } from './lib/server/Smarthouse.js';
 import type { PowerData } from './lib/server/Tibber.js';
 import type { HourlyForecast } from './lib/server/Weather.js';
+import {
+	buildSkyState,
+	getArc,
+	getCondition,
+	getPhase,
+	getPrecip,
+} from './lib/sky.js';
 import { calculateMinMaxTemps } from './lib/weatherCalculations.js';
 import { weatherIconMapping } from './lib/weatherSymbolMapping.js';
+
+const OSLO_LAT = 59.9508;
+const OSLO_LON = 10.6847;
 
 // --- Current Weather ---
 
@@ -28,6 +38,21 @@ function getCachedSunTimes(): { rise: string; set: string } {
 		};
 	}
 	return sunCache;
+}
+
+// Raw sun-time Dates (cached per day) for the living-sky phase/arc math.
+let sunDateCache: { date: string; rise: Date; set: Date } | null = null;
+
+function getCachedSunDates(now: Date): { rise: Date; set: Date } {
+	const today = now.toDateString();
+	if (!sunDateCache || sunDateCache.date !== today) {
+		sunDateCache = {
+			date: today,
+			rise: getSunrise(OSLO_LAT, OSLO_LON, now) ?? now,
+			set: getSunset(OSLO_LAT, OSLO_LON, now) ?? now,
+		};
+	}
+	return sunDateCache;
 }
 
 export function buildCurrentWeatherData(
@@ -111,6 +136,42 @@ export function buildHourlyForecastData(hourlyForecasts: HourlyForecast[]) {
 		displayZeroLine,
 		mapToRange,
 		getRainHeight,
+	};
+}
+
+// --- Living sky ---
+
+const PRECIP_INDEX = { none: 0, rain: 1, snow: 2 } as const;
+const CLOUD_COVERAGE = { clear: 0.05, partly: 0.4, cloudy: 0.85, precip: 1.0 };
+const NIGHT_FACTOR = { night: 1, dawn: 0.5, dusk: 0.5, day: 0 };
+
+const rgb = (c: [number, number, number]): string =>
+	`${c[0].toFixed(3)},${c[1].toFixed(3)},${c[2].toFixed(3)}`;
+
+export function buildSkyData(
+	hourlyForecasts: HourlyForecast[],
+	now: Date = new Date(),
+) {
+	const { rise, set } = getCachedSunDates(now);
+	const nearest = hourlyForecasts[0];
+	const symbol = nearest?.symbol;
+	const temp = nearest?.instant.air_temperature;
+
+	const phase = getPhase(now, rise, set);
+	const condition = getCondition(symbol);
+	const precip = getPrecip(symbol, temp);
+	const arc = getArc(now, rise, set);
+	const sky = buildSkyState(phase, condition, precip, arc);
+
+	return {
+		css: sky.css,
+		c1: rgb(sky.colors.c1),
+		c2: rgb(sky.colors.c2),
+		c3: rgb(sky.colors.c3),
+		arc: arc.toFixed(4),
+		precip: PRECIP_INDEX[precip],
+		cloud: CLOUD_COVERAGE[condition].toFixed(2),
+		night: NIGHT_FACTOR[phase].toFixed(2),
 	};
 }
 

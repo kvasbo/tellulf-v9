@@ -2,6 +2,46 @@
 	box-sizing: border-box;
 }
 
+/* Adaptive theme variables — overridden live by the server-pushed sky frame
+   (see views/partials/sky.eta). These are light-scheme fallbacks. */
+:root {
+	--fg: #1a1d22;
+	--fg-muted: #4a4f57;
+	--fg-faint: rgba(20, 22, 28, 0.42);
+	--line: rgba(20, 30, 45, 0.22);
+	--glass-bg: rgba(255, 255, 255, 0.16);
+	--glass-border: rgba(255, 255, 255, 0.38);
+	--glass-shadow: rgba(30, 50, 80, 0.18);
+}
+
+/* Living-sky WebGL canvas, behind everything. */
+canvas.sky {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	z-index: -1;
+	display: block;
+}
+
+/* Shared frosted-glass card treatment. */
+clock,
+currentweather,
+calendar,
+.footerBox {
+	background: var(--glass-bg);
+	backdrop-filter: blur(20px) saturate(1.4);
+	-webkit-backdrop-filter: blur(20px) saturate(1.4);
+	border: 1px solid var(--glass-border);
+	border-radius: 18px;
+	box-shadow: 0 8px 30px var(--glass-shadow);
+	padding: 16px 22px;
+	transition:
+		background 1.5s linear,
+		border-color 1.5s linear,
+		box-shadow 1.5s linear;
+}
+
 body {
 	cursor: none;
 	display: grid;
@@ -21,7 +61,8 @@ body {
 	width: 100vw;
 	padding: 15px;
 	margin: 0;
-	background-color: #ffffff;
+	color: var(--fg);
+	transition: color 1.5s linear;
 }
 
 /* CSS containment for SSE swap targets - isolates reflows */
@@ -89,10 +130,11 @@ currentweather {
 
 calendar {
 	container-type: size;
+	box-sizing: border-box;
 	container-name: calendar-v;
 	grid-area: calendar;
 	width: 100%;
-	height: 1000px;
+	height: 1095px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -128,7 +170,7 @@ day .dateHeader .calendaricon.kids {
 day .dateHeader .kids-arrow {
 	margin-left: 0.3em;
 	align-self: center;
-	color: #999;
+	color: var(--fg-muted);
 }
 
 day.day-hidden {
@@ -138,7 +180,7 @@ day.day-hidden {
 day .dateHeader {
 	align-items: center;
 	display: flex;
-	border-bottom: 1px solid #555555;
+	border-bottom: 1px solid var(--line);
 	font-size: 25px;
 	justify-content: space-between;
 	width: 100%;
@@ -188,7 +230,7 @@ day .birthday {
 }
 
 day .event .event-time {
-	color: #555555;
+	color: var(--fg-muted);
 	font-variant-numeric: tabular-nums;
 	display: flex;
 	align-items: baseline;
@@ -200,7 +242,7 @@ day .event .event-time {
 }
 
 .hytta-weather {
-	color: #555555;
+	color: var(--fg-muted);
 	font-size: 14px;
 	margin-left: 0.5em;
 }
@@ -232,7 +274,7 @@ nowcast .weather {
 nowcast .weather .zeroLine {
 	position: absolute;
 	width: 100%;
-	border-bottom: 1px solid #c0c0c0;
+	border-bottom: 1px solid var(--line);
 }
 
 nowcast .weather .time {
@@ -253,7 +295,7 @@ nowcast .weather forecast {
 	justify-content: flex-end;
 	margin: 0;
 	height: 90%;
-	border-right: 1px solid #c0c0c0;
+	border-right: 1px solid var(--line);
 }
 
 nowcast .weather forecast .time {
@@ -277,7 +319,7 @@ nowcast .weather forecast .forecastMovablePart {
 }
 
 nowcast .weather forecast .forecastMovablePart .forecastProb {
-	color: #555555;
+	color: var(--fg-muted);
 	font-size: 14px;
 	text-align: center;
 }
@@ -368,7 +410,8 @@ nowcast .weather forecast.raining::before {
 .minTemp {
 	width: calc(100% / 18);
 	font-size: 30px;
-	opacity: 0.1;
+	color: var(--fg);
+	opacity: 0.15;
 	position: absolute;
 	display: flex;
 	align-items: center;
@@ -399,6 +442,8 @@ footer {
 	justify-content: flex-start;
 	align-items: flex-start;
 	flex: 1;
+	margin: 10px;
+	overflow: hidden;
 }
 
 .footerTable {

@@ -1,3 +1,8 @@
+import { initSky } from './sky.js';
+
+// Living weather-reactive sky background
+initSky();
+
 // Pre-create Intl formatters (expensive to construct, cheap to call)
 const timeFmt = new Intl.DateTimeFormat('nb-NO', {
 	hour: 'numeric',

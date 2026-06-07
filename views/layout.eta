@@ -13,6 +13,11 @@
 	<script src="/vendor/idiomorph-ext.min.js"></script>
 </head>
 <body hx-ext="sse,morph" sse-connect="/sse">
+	<canvas class="sky" aria-hidden="true"></canvas>
+	<div id="sky-driver" sse-swap="sky" hx-swap="innerHTML" hidden>
+		<%~ it.skyHtml %>
+	</div>
+
 	<clock>
 		<div id="now_time"></div>
 		<div id="date_week">
