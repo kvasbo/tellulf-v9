@@ -171,9 +171,11 @@ export class Calendar {
 
 	async refreshEvents() {
 		const sources = [
-			process.env.CAL_ID_FELLES,
-			process.env.CAL_ID_AUDUN,
-		].filter((id): id is string => Boolean(id));
+			{ id: process.env.CAL_ID_FELLES, source: 'felles' as const },
+			{ id: process.env.CAL_ID_AUDUN, source: 'audun' as const },
+		].filter((s): s is { id: string; source: 'felles' | 'audun' } =>
+			Boolean(s.id),
+		);
 
 		if (sources.length === 0) {
 			this.events = [];
@@ -181,7 +183,9 @@ export class Calendar {
 		}
 
 		const results = await Promise.all(
-			sources.map((id) => Calendar.getCalendarData(id)),
+			sources.map(async ({ id, source }) =>
+				(await Calendar.getCalendarData(id)).map((e) => ({ ...e, source })),
+			),
 		);
 		this.events = results
 			.flat()

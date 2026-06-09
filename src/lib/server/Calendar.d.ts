@@ -3,6 +3,7 @@ export interface Event {
 	start: Date;
 	end: Date;
 	fullDay: boolean;
+	source?: 'felles' | 'audun';
 }
 
 export interface EnrichedEvent extends Event {

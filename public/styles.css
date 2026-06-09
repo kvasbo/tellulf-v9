@@ -246,6 +246,10 @@ day .birthday {
 	margin-top: 1px;
 }
 
+day .event.faded {
+	opacity: 0.4;
+}
+
 day .event .event-time {
 	color: var(--fg-muted);
 	font-variant-numeric: tabular-nums;

@@ -47,15 +47,16 @@
 	</div>
 	<div class="events">
 		<% (it.day.events || []).forEach((event) => { %>
+			<% const faded = event.source === 'felles' && !it.day.kidsStatus ? ' faded' : ''; %>
 			<% if (event.fullDay) { %>
-			<div class="event">
+			<div class="event<%= faded %>">
 				<%= event.displayTitle %>
 				<% if (event.hyttaWeather) { %>
 				<span class="hytta-weather">(<%= event.hyttaWeather.temperature %>&deg;, <%= event.hyttaWeather.rainProbability %>% regn)</span>
 				<% } %>
 			</div>
 			<% } else { %>
-			<div class="event">
+			<div class="event<%= faded %>">
 				<span class="event-time timespan"><%= event.displayTime.start %> <%= event.displayTime.spacer %> <%= event.displayTime.end %></span>
 				<%= event.displayTitle %>
 			</div>
