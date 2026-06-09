@@ -1,5 +1,5 @@
 // Living-sky WebGL renderer. Draws a procedural sky (gradient, sun/moon glow,
-// drifting clouds, stars, rain/snow) on a fullscreen <canvas class="sky">.
+// drifting clouds) on a fullscreen <canvas class="sky">.
 // All weather/time reasoning happens on the server; this only reads the
 // uniform targets the server pushes into #sky-uniforms and lerps toward them.
 
@@ -15,17 +15,14 @@ const FRAG = `
 precision highp float;
 varying vec2 vUv;
 uniform vec2 uRes;
-uniform float uTime;
+uniform float uTime;     // elapsed seconds (clouds only; tiny coeff, precision-safe)
 uniform vec3 uC1;        // sky top
 uniform vec3 uC2;        // sky middle
 uniform vec3 uC3;        // horizon
 uniform float uArc;      // 0..1 luminary position along its arc
 uniform float uNight;    // 0 day .. 1 night
 uniform float uCloud;    // 0..1 cloud coverage
-uniform float uPrecipType;  // 0 none, 1 rain, 2 snow
-uniform float uPrecipAmt;   // 0..1 precipitation intensity (lerped)
 
-float hash1(float n) { return fract(sin(n) * 43758.5453123); }
 float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
 
 float noise(vec2 p) {
@@ -75,38 +72,6 @@ void main() {
 	vec3 cloudCol = mix(vec3(0.97, 0.98, 1.0), vec3(0.3, 0.34, 0.44), uNight);
 	col = mix(col, cloudCol, cov * uCloud);
 
-	// Stars at clear night.
-	vec2 sg = floor(p * 140.0);
-	float sh = hash2(sg);
-	float star = step(0.99, sh) * (0.5 + 0.5 * sin(uTime * 2.5 + sh * 80.0));
-	col += star * uNight * (1.0 - uCloud) * 0.9;
-
-	// Rain.
-	if (uPrecipType > 0.5 && uPrecipType < 1.5) {
-		float c = floor(p.x * 120.0);
-		float r = hash1(c);
-		float yp = fract(uv.y * 1.3 + uTime * (1.6 + r) + r * 7.0);
-		float band = smoothstep(0.92, 1.0, yp);
-		col += vec3(0.62, 0.72, 0.86) * band * uPrecipAmt * 0.5;
-	}
-
-	// Snow.
-	if (uPrecipType > 1.5) {
-		float s = 0.0;
-		for (int i = 0; i < 3; i++) {
-			float fi = float(i);
-			float scale = mix(45.0, 90.0, fi / 2.0);
-			vec2 gp = p * scale;
-			gp.y += uTime * (7.0 + fi * 6.0);
-			gp.x += sin(uTime * 0.6 + fi * 2.0 + gp.y * 0.1) * 1.5;
-			vec2 cell = floor(gp);
-			vec2 f = fract(gp) - 0.5;
-			float hh = hash2(cell + fi * 13.0);
-			s += step(0.93, hh) * smoothstep(0.35, 0.0, length(f));
-		}
-		col += vec3(1.0) * s * uPrecipAmt * 0.9;
-	}
-
 	gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
@@ -117,8 +82,6 @@ interface SkyUniforms {
 	arc: number;
 	night: number;
 	cloud: number;
-	precipAmt: number;
-	precipType: number;
 }
 
 const DEFAULTS: SkyUniforms = {
@@ -128,8 +91,6 @@ const DEFAULTS: SkyUniforms = {
 	arc: 0.5,
 	night: 0,
 	cloud: 0.1,
-	precipAmt: 0,
-	precipType: 0,
 };
 
 function compile(
@@ -192,8 +153,6 @@ export function initSky(): void {
 		arc: gl.getUniformLocation(program, 'uArc'),
 		night: gl.getUniformLocation(program, 'uNight'),
 		cloud: gl.getUniformLocation(program, 'uCloud'),
-		precipType: gl.getUniformLocation(program, 'uPrecipType'),
-		precipAmt: gl.getUniformLocation(program, 'uPrecipAmt'),
 	};
 
 	// Render below display resolution: the sky is all soft gradients, glow and
@@ -234,11 +193,6 @@ export function initSky(): void {
 		if (ds.arc) target.arc = Number(ds.arc);
 		if (ds.night) target.night = Number(ds.night);
 		if (ds.cloud) target.cloud = Number(ds.cloud);
-		if (ds.precip !== undefined) {
-			const t = Number(ds.precip);
-			target.precipType = t;
-			target.precipAmt = t === 0 ? 0 : 1;
-		}
 		// On first read, snap current to target so we don't fade up from defaults.
 		if (!primed) {
 			primed = true;
@@ -248,8 +202,6 @@ export function initSky(): void {
 			current.arc = target.arc;
 			current.night = target.night;
 			current.cloud = target.cloud;
-			current.precipType = target.precipType;
-			current.precipAmt = target.precipAmt;
 		}
 	}
 
@@ -260,15 +212,17 @@ export function initSky(): void {
 	readTargets();
 
 	const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
-	const FPS = 30;
+	const FPS = 10;
 	const frameInterval = 1000 / FPS;
 	let last = 0;
 	const start = performance.now();
 
 	function frame(now: number) {
 		requestAnimationFrame(frame);
-		// Cap the framerate: ambient sky motion looks identical at 30fps and it
-		// halves both shader draws and the panels' backdrop-filter reblur.
+		// Cap the framerate hard: the only continuous motion is slow cloud drift,
+		// which looks fine at 10fps, and each rendered frame forces the three
+		// glass panels to re-run their (expensive, esp. on Firefox/Safari)
+		// backdrop-filter blur over the canvas. 10fps cuts that reblur load 3x.
 		if (last && now - last < frameInterval) return;
 		const dt = last ? Math.min((now - last) / 1000, 0.1) : 0.016;
 		last = now;
@@ -282,11 +236,6 @@ export function initSky(): void {
 		current.arc = lerp(current.arc, target.arc, k);
 		current.night = lerp(current.night, target.night, k);
 		current.cloud = lerp(current.cloud, target.cloud, k);
-		current.precipAmt = lerp(current.precipAmt, target.precipAmt, k);
-		// Snap precip type once the old precip has faded out.
-		if (current.precipAmt < 0.05 || target.precipType === current.precipType) {
-			current.precipType = target.precipType;
-		}
 
 		gl.uniform2f(u.res, cv.width, cv.height);
 		gl.uniform1f(u.time, (now - start) / 1000);
@@ -296,8 +245,6 @@ export function initSky(): void {
 		gl.uniform1f(u.arc, current.arc);
 		gl.uniform1f(u.night, current.night);
 		gl.uniform1f(u.cloud, current.cloud);
-		gl.uniform1f(u.precipType, current.precipType);
-		gl.uniform1f(u.precipAmt, current.precipAmt);
 
 		gl.drawArrays(gl.TRIANGLES, 0, 3);
 	}

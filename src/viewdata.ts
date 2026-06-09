@@ -135,7 +135,6 @@ export function buildHourlyForecastData(hourlyForecasts: HourlyForecast[]) {
 
 // --- Living sky ---
 
-const PRECIP_INDEX = { none: 0, rain: 1, snow: 2 } as const;
 const CLOUD_COVERAGE = { clear: 0.05, partly: 0.4, cloudy: 0.85, precip: 1.0 };
 const NIGHT_FACTOR = { night: 1, dawn: 0.5, dusk: 0.5, day: 0 };
 
@@ -163,7 +162,6 @@ export function buildSkyData(
 		c2: rgb(sky.colors.c2),
 		c3: rgb(sky.colors.c3),
 		arc: arc.toFixed(4),
-		precip: PRECIP_INDEX[precip],
 		cloud: CLOUD_COVERAGE[condition].toFixed(2),
 		night: NIGHT_FACTOR[phase].toFixed(2),
 	};
