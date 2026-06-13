@@ -69,7 +69,8 @@ export function buildCurrentWeatherData(
 		pressure: Math.round(homey.pressure),
 		humidity: Math.round(homey.humOut),
 		showTempTime: tempTime > 0 && Date.now() - tempTime > 20 * 60 * 1000,
-		tempTimeStr: tempTime > 0 ? new Date(tempTime).toLocaleTimeString() : '',
+		tempTimeStr:
+			tempTime > 0 ? new Date(tempTime).toLocaleTimeString('nb-NO') : '',
 	};
 }
 
