@@ -1,4 +1,5 @@
 import * as mqtt from 'mqtt';
+import { requireEnv } from './env.js';
 
 const options = {
 	username: process.env.MQTT_USER,
@@ -21,7 +22,7 @@ export class MqttClient {
 
 	// Connect to MQTT broker
 	private constructor() {
-		const mqttHost = process.env.MQTT_HOST!;
+		const mqttHost = requireEnv('MQTT_HOST');
 		console.log('Connecting to MQTT host:', mqttHost);
 		this.client = mqtt.connect(mqttHost, options);
 		this.client

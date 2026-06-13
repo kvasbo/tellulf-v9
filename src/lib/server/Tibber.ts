@@ -1,6 +1,7 @@
 import { type IConfig, TibberFeed, TibberQuery } from 'tibber-api';
 import { Places } from '../Enums.js';
 import { ConsumptionTracker } from './ConsumptionTracker.js';
+import { requireEnv } from './env.js';
 import { NorgesprisCalculator } from './NorgesprisCalculator.js';
 
 // Define EnergyResolution enum since it's not exported from main tibber-api
@@ -78,7 +79,7 @@ export class Tibber {
 	private readonly config: IConfig = {
 		active: true,
 		apiEndpoint: {
-			apiKey: process.env.TIBBER_KEY!,
+			apiKey: requireEnv('TIBBER_KEY'),
 			queryUrl: 'https://api.tibber.com/v1-beta/gql',
 		},
 		timestamp: true,
@@ -101,14 +102,17 @@ export class Tibber {
 		this.consumptionTracker = new ConsumptionTracker();
 		this.norgesprisCalculator = new NorgesprisCalculator();
 		this.feedHome = new TibberFeed(
-			new TibberQuery({ ...this.config, homeId: process.env.TIBBER_ID_HOME! }),
+			new TibberQuery({ ...this.config, homeId: requireEnv('TIBBER_ID_HOME') }),
 			60000,
 			false,
 			30000,
 			true,
 		);
 		this.feedCabin = new TibberFeed(
-			new TibberQuery({ ...this.config, homeId: process.env.TIBBER_ID_CABIN! }),
+			new TibberQuery({
+				...this.config,
+				homeId: requireEnv('TIBBER_ID_CABIN'),
+			}),
 			60000,
 			false,
 			30000,
@@ -268,8 +272,8 @@ export class Tibber {
 			if (!cacheValid) {
 				const id =
 					where === 'home'
-						? process.env.TIBBER_ID_HOME!
-						: process.env.TIBBER_ID_CABIN!;
+						? requireEnv('TIBBER_ID_HOME')
+						: requireEnv('TIBBER_ID_CABIN');
 				const currentDay = now.getDate();
 				const hoursToFetch = currentDay * 24 + now.getHours() + 3;
 
@@ -352,8 +356,8 @@ export class Tibber {
 		try {
 			const id =
 				where === 'home'
-					? process.env.TIBBER_ID_HOME!
-					: process.env.TIBBER_ID_CABIN!;
+					? requireEnv('TIBBER_ID_HOME')
+					: requireEnv('TIBBER_ID_CABIN');
 			const price = await this.query.getCurrentEnergyPrice(id);
 			const spotPrice = price.total || 0;
 

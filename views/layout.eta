@@ -18,23 +18,23 @@
 		<%~ it.skyHtml %>
 	</div>
 
-	<topbar>
-		<clock>
+	<tl-topbar>
+		<tl-clock>
 			<div id="now_time"></div>
 			<div id="date_week">
 				<div id="now_date"></div>
 				<div id="now_week"></div>
 			</div>
-		</clock>
+		</tl-clock>
 
-		<currentweather>
+		<tl-currentweather>
 			<div id="current-weather-content" sse-swap="current-weather" hx-swap="innerHTML">
 				<%~ it.currentWeatherHtml %>
 			</div>
-		</currentweather>
-	</topbar>
+		</tl-currentweather>
+	</tl-topbar>
 
-	<nowcast>
+	<tl-nowcast>
 		<svg width="0" height="0">
 			<defs>
 				<filter id="shape-shadow">
@@ -45,11 +45,11 @@
 		<div id="hourly-forecast-content" sse-swap="hourly-forecast" hx-swap="innerHTML">
 			<%~ it.hourlyForecastHtml %>
 		</div>
-	</nowcast>
+	</tl-nowcast>
 
-	<calendar id="calendar-content" sse-swap="calendar" hx-swap="innerHTML">
+	<tl-calendar id="calendar-content" sse-swap="calendar" hx-swap="innerHTML">
 		<%~ it.calendarHtml %>
-	</calendar>
+	</tl-calendar>
 
 	<footer>
 		<div id="power-home-content" class="footerBox" sse-swap="power-home" hx-swap="morph:innerHTML">

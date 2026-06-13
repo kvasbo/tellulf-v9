@@ -2,6 +2,7 @@ import { calendar_v3 } from '@googleapis/calendar';
 import { JWT } from 'google-auth-library';
 import { DateTime } from 'luxon';
 import type { EnrichedEvent, Event } from './Calendar.d.js';
+import { requireEnv } from './env.js';
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
@@ -13,7 +14,7 @@ let jwtClient: JWT | null = null;
 function getJwtClient(): JWT {
 	if (!jwtClient) {
 		const key = JSON.parse(
-			Buffer.from(process.env.GOOGLE_KEY_B64!, 'base64').toString('utf8'),
+			Buffer.from(requireEnv('GOOGLE_KEY_B64'), 'base64').toString('utf8'),
 		);
 		jwtClient = new JWT({
 			email: key.client_email,

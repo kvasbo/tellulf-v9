@@ -15,13 +15,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"preset": "recommended",
-			"style": {
-				"noNonNullAssertion": "off"
-			},
-			"correctness": {
-				"noUnknownTypeSelector": "off"
-			}
+			"preset": "recommended"
 		}
 	},
 	"javascript": {

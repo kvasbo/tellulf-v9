@@ -1,4 +1,4 @@
-<day>
+<tl-day>
 	<div class="dateHeader">
 		<span class="dateLabel">
 		    <span>
@@ -63,4 +63,4 @@
 			<% } %>
 		<% }) %>
 	</div>
-</day>
+</tl-day>

@@ -98,7 +98,8 @@ function compile(
 	type: number,
 	src: string,
 ): WebGLShader {
-	const sh = gl.createShader(type)!;
+	const sh = gl.createShader(type);
+	if (!sh) throw new Error('shader creation failed');
 	gl.shaderSource(sh, src);
 	gl.compileShader(sh);
 	if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
@@ -123,7 +124,8 @@ export function initSky(): void {
 	const cv = canvas;
 	const gl = ctx;
 
-	const program = gl.createProgram()!;
+	const program = gl.createProgram();
+	if (!program) throw new Error('program creation failed');
 	gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT));
 	gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG));
 	gl.linkProgram(program);

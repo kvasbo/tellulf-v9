@@ -14,9 +14,14 @@ const dateFmt = new Intl.DateTimeFormat('nb-NO', {
 });
 
 // Cache DOM refs
-const elTime = document.getElementById('now_time')!;
-const elDate = document.getElementById('now_date')!;
-const elWeek = document.getElementById('now_week')!;
+function mustGet(id: string): HTMLElement {
+	const el = document.getElementById(id);
+	if (!el) throw new Error(`Missing element #${id}`);
+	return el;
+}
+const elTime = mustGet('now_time');
+const elDate = mustGet('now_date');
+const elWeek = mustGet('now_week');
 
 // Clock - update on the minute, then schedule next update
 let lastDay = -1;
@@ -44,12 +49,12 @@ elTime.addEventListener('click', () => window.location.reload());
 
 // Calendar visibility - hide days that overflow
 function checkCalendarVisibility() {
-	const calendarEl = document.querySelector('calendar');
+	const calendarEl = document.querySelector('tl-calendar');
 	if (!calendarEl) return;
 
 	const containerHeight = calendarEl.clientHeight;
 	const dayElements = Array.from(
-		calendarEl.querySelectorAll('day'),
+		calendarEl.querySelectorAll('tl-day'),
 	) as HTMLElement[];
 
 	let cumulativeHeight = 0;
@@ -76,7 +81,7 @@ document.body.addEventListener('htmx:sseMessage', ((evt: CustomEvent) => {
 }) as EventListener);
 
 // Run visibility check on resize
-const calendarEl = document.querySelector('calendar');
+const calendarEl = document.querySelector('tl-calendar');
 if (calendarEl) {
 	new ResizeObserver(() =>
 		requestAnimationFrame(checkCalendarVisibility),
