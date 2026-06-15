@@ -65,8 +65,7 @@ export class Entur {
 			const parsed = parser.parse(text);
 			const valid = enturSchema.safeParse(parsed);
 			if (!valid.success) {
-				console.error('Invalid data from Entur');
-				this.trains = [];
+				console.error('Invalid data from Entur; keeping previous departures');
 				return;
 			}
 			const trips =
@@ -115,8 +114,10 @@ export class Entur {
 
 			console.log(`Entur updated with ${this.trains.length} trains`);
 		} catch (error) {
-			console.error('Error: ', error);
-			this.trains = [];
+			console.error(
+				'Error updating Entur; keeping previous departures:',
+				error,
+			);
 		}
 	}
 }

@@ -108,6 +108,22 @@ export class Weather {
 		},
 	};
 
+	// Per-location retry backoff. yr.no throttles aggressive clients, so on
+	// failure we back off exponentially (10s → … → 5min) instead of hammering
+	// every 10s, and reset to the base delay once a fetch succeeds.
+	private static readonly BASE_RETRY_MS = 10 * 1000;
+	private static readonly MAX_RETRY_MS = 5 * 60 * 1000;
+	private retryDelay: Record<StedNavn, number> = {
+		oslo: Weather.BASE_RETRY_MS,
+		hytta: Weather.BASE_RETRY_MS,
+	};
+
+	private scheduleRetry(location: StedNavn): void {
+		const delay = this.retryDelay[location];
+		this.retryDelay[location] = Math.min(delay * 2, Weather.MAX_RETRY_MS);
+		setTimeout(() => this.fetchForecastData(location), delay);
+	}
+
 	constructor() {
 		setTimeout(() => {
 			this.updateForecasts();
@@ -243,9 +259,7 @@ export class Weather {
 				// Log the fetch error message
 				console.log(fetchResponse.statusText);
 				console.error(`Could not fetch forecast for ${location} from yr.no`);
-				setTimeout(() => {
-					this.fetchForecastData(location);
-				}, 1000 * 10);
+				this.scheduleRetry(location);
 				return;
 			}
 
@@ -262,18 +276,15 @@ export class Weather {
 				);
 				this.weatherData[location].forecast =
 					forecastValidated.data.properties.timeseries;
+				this.retryDelay[location] = Weather.BASE_RETRY_MS;
 			} else {
 				console.log(`Could not validate forecast for ${location}`);
 				console.log(forecastValidated);
-				setTimeout(() => {
-					this.fetchForecastData(location);
-				}, 1000 * 10);
+				this.scheduleRetry(location);
 			}
 		} catch (error) {
 			console.error(error);
-			setTimeout(() => {
-				this.fetchForecastData(location);
-			}, 1000 * 10);
+			this.scheduleRetry(location);
 		}
 	}
 }
