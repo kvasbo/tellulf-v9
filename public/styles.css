@@ -1,72 +1,72 @@
 * {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 /* Adaptive theme variables — overridden live by the server-pushed sky frame
    (see views/partials/sky.eta). These are light-scheme fallbacks. */
 :root {
-	--fg: #1a1d22;
-	--fg-muted: #4a4f57;
-	--fg-faint: rgba(20, 22, 28, 0.42);
-	--line: rgba(20, 30, 45, 0.22);
-	--glass-bg: rgba(255, 255, 255, 0.16);
-	--glass-border: rgba(255, 255, 255, 0.38);
-	--glass-shadow: rgba(30, 50, 80, 0.18);
-	--icon-filter: brightness(0.45);
+  --fg: #1a1d22;
+  --fg-muted: #4a4f57;
+  --fg-faint: rgba(20, 22, 28, 0.42);
+  --line: rgba(20, 30, 45, 0.22);
+  --glass-bg: rgba(255, 255, 255, 0.16);
+  --glass-border: rgba(255, 255, 255, 0.38);
+  --glass-shadow: rgba(30, 50, 80, 0.18);
+  --icon-filter: brightness(0.45);
 }
 
 /* Living-sky WebGL canvas, behind everything. */
 canvas.sky {
-	position: fixed;
-	inset: 0;
-	width: 100vw;
-	height: 100vh;
-	z-index: -1;
-	display: block;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  display: block;
 }
 
 /* Shared frosted-glass card treatment. */
 tl-topbar,
 tl-calendar,
 .footerBox {
-	background: var(--glass-bg);
-	backdrop-filter: blur(12px) saturate(1.4);
-	-webkit-backdrop-filter: blur(12px) saturate(1.4);
-	border: 1px solid var(--glass-border);
-	border-radius: 12px;
-	box-shadow: 0 8px 30px var(--glass-shadow);
-	padding: 16px 22px;
-	transition:
-		background 1.5s linear,
-		border-color 1.5s linear,
-		box-shadow 1.5s linear;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px var(--glass-shadow);
+  padding: 16px 22px;
+  transition:
+    background 1.5s linear,
+    border-color 1.5s linear,
+    box-shadow 1.5s linear;
 }
 
 body {
-	cursor: none;
-	display: grid;
-	grid-template-columns: 30% 30% 1fr;
-	/* Footer sizes to its content (auto) so the glass-padded power panels can't
+  cursor: none;
+  display: grid;
+  grid-template-columns: 30% 30% 1fr;
+  /* Footer sizes to its content (auto) so the glass-padded power panels can't
 	   overflow a fixed track; the nowcast row (1fr) absorbs the remaining space. */
-	grid-template-rows: 30% 1fr auto;
-	row-gap: 15px;
-	column-gap: 15px;
-	grid-template-areas:
-		"tl-topbar tl-topbar tl-calendar"
-		"weather_nowcast weather_nowcast tl-calendar"
-		"bottom-boxes bottom-boxes tl-calendar";
-	font-family: "Lato", sans-serif;
-	font-optical-sizing: auto;
-	font-weight: 300;
-	font-size: 20px;
-	height: 100vh;
-	width: 100vw;
-	padding: 15px;
-	margin: 0;
-	color: var(--fg);
-	transition: color 1.5s linear;
-	/* Fixed 1920x1080 kiosk: never scroll, clamp to exactly one screen. */
-	overflow: hidden;
+  grid-template-rows: 30% 1fr auto;
+  row-gap: 15px;
+  column-gap: 15px;
+  grid-template-areas:
+    "tl-topbar tl-topbar tl-calendar"
+    "weather_nowcast weather_nowcast tl-calendar"
+    "bottom-boxes bottom-boxes tl-calendar";
+  font-family: "Lato", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-size: 20px;
+  height: 100vh;
+  width: 100vw;
+  padding: 15px;
+  margin: 0;
+  color: var(--fg);
+  transition: color 1.5s linear;
+  /* Fixed 1920x1080 kiosk: never scroll, clamp to exactly one screen. */
+  overflow: hidden;
 }
 
 /* CSS containment for SSE swap targets - isolates reflows */
@@ -75,308 +75,303 @@ body {
 #power-home-content,
 #power-cabin-content,
 #entur-content {
-	contain: layout style;
+  contain: layout style;
 }
 
 tl-topbar {
-	grid-area: tl-topbar;
-	display: flex;
+  grid-area: tl-topbar;
+  display: flex;
 }
 
 tl-clock,
 tl-currentweather {
-	display: flex;
-	flex: 1;
-	flex-direction: column;
-	justify-content: flex-start;
-	align-items: center;
-	width: 100%;
-	height: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 /* Subtle divider between the clock and temperature halves of the one card. */
-tl-topbar > tl-currentweather {
-	border-left: 1px solid var(--line);
+tl-topbar>tl-currentweather {
+  border-left: 1px solid var(--line);
 }
 
 #now_time,
 #current_temperature {
-	align-items: center;
-	display: flex;
-	flex: 3;
-	font-size: 170px;
-	font-weight: 400;
-	height: 100%;
-	justify-content: center;
-	width: 100%;
-	text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  display: flex;
+  flex: 3;
+  font-size: 170px;
+  font-weight: 400;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 #date_week,
 #aux-weather-info {
-	align-items: center;
-	display: flex;
-	flex-direction: row;
-	flex: 2;
-	width: 100%;
-	justify-content: space-evenly;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex: 2;
+  width: 100%;
+  justify-content: space-evenly;
 }
 
 tl-clock {
-	padding-right: 20px;
+  padding-right: 20px;
 }
 
 tl-currentweather {
-	padding-left: 20px;
+  padding-left: 20px;
 }
 
 tl-clock #now_date {
-	font-size: 50px;
+  font-size: 50px;
 }
 
 tl-clock #now_week {
-	font-size: 50px;
+  font-size: 50px;
 }
 
 #current-weather-content,
 #hourly-forecast-content {
-	display: contents;
+  display: contents;
 }
 
 tl-calendar {
-	container-type: size;
-	box-sizing: border-box;
-	container-name: calendar-v;
-	grid-area: tl-calendar;
-	width: 100%;
-	height: 100%;
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start;
-	overflow: hidden;
-	flex-wrap: nowrap;
+  container-type: size;
+  box-sizing: border-box;
+  container-name: calendar-v;
+  grid-area: tl-calendar;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+  flex-wrap: nowrap;
 }
 
 tl-day {
-	flex-shrink: 0;
-	padding-bottom: 10px;
-	box-sizing: border-box;
+  flex-shrink: 0;
+  padding-bottom: 10px;
+  box-sizing: border-box;
 }
 
 tl-day .dateLabel {
-	display: flex;
-	align-items: end;
+  display: flex;
+  align-items: end;
 }
 
 tl-day .calendaricon {
-	height: 14px;
-	margin-right: 0.3em;
-	width: 14px;
+  height: 14px;
+  margin-right: 0.3em;
+  width: 14px;
 }
 
 tl-day .dateHeader .calendaricon.kids {
-	margin-right: 0;
-	margin-left: 0.3em;
-	height: 28px;
-	width: auto;
-	flex: 1;
-	filter: var(--icon-filter);
-	transition: filter 1.5s linear;
+  margin-right: 0;
+  margin-left: 0.3em;
+  height: 28px;
+  width: auto;
+  flex: 1;
+  filter: var(--icon-filter);
+  transition: filter 1.5s linear;
 }
 
 tl-day .dateHeader .kids-arrow {
-	margin-left: 0.3em;
-	align-self: center;
-	color: var(--fg-muted);
+  margin-left: 0.3em;
+  align-self: center;
+  color: var(--fg-muted);
 }
 
 tl-day.day-hidden {
-	display: none;
+  display: none;
 }
 
 tl-day .dateHeader {
-	align-items: center;
-	display: flex;
-	border-bottom: 1px solid var(--line);
-	font-size: 25px;
-	justify-content: space-between;
-	width: 100%;
+  align-items: center;
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  font-size: 25px;
+  justify-content: space-between;
+  width: 100%;
 }
 
 tl-day .dateHeader .headerWeather {
-	align-items: center;
-	display: flex;
+  align-items: center;
+  display: flex;
 }
 
 tl-day .dateHeader .headerWeather .headerWeatherPrepArea {
-	display: flex;
-	margin-right: 0.2em;
+  display: flex;
+  margin-right: 0.2em;
 }
 
 tl-day .dateHeader .headerWeather .headerWeatherPrepArea .weatherPrep {
-	color: grey;
-	display: flex;
-	flex: 1;
+  color: grey;
+  display: flex;
+  flex: 1;
 }
 
-tl-day
-	.dateHeader
-	.headerWeather
-	.headerWeatherPrepArea
-	.weatherPrep
-	.headerWeatherIconPrep {
-	height: 25px;
-	margin: 0 0.25em;
-	width: 25px;
+tl-day .dateHeader .headerWeather .headerWeatherPrepArea .weatherPrep .headerWeatherIconPrep {
+  height: 25px;
+  margin: 0 0.25em;
+  width: 25px;
 }
 
 tl-day .dateHeader .headerWeather .headerWeatherTempIcon {
-	height: 25px;
-	opacity: 0.4;
-	width: 25px;
+  height: 25px;
+  opacity: 0.4;
+  width: 25px;
 }
 
 tl-day .event,
 tl-day .dinner,
 tl-day .birthday {
-	display: flex;
-	align-items: baseline;
-	justify-content: flex-start;
-	margin-bottom: 1px;
-	margin-top: 1px;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  margin-bottom: 1px;
+  margin-top: 1px;
 }
 
 tl-day .event.faded {
-	opacity: 0.4;
+  opacity: 0.4;
 }
 
 tl-day .event .event-time {
-	color: var(--fg-muted);
-	font-variant-numeric: tabular-nums;
-	display: flex;
-	align-items: baseline;
-	justify-content: flex-start;
-	margin-right: 10px;
-	font-size: 13pt;
-	width: 123px;
-	overflow: hidden;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  margin-right: 10px;
+  font-size: 13pt;
+  width: 123px;
+  overflow: hidden;
 }
 
 .hytta-weather {
-	color: var(--fg-muted);
-	font-size: 14px;
-	margin-left: 0.5em;
+  color: var(--fg-muted);
+  font-size: 14px;
+  margin-left: 0.5em;
 }
 
 .number {
-	font-variant-numeric: tabular-nums;
-	font-size: 13pt;
+  font-variant-numeric: tabular-nums;
+  font-size: 13pt;
 }
 
 tl-nowcast {
-	grid-area: weather_nowcast;
-	display: flex;
-	flex: 1;
-	margin-top: 1em;
-	margin-bottom: 0.5em;
-	flex-direction: column;
-	justify-content: space-evenly;
-	align-items: flex-start;
+  grid-area: weather_nowcast;
+  display: flex;
+  flex: 1;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: flex-start;
 }
 
 tl-nowcast .weather {
-	position: relative;
-	display: flex;
-	flex: 1;
-	width: 100%;
-	flex-wrap: nowrap;
+  position: relative;
+  display: flex;
+  flex: 1;
+  width: 100%;
+  flex-wrap: nowrap;
 }
 
 tl-nowcast .weather .zeroLine {
-	position: absolute;
-	width: 100%;
-	border-bottom: 1px solid var(--line);
+  position: absolute;
+  width: 100%;
+  border-bottom: 1px solid var(--line);
 }
 
 tl-nowcast .weather .time {
-	position: absolute;
-	bottom: 15px;
+  position: absolute;
+  bottom: 15px;
 }
 
 tl-nowcast .weather :last-child {
-	border-right: none;
+  border-right: none;
 }
 
 tl-nowcast .weather tl-forecast {
-	flex: 1;
-	position: relative;
-	align-items: center;
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-end;
-	margin: 0;
-	height: 90%;
-	border-right: 1px solid var(--line);
+  flex: 1;
+  position: relative;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin: 0;
+  height: 90%;
+  border-right: 1px solid var(--line);
 }
 
 tl-nowcast .weather tl-forecast .time {
-	position: absolute;
-	bottom: -40px;
+  position: absolute;
+  bottom: -40px;
 }
 
 tl-nowcast .weather tl-forecast:last-of-type {
-	border-right: none;
+  border-right: none;
 }
 
 tl-nowcast .weather tl-forecast .forecastMovablePart {
-	transform: translateY(80px);
-	display: flex;
-	position: absolute;
-	bottom: 0;
-	justify-content: center;
-	align-items: center;
-	flex-direction: column;
-	height: 120px;
+  transform: translateY(80px);
+  display: flex;
+  position: absolute;
+  bottom: 0;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 120px;
 }
 
 tl-nowcast .weather tl-forecast .forecastMovablePart .forecastProb {
-	color: var(--fg-muted);
-	font-size: 14px;
-	text-align: center;
+  color: var(--fg-muted);
+  font-size: 14px;
+  text-align: center;
 }
 
 tl-nowcast .weather tl-forecast .forecastMovablePart .weather_icon {
-	height: 64px;
-	width: 64px;
+  height: 64px;
+  width: 64px;
 }
 
 .wind-indicator {
-	display: flex;
-	align-items: center;
-	gap: 1px;
-	color: #6a7a8a;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  color: #6a7a8a;
 }
 
 .wind-arrow {
-	width: 14px;
-	height: 14px;
-	opacity: 0.65;
+  width: 14px;
+  height: 14px;
+  opacity: 0.65;
 }
 
 .wind-speed {
-	font-size: 11px;
-	font-weight: 400;
-	opacity: 0.65;
-	white-space: nowrap;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.65;
+  white-space: nowrap;
 }
 
 .rain {
-	background-color: #3ea4f0;
-	position: absolute;
-	bottom: 0;
-	color: white;
-	display: flex;
-	width: 100%;
+  background-color: #3ea4f0;
+  position: absolute;
+  bottom: 0;
+  color: white;
+  display: flex;
+  width: 100%;
 }
 
 /* Discreet rain drops falling through the air above the bar.
@@ -386,154 +381,156 @@ tl-nowcast .weather tl-forecast .forecastMovablePart .weather_icon {
    spacing (background-size) and start offset, so they fall at different
    speeds and never line up into rows or columns. */
 tl-nowcast .weather tl-forecast.raining::before {
-	content: "";
-	position: absolute;
-	inset: 0;
-	background-image:
-		radial-gradient(1px 5px at 8% 0, rgba(62, 164, 240, 0.32), transparent),
-		radial-gradient(1px 6px at 19% 0, rgba(62, 164, 240, 0.26), transparent),
-		radial-gradient(1px 4px at 28% 0, rgba(62, 164, 240, 0.36), transparent),
-		radial-gradient(1px 5px at 41% 0, rgba(62, 164, 240, 0.28), transparent),
-		radial-gradient(1px 6px at 53% 0, rgba(62, 164, 240, 0.34), transparent),
-		radial-gradient(1px 4px at 64% 0, rgba(62, 164, 240, 0.24), transparent),
-		radial-gradient(1px 5px at 76% 0, rgba(62, 164, 240, 0.3), transparent),
-		radial-gradient(1px 6px at 89% 0, rgba(62, 164, 240, 0.33), transparent);
-	background-size:
-		100% 40px,
-		100% 57px,
-		100% 33px,
-		100% 63px,
-		100% 45px,
-		100% 37px,
-		100% 59px,
-		100% 48px;
-	background-position-y: 0, 12px, 25px, 8px, 30px, 18px, 5px, 22px;
-	background-repeat: repeat-y;
-	animation: rainDrops 1s linear infinite;
-	pointer-events: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 5px at 8% 0, rgba(62, 164, 240, 0.32), transparent),
+    radial-gradient(1px 6px at 19% 0, rgba(62, 164, 240, 0.26), transparent),
+    radial-gradient(1px 4px at 28% 0, rgba(62, 164, 240, 0.36), transparent),
+    radial-gradient(1px 5px at 41% 0, rgba(62, 164, 240, 0.28), transparent),
+    radial-gradient(1px 6px at 53% 0, rgba(62, 164, 240, 0.34), transparent),
+    radial-gradient(1px 4px at 64% 0, rgba(62, 164, 240, 0.24), transparent),
+    radial-gradient(1px 5px at 76% 0, rgba(62, 164, 240, 0.3), transparent),
+    radial-gradient(1px 6px at 89% 0, rgba(62, 164, 240, 0.33), transparent);
+  background-size:
+    100% 40px,
+    100% 57px,
+    100% 33px,
+    100% 63px,
+    100% 45px,
+    100% 37px,
+    100% 59px,
+    100% 48px;
+  background-position-y: 0, 12px, 25px, 8px, 30px, 18px, 5px, 22px;
+  background-repeat: repeat-y;
+  animation: rainDrops 1s linear infinite;
+  pointer-events: none;
 }
 
 /* Each layer travels exactly one tile (its background-size height) per
    cycle, so the loop is seamless but every column falls at its own speed. */
 @keyframes rainDrops {
-	to {
-		background-position-y: 40px, 69px, 58px, 71px, 75px, 55px, 64px, 70px;
-	}
+  to {
+    background-position-y: 40px, 69px, 58px, 71px, 75px, 55px, 64px, 70px;
+  }
 }
 
 .rainWave {
-	position: absolute;
-	width: 100%;
-	display: block;
+  position: absolute;
+  width: 100%;
+  display: block;
 }
 
 .maxTemp,
 .minTemp {
-	width: calc(100% / 18);
-	font-size: 30px;
-	color: var(--fg);
-	opacity: 0.15;
-	position: absolute;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+  width: calc(100% / 18);
+  font-size: 30px;
+  color: var(--fg);
+  opacity: 0.15;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .maxTemp {
-	top: 10px;
-	left: 0;
+  top: 10px;
+  left: 0;
 }
 
 .minTemp {
-	bottom: 50px;
-	left: 0;
+  bottom: 50px;
+  left: 0;
 }
 
 footer {
-	grid-area: bottom-boxes;
-	display: flex;
-	flex-direction: row;
-	justify-content: space-evenly;
-	flex: 1;
+  grid-area: bottom-boxes;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  flex: 1;
 }
 
 .footerBox {
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start;
-	align-items: flex-start;
-	flex: 1;
-	margin: 5px 5px 0 5px;
-	overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  flex: 1;
+  margin: 5px 5px 0 5px;
+  overflow: hidden;
 }
 
 .footerTable {
-	font-size: 13pt;
+  font-size: 13pt;
+  flex: 1;
+  justify-content: center;
 }
 
 .footerTable td {
-	width: 120px;
-	padding-right: 10px;
+  width: 120px;
+  padding-right: 10px;
 }
 
 .powerShow {
-	width: 100%;
-	height: 50px;
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start;
-	align-items: flex-start;
-	margin-right: 25px;
-	box-sizing: border-box;
+  width: 100%;
+  height: 50px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-right: 25px;
+  box-sizing: border-box;
 }
 
 .powerBar {
-	height: 40px;
-	background-color: #3ea4f0;
-	transition: width 0.5s linear;
-	display: flex;
-	justify-content: flex-start;
-	align-items: center;
-	padding-left: 10px;
-	margin-top: 10px;
-	overflow: visible;
-	break-inside: avoid;
-	font-variant-numeric: tabular-nums;
+  height: 40px;
+  background-color: #3ea4f0;
+  transition: width 0.5s linear;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 10px;
+  margin-top: 10px;
+  overflow: visible;
+  break-inside: avoid;
+  font-variant-numeric: tabular-nums;
 }
 
 .minBar {
-	height: 5px;
-	background-color: #3ea4f033;
-	transition: width 0.5s linear;
+  height: 5px;
+  background-color: #3ea4f033;
+  transition: width 0.5s linear;
 }
 
 .maxBar {
-	height: 5px;
-	background-color: #3ea4f055;
-	transition: width 0.5s linear;
+  height: 5px;
+  background-color: #3ea4f055;
+  transition: width 0.5s linear;
 }
 
 .avgBar {
-	height: 5px;
-	background-color: #3ea4f077;
-	transition: width 0.5s linear;
+  height: 5px;
+  background-color: #3ea4f077;
+  transition: width 0.5s linear;
 }
 
 .monthlyStatus {
-	font-size: 0.85em;
-	opacity: 0.7;
+  font-size: 0.85em;
+  opacity: 0.7;
 }
 
 .monthlyStatus td {
-	padding-top: 2px;
-	white-space: nowrap;
+  padding-top: 2px;
+  white-space: nowrap;
 }
 
 #current_temperature_time {
-	color: rgba(255, 0, 0, 0.35);
+  color: rgba(255, 0, 0, 0.35);
 }
 
 #server-version {
-	display: none;
+  display: none;
 }
