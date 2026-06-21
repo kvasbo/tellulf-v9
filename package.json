@@ -14,7 +14,7 @@
 	"dependencies": {
 		"@googleapis/calendar": "^15.0.0",
 		"eta": "^4.6.0",
-		"fast-xml-parser": "^5.8.0",
+		"fast-xml-parser": "^5.9.3",
 		"google-auth-library": "^10.7.0",
 		"htmx-ext-sse": "^2.2.4",
 		"htmx.org": "^2.0.10",
@@ -28,7 +28,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.0",
-		"@types/luxon": "^3.7.1",
+		"@types/luxon": "^3.7.2",
 		"bun-types": "^1.3.14",
 		"typescript": "^6.0.3"
 	}
