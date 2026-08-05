@@ -3,6 +3,10 @@
 	"private": true,
 	"version": "1.0.0",
 	"type": "module",
+	"engines": {
+		"bun": ">=1.0.0",
+		"npm": "0.0.0-use-bun-instead"
+	},
 	"scripts": {
 		"dev": "bun --watch src/server.ts",
 		"start": "bun src/server.ts",
