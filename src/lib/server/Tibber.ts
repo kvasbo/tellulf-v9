@@ -57,9 +57,24 @@ const initValues: PowerData = {
 	cap: 0,
 };
 
+// Recreate a feed if it has delivered no data for this long. Doubles per
+// consecutive recreation (up to the max) so a long-dead feed does not burn
+// Tibber's ~20 new websocket connections/hour per-IP budget, which is shared
+// with the healthy feed.
+const STALE_LIMIT_MS = 5 * 60 * 1000;
+const MAX_STALE_LIMIT_MS = 60 * 60 * 1000;
+
 export class Tibber {
-	private readonly feedHome: TibberFeed;
-	private readonly feedCabin: TibberFeed;
+	private feedHome: TibberFeed;
+	private feedCabin: TibberFeed;
+	private readonly lastData: { home: number; cabin: number } = {
+		home: Date.now(),
+		cabin: Date.now(),
+	};
+	private readonly staleLimit: { home: number; cabin: number } = {
+		home: STALE_LIMIT_MS,
+		cabin: STALE_LIMIT_MS,
+	};
 	private readonly data: { home: PowerData; cabin: PowerData } = {
 		home: { ...initValues },
 		cabin: { ...initValues },
@@ -101,33 +116,25 @@ export class Tibber {
 		this.query = new TibberQuery(this.config);
 		this.consumptionTracker = new ConsumptionTracker();
 		this.norgesprisCalculator = new NorgesprisCalculator();
-		this.feedHome = new TibberFeed(
-			new TibberQuery({ ...this.config, homeId: requireEnv('TIBBER_ID_HOME') }),
-			60000,
-			false,
-			30000,
-			true,
-		);
-		this.feedCabin = new TibberFeed(
-			new TibberQuery({
-				...this.config,
-				homeId: requireEnv('TIBBER_ID_CABIN'),
-			}),
-			60000,
-			false,
-			30000,
-			true,
-		);
+		this.feedHome = this.createFeed(Places.Home);
+		this.feedCabin = this.createFeed(Places.Cabin);
 
 		// Caps come from the Norgespris config (single source of truth)
 		this.data.home.cap = this.norgesprisCalculator.getCap(Places.Home);
 		this.data.cabin.cap = this.norgesprisCalculator.getCap(Places.Cabin);
 
-		this.setupFeed(this.feedHome, Places.Home);
-		this.setupFeed(this.feedCabin, Places.Cabin);
-
 		this.feedHome.connect();
 		this.feedCabin.connect();
+
+		// Watchdog: the tibber-api feed can wedge itself in states its own
+		// auto-reconnect never recovers from, so rebuild any silent feed.
+		setInterval(() => {
+			// At most one recreation per tick: Tibber caps connections per IP,
+			// so never open two new ones simultaneously.
+			if (!this.checkFeedHealth(Places.Home)) {
+				this.checkFeedHealth(Places.Cabin);
+			}
+		}, 60000);
 
 		// Start power price fetching loop
 		this.updatePowerPrice(Places.Home);
@@ -155,8 +162,63 @@ export class Tibber {
 		return this.data[where];
 	}
 
+	private createFeed(where: Places): TibberFeed {
+		const homeId =
+			where === 'home'
+				? requireEnv('TIBBER_ID_HOME')
+				: requireEnv('TIBBER_ID_CABIN');
+		const feed = new TibberFeed(
+			new TibberQuery({ ...this.config, homeId }),
+			60000,
+			false,
+			30000,
+			true,
+		);
+		this.setupFeed(feed, where);
+		return feed;
+	}
+
+	private checkFeedHealth(where: Places): boolean {
+		const silentFor = Date.now() - this.lastData[where];
+		if (silentFor < this.staleLimit[where]) {
+			return false;
+		}
+		console.warn(
+			`${where}: no Tibber data for ${Math.round(silentFor / 1000)}s, recreating feed`,
+		);
+		const old = where === 'home' ? this.feedHome : this.feedCabin;
+		old.active = false; // closes the connection and cancels internal timers
+		old.removeAllListeners();
+		// close() skips sockets it believes are dead, so force-terminate to
+		// make sure no connection leaks (Tibber caps open connections per IP)
+		try {
+			(
+				old as unknown as { _webSocket?: { terminate: () => void } }
+			)._webSocket?.terminate();
+		} catch {
+			// socket was already gone
+		}
+		const fresh = this.createFeed(where);
+		if (where === 'home') {
+			this.feedHome = fresh;
+		} else {
+			this.feedCabin = fresh;
+		}
+		// Grace period before the watchdog can fire again, doubling while the
+		// feed stays silent
+		this.lastData[where] = Date.now();
+		this.staleLimit[where] = Math.min(
+			this.staleLimit[where] * 2,
+			MAX_STALE_LIMIT_MS,
+		);
+		fresh.connect();
+		return true;
+	}
+
 	private setupFeed(feed: TibberFeed, where: Places) {
 		feed.on('data', (data) => {
+			this.lastData[where] = Date.now();
+			this.staleLimit[where] = STALE_LIMIT_MS;
 			this.data[where].timestamp = new Date().toISOString();
 			this.data[where].accumulatedConsumption =
 				data.accumulatedConsumption - data.accumulatedProduction;
@@ -249,6 +311,10 @@ export class Tibber {
 
 		feed.on('error', (error) => {
 			console.error('Feed Error:', error);
+		});
+
+		feed.on('warn', (message) => {
+			console.warn(`${where} Tibber warning:`, message);
 		});
 
 		feed.on('connected', () => {
