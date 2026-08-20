@@ -47,7 +47,7 @@
 	</div>
 	<div class="events">
 		<% (it.day.events || []).forEach((event) => { %>
-			<% const faded = event.source === 'felles' && !it.day.kidsStatus ? ' faded' : ''; %>
+			<% const faded = event.faded ? ' faded' : ''; %>
 			<% if (event.fullDay) { %>
 			<div class="event<%= faded %>">
 				<%= event.displayTitle %>

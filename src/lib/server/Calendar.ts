@@ -1,7 +1,7 @@
 import { calendar_v3 } from '@googleapis/calendar';
 import { JWT } from 'google-auth-library';
 import { DateTime } from 'luxon';
-import type { EnrichedEvent, Event } from './Calendar.d.js';
+import type { EnrichedEvent, Event, KidsStatus } from './Calendar.d.js';
 import { requireEnv } from './env.js';
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
@@ -137,12 +137,18 @@ export class Calendar {
 		const displayTitle = Calendar.getDisplayTitle(event, type);
 		const dayType = Calendar.getDayType(event, forDate);
 		const displayTime = Calendar.getEventDisplayTime(event, dayType);
+		const faded = Calendar.isEventFaded(
+			event,
+			forDate,
+			this.getKidsStatusForDate(forDate),
+		);
 
 		return {
 			...event,
 			displayTitle: displayTitle,
 			dayType: dayType,
 			displayTime: displayTime,
+			faded: faded,
 		};
 	}
 
@@ -226,7 +232,7 @@ export class Calendar {
 	 * - 'full'     when title contains only "audun"
 	 * - null       when there is no matching event
 	 */
-	getKidsStatusForDate(jsDate: Date): 'full' | 'leaving' | 'arriving' | null {
+	getKidsStatusForDate(jsDate: Date): KidsStatus {
 		const events = this.barneuker.filter(
 			(e) => e.fullDay && this.checkEventForDate(e, jsDate),
 		);
@@ -325,6 +331,34 @@ export class Calendar {
 			end: DateTime.fromJSDate(event.end).toFormat('HH:mm'),
 			spacer: arrow,
 		};
+	}
+
+	// The kids are exchanged at 16:00 on the days we switch.
+	static readonly HANDOVER_HOUR = 16;
+
+	/**
+	 * Should a felles event be greyed out, i.e. are the kids away while it
+	 * happens? On exchange days the handover at 16:00 splits the day. Events
+	 * that span the day rather than start in it have no start time to compare,
+	 * so they stay black whenever the kids are here at all.
+	 */
+	static isEventFaded(
+		event: Event,
+		forDate: Date,
+		kidsStatus: KidsStatus,
+	): boolean {
+		if (event.source !== 'felles') return false;
+		if (kidsStatus === null) return true;
+		if (kidsStatus === 'full') return false;
+
+		const dayType = Calendar.getDayType(event, forDate);
+		if (event.fullDay || dayType === 'middleDay' || dayType === 'lastDay') {
+			return false;
+		}
+
+		const afterHandover =
+			DateTime.fromJSDate(event.start).hour >= Calendar.HANDOVER_HOUR;
+		return kidsStatus === 'leaving' ? afterHandover : !afterHandover;
 	}
 
 	// Figure out if same date or whether it spans multiple days. For displaying purposes
