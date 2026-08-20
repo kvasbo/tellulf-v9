@@ -256,7 +256,7 @@ export function buildPowerData(powerData: PowerData, where: string) {
 export function buildEnturData(entur: Entur) {
 	const trains = entur
 		.getTrains()
-		.slice(0, 3)
+		.slice(0, 4)
 		.map((train) => ({
 			time: new Date(train.time).toLocaleTimeString('nb-NO', {
 				hour: '2-digit',
