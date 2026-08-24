@@ -478,6 +478,23 @@ footer {
 	padding-right: 10px;
 }
 
+/* Departure status: grey = no realtime data, red = running late. */
+.train-dot {
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	vertical-align: middle;
+}
+
+.train-dot-grey {
+	background: var(--fg-faint);
+}
+
+.train-dot-red {
+	background: #d63a2f;
+}
+
 .powerShow {
 	width: 100%;
 	height: 50px;

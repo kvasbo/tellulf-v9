@@ -264,6 +264,8 @@ export function buildEnturData(entur: Entur) {
 				timeZone: 'Europe/Oslo',
 			}),
 			destination: train.destination,
+			// Red for a delayed departure; grey when there is no realtime data at all.
+			dot: train.delayed ? 'red' : train.realtime ? null : 'grey',
 		}));
 	return { trains };
 }

@@ -5,6 +5,8 @@ const enturSchema = z.object({
 		stopPlace: z.object({
 			estimatedCalls: z.array(
 				z.object({
+					realtime: z.boolean(),
+					aimedDepartureTime: z.string(),
 					expectedDepartureTime: z.string(),
 					destinationDisplay: z.object({ frontText: z.string() }),
 					serviceJourney: z.object({ directionType: z.string() }),
@@ -18,6 +20,8 @@ const enturSchema = z.object({
 const query = `{
 	stopPlace(id: "NSR:StopPlace:58268") {
 		estimatedCalls(numberOfDepartures: 20, filters: [{select: [{lines: ["RUT:Line:1"]}]}]) {
+			realtime
+			aimedDepartureTime
 			expectedDepartureTime
 			destinationDisplay { frontText }
 			serviceJourney { directionType }
@@ -28,7 +32,12 @@ const query = `{
 interface Train {
 	time: string;
 	destination: string;
+	realtime: boolean;
+	// Expected departure more than two minutes after the timetabled one.
+	delayed: boolean;
 }
+
+const DELAY_THRESHOLD_MS = 2 * 60 * 1000;
 
 export class Entur {
 	trains: Train[] = [];
@@ -67,6 +76,11 @@ export class Entur {
 				.map((call) => ({
 					time: call.expectedDepartureTime,
 					destination: call.destinationDisplay.frontText,
+					realtime: call.realtime,
+					delayed:
+						new Date(call.expectedDepartureTime).getTime() -
+							new Date(call.aimedDepartureTime).getTime() >
+						DELAY_THRESHOLD_MS,
 				}))
 				.sort(
 					(a, b) => new Date(a.time).getTime() - new Date(b.time).getTime(),
