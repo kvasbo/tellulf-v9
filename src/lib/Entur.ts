@@ -1,40 +1,29 @@
-import { XMLParser } from 'fast-xml-parser';
 import { z } from 'zod';
 
 const enturSchema = z.object({
-	Siri: z.object({
-		ServiceDelivery: z.object({
-			EstimatedTimetableDelivery: z.object({
-				EstimatedJourneyVersionFrame: z.object({
-					EstimatedVehicleJourney: z.array(
-						z.object({
-							EstimatedCalls: z
-								.object({
-									EstimatedCall: z.union([
-										z.array(
-											z.object({
-												StopPointName: z.string().optional(),
-												ExpectedDepartureTime: z.string().optional(),
-												DestinationDisplay: z.string(),
-											}),
-										),
-										z.object({
-											StopPointName: z.string().optional(),
-											ExpectedDepartureTime: z.string().optional(),
-											DestinationDisplay: z.string(),
-										}),
-									]),
-								})
-								.optional(),
-							LineRef: z.string(),
-							DirectionRef: z.number(),
-						}),
-					),
+	data: z.object({
+		stopPlace: z.object({
+			estimatedCalls: z.array(
+				z.object({
+					expectedDepartureTime: z.string(),
+					destinationDisplay: z.object({ frontText: z.string() }),
+					serviceJourney: z.object({ directionType: z.string() }),
 				}),
-			}),
+			),
 		}),
 	}),
 });
+
+// Slemdal station, metro line 1 only. "inbound" = towards the city centre.
+const query = `{
+	stopPlace(id: "NSR:StopPlace:58268") {
+		estimatedCalls(numberOfDepartures: 20, filters: [{select: [{lines: ["RUT:Line:1"]}]}]) {
+			expectedDepartureTime
+			destinationDisplay { frontText }
+			serviceJourney { directionType }
+		}
+	}
+}`;
 
 interface Train {
 	time: string;
@@ -57,60 +46,31 @@ export class Entur {
 
 	async Update() {
 		try {
-			const parser = new XMLParser();
-			const xmlData = await fetch(
-				'https://api.entur.io/realtime/v1/rest/et?datasetId=RUT',
+			const response = await fetch(
+				'https://api.entur.io/journey-planner/v3/graphql',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'ET-Client-Name': 'kvasbo-tellulf',
+					},
+					body: JSON.stringify({ query }),
+				},
 			);
-			const text = await xmlData.text();
-			const parsed = parser.parse(text);
-			const valid = enturSchema.safeParse(parsed);
+			const valid = enturSchema.safeParse(await response.json());
 			if (!valid.success) {
 				console.error('Invalid data from Entur; keeping previous departures');
 				return;
 			}
-			const trips =
-				valid.data.Siri.ServiceDelivery.EstimatedTimetableDelivery
-					.EstimatedJourneyVersionFrame.EstimatedVehicleJourney;
-			const filteredTrips = trips.filter((trip) => {
-				// Check if the trip has any EstimatedCalls
-				if (
-					!trip.EstimatedCalls?.EstimatedCall ||
-					!Array.isArray(trip.EstimatedCalls.EstimatedCall) ||
-					trip.EstimatedCalls.EstimatedCall.length === 0
-				) {
-					return false;
-				}
-				// Check if the trip is on the correct line and direction
-				if (trip.LineRef !== 'RUT:Line:1' || trip.DirectionRef !== 1) {
-					return false;
-				}
-				if (
-					!Array.isArray(trip.EstimatedCalls.EstimatedCall) ||
-					trip.EstimatedCalls.EstimatedCall.filter(
-						(call) => call.StopPointName === 'Slemdal',
-					).length === 0
-				) {
-					return false;
-				}
-				return true;
-			});
-			const filteredTrains = filteredTrips.map(
-				(trip): { time: string; destination: string } => {
-					// @ts-expect-error - We have already checked that this is an array
-					const found = trip.EstimatedCalls?.EstimatedCall.find(
-						(stop: { StopPointName: string }) =>
-							stop.StopPointName === 'Slemdal',
-					);
-					return {
-						time: found.ExpectedDepartureTime,
-						destination: found.DestinationDisplay,
-					};
-				},
-			);
-
-			this.trains = filteredTrains.sort((a, b) => {
-				return new Date(a.time).getTime() - new Date(b.time).getTime();
-			});
+			this.trains = valid.data.data.stopPlace.estimatedCalls
+				.filter((call) => call.serviceJourney.directionType === 'inbound')
+				.map((call) => ({
+					time: call.expectedDepartureTime,
+					destination: call.destinationDisplay.frontText,
+				}))
+				.sort(
+					(a, b) => new Date(a.time).getTime() - new Date(b.time).getTime(),
+				);
 
 			console.log(`Entur updated with ${this.trains.length} trains`);
 		} catch (error) {

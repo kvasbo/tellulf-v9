@@ -18,7 +18,6 @@
 	"dependencies": {
 		"@googleapis/calendar": "^16.0.0",
 		"eta": "^4.6.0",
-		"fast-xml-parser": "^5.11.0",
 		"google-auth-library": "^11.0.2",
 		"htmx-ext-sse": "^2.2.4",
 		"htmx.org": "^2.0.10",
