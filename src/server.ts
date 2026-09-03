@@ -88,7 +88,10 @@ function handleIndex(): Response {
 			'hourlyForecast',
 			buildHourlyForecastData(hourly),
 		),
-		calendarHtml: renderPartial('calendar', { days: comingDays }),
+		calendarHtml: renderPartial('calendar', {
+			days: comingDays,
+			bhgDaysLeft: calendar.bhgDaysLeft,
+		}),
 		powerHomeHtml: renderPartial(
 			'power',
 			buildPowerData(tibber.getPowerData(Places.Home), 'home'),
@@ -142,7 +145,10 @@ function handleSSE(req: Request): Response {
 			);
 			sendEvent(
 				'calendar',
-				renderPartial('calendar', { days: days.generateComingDays() }),
+				renderPartial('calendar', {
+					days: days.generateComingDays(),
+					bhgDaysLeft: calendar.bhgDaysLeft,
+				}),
 			);
 			sendEvent(
 				'power-home',
@@ -200,7 +206,10 @@ function handleSSE(req: Request): Response {
 				);
 				sendEventIfChanged(
 					'calendar',
-					renderPartial('calendar', { days: days.generateComingDays() }),
+					renderPartial('calendar', {
+						days: days.generateComingDays(),
+						bhgDaysLeft: calendar.bhgDaysLeft,
+					}),
 				);
 			}, 15000);
 

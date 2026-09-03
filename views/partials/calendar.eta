@@ -1,3 +1,6 @@
 <% it.days.forEach((day) => { %>
 <%~ include("./day", { day }) %>
 <% }) %>
+<% if (it.bhgDaysLeft != null) { %>
+<div class="bhg-count">bhg: <%= it.bhgDaysLeft %></div>
+<% } %>

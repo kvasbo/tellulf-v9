@@ -36,6 +36,8 @@ export class Calendar {
 	birthdays: Event[] = []; // RawEvents
 	dinners: Event[] = [];
 	barneuker: Event[] = [];
+	// Number of "bhg" days left until kindergarten is done (null until fetched)
+	bhgDaysLeft: number | null = null;
 	// Display height of calendar events in pixels to ensure we don't overflow
 	displayHeights = {
 		event: 25,
@@ -60,6 +62,7 @@ export class Calendar {
 		this.refreshBirthdays();
 		this.refreshDinners();
 		this.refreshBarneuker();
+		this.refreshBhgCount();
 
 		setInterval(() => {
 			this.refreshEvents();
@@ -69,6 +72,7 @@ export class Calendar {
 			this.refreshBirthdays();
 			this.refreshDinners();
 			this.refreshBarneuker();
+			this.refreshBhgCount();
 		}, 900 * 1000);
 	}
 
@@ -250,6 +254,26 @@ export class Calendar {
 		return null;
 	}
 
+	/**
+	 * Counts remaining kindergarten ("bhg") days until Engebret is done,
+	 * fetching the childcare calendar through August 2027.
+	 */
+	async refreshBhgCount() {
+		if (process.env.CAL_ID_KINDERGARDEN) {
+			const events = await Calendar.getCalendarData(
+				process.env.CAL_ID_KINDERGARDEN,
+				DateTime.fromISO('2027-09-01'),
+			);
+			this.bhgDaysLeft = events.filter((e) =>
+				e.title.toLowerCase().includes('bhg'),
+			).length;
+
+			console.log(`${this.bhgDaysLeft} bhg days left.`);
+		} else {
+			this.bhgDaysLeft = null;
+		}
+	}
+
 	async refreshBirthdays() {
 		if (process.env.CAL_ID_BURSDAG) {
 			this.birthdays = await Calendar.getCalendarData(
@@ -265,8 +289,9 @@ export class Calendar {
 	/**
 	 * Get the content of a calendar
 	 * @param calendarId
+	 * @param timeMax How far ahead to fetch (default two weeks)
 	 */
-	static async getCalendarData(calendarId: string) {
+	static async getCalendarData(calendarId: string, timeMax?: DateTime) {
 		const calendar = new calendar_v3.Calendar({
 			auth: getJwtClient() as unknown as string,
 		});
@@ -276,7 +301,8 @@ export class Calendar {
 		const result = await calendar.events.list({
 			calendarId: calendarId,
 			timeMin: DateTime.now().toISO(),
-			timeMax: DateTime.now().plus({ weeks: 2 }).toISO(),
+			timeMax:
+				(timeMax ?? DateTime.now().plus({ weeks: 2 })).toISO() ?? undefined,
 			maxResults: 2000,
 			singleEvents: true,
 			orderBy: 'startTime',

@@ -148,6 +148,7 @@ tl-calendar {
 	box-sizing: border-box;
 	container-name: calendar-v;
 	grid-area: tl-calendar;
+	position: relative;
 	width: 100%;
 	height: 100%;
 	display: flex;
@@ -155,6 +156,15 @@ tl-calendar {
 	justify-content: flex-start;
 	overflow: hidden;
 	flex-wrap: nowrap;
+}
+
+/* Days left of kindergarten - discreet counter in the calendar corner */
+.bhg-count {
+	position: absolute;
+	bottom: 4px;
+	right: 10px;
+	font-size: 12px;
+	opacity: 0.35;
 }
 
 tl-day {
