@@ -95,8 +95,9 @@ tl-currentweather {
 }
 
 /* Subtle divider between the clock and temperature halves of the one card. */
-tl-topbar > tl-currentweather {
+tl-currentweather {
 	border-left: 1px solid var(--line);
+	padding-left: 20px;
 }
 
 #now_time,
@@ -124,10 +125,6 @@ tl-topbar > tl-currentweather {
 
 tl-clock {
 	padding-right: 20px;
-}
-
-tl-currentweather {
-	padding-left: 20px;
 }
 
 tl-clock #now_date {
