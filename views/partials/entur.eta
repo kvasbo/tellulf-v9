@@ -3,8 +3,8 @@
 		<tbody>
 			<% it.trains.forEach((train) => { %>
 			<tr>
-				<td class="number"><%= train.time %></td>
-				<td><%= train.destination %><% if (train.dot) { %> <span class="train-dot train-dot-<%= train.dot %>"></span><% } %></td>
+				<td class="number"><%= train.time %><% if (train.dot) { %> <span class="train-dot train-dot-<%= train.dot %>"></span><% } %></td>
+				<td><%= train.destination %></td>
 			</tr>
 			<% }) %>
 		</tbody>
