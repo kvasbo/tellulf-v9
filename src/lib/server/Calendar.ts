@@ -310,6 +310,7 @@ export class Calendar {
 
 		if (result?.data?.items?.length) {
 			result.data.items.forEach((event) => {
+				if (!Calendar.isVisible(event)) return;
 				const e = Calendar.parseGoogleEvent(event);
 				out.push(e);
 			});
@@ -402,6 +403,20 @@ export class Calendar {
 		} else {
 			return 'middleDay';
 		}
+	}
+
+	/**
+	 * Events this calendar organized always show. Invitations from others only
+	 * show once accepted or tentatively accepted, so declined and unanswered
+	 * ones are hidden. Google marks the calendar's own entries with `self`.
+	 */
+	static isVisible(event: calendar_v3.Schema$Event): boolean {
+		if (event.organizer?.self) return true;
+		const me = event.attendees?.find((a) => a.self);
+		if (!me) return true;
+		return (
+			me.responseStatus === 'accepted' || me.responseStatus === 'tentative'
+		);
 	}
 
 	// Main parsing of an event from Google

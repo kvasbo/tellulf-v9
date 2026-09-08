@@ -1,6 +1,58 @@
 import { describe, expect, test } from 'bun:test';
+import type { calendar_v3 } from '@googleapis/calendar';
 import type { Event } from './Calendar.d.js';
 import { Calendar } from './Calendar.js';
+
+describe('isVisible', () => {
+	const other = { email: 'other@example.com' };
+	const invitation = (
+		responseStatus: string,
+		extra: Partial<calendar_v3.Schema$Event> = {},
+	): calendar_v3.Schema$Event => ({
+		summary: 'Møte',
+		organizer: other,
+		attendees: [
+			{ ...other, responseStatus: 'accepted' },
+			{ self: true, responseStatus },
+		],
+		...extra,
+	});
+
+	test('my own events without guests are visible', () => {
+		expect(Calendar.isVisible({ summary: 'Egen' })).toBe(true);
+		expect(Calendar.isVisible({ summary: 'Egen', attendees: [] })).toBe(true);
+	});
+
+	test('events I organized are visible whatever my own status', () => {
+		expect(
+			Calendar.isVisible(invitation('declined', { organizer: { self: true } })),
+		).toBe(true);
+		expect(
+			Calendar.isVisible(
+				invitation('needsAction', { organizer: { self: true } }),
+			),
+		).toBe(true);
+	});
+
+	test('invitations are visible once accepted or tentative', () => {
+		expect(Calendar.isVisible(invitation('accepted'))).toBe(true);
+		expect(Calendar.isVisible(invitation('tentative'))).toBe(true);
+	});
+
+	test('declined and unanswered invitations are hidden', () => {
+		expect(Calendar.isVisible(invitation('declined'))).toBe(false);
+		expect(Calendar.isVisible(invitation('needsAction'))).toBe(false);
+	});
+
+	test("another guest's status does not matter", () => {
+		const e = invitation('accepted');
+		e.attendees = [
+			{ ...other, responseStatus: 'declined' },
+			{ self: true, responseStatus: 'accepted' },
+		];
+		expect(Calendar.isVisible(e)).toBe(true);
+	});
+});
 
 // The kids are exchanged at 16:00 on days where we switch.
 const day = new Date(2026, 2, 10);
