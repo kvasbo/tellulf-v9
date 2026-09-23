@@ -16,12 +16,12 @@
 		"check": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@googleapis/calendar": "^16.0.0",
+		"@googleapis/calendar": "^20.0.0",
 		"eta": "^4.6.0",
 		"google-auth-library": "^11.1.0",
 		"htmx-ext-sse": "^2.2.4",
-		"htmx.org": "^2.0.10",
-		"idiomorph": "^0.7.4",
+		"htmx.org": "^2.0.11",
+		"idiomorph": "^0.8.0",
 		"lunarphase-js": "^2.0.3",
 		"luxon": "^3.7.2",
 		"mqtt": "^5.16.0",
