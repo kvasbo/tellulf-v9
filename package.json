@@ -16,7 +16,7 @@
 		"check": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@googleapis/calendar": "^20.0.0",
+		"@googleapis/calendar": "^20.1.0",
 		"eta": "^4.6.0",
 		"google-auth-library": "^11.1.0",
 		"htmx-ext-sse": "^2.2.4",
@@ -30,8 +30,8 @@
 		"zod": "^4.6.5"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.14",
-		"@types/luxon": "^3.7.5",
+		"@biomejs/biome": "^2.5.15",
+		"@types/luxon": "^3.7.6",
 		"bun-types": "^1.4.2",
 		"typescript": "^7.0.2"
 	}
