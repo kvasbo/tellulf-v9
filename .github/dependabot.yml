@@ -1,0 +1,34 @@
+# Weekly pull requests for dependency updates. Updates within each ecosystem
+# are grouped into one PR to keep the noise down.
+#
+# Not covered: the vendored htmx files in static/vendor/ (update by hand),
+# and the `go` line in go.mod (bump it yourself together with the Dockerfile).
+# After a templ update, run `go generate ./...` on the PR branch so the
+# committed *_templ.go files match; the Docker build regenerates them anyway.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      go-modules:
+        patterns: ["*"]
+
+  # Base images in the Dockerfile (golang build image).
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      docker-images:
+        patterns: ["*"]
+
+  # Action versions in .github/workflows/.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]

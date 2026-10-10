@@ -105,7 +105,13 @@ internal/
 
 ## Updating dependencies
 
-- Go modules: `go get -u ./... && go mod tidy`
+Dependabot (`.github/dependabot.yml`) opens weekly pull requests for Go modules, the
+Docker build image and GitHub Actions. To check or update by hand:
+
+- See what's outdated: `go list -m -u all` (newer versions in brackets)
+- Security: `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`
+- Go modules: `go get -u ./... && go mod tidy`, then `go test ./...`
+- templ: `go get -u tool`, then `go generate ./...` to refresh the generated files
 - htmx, htmx-ext-sse and idiomorph are vendored in `static/vendor/` (currently htmx
   2.0.11, htmx-ext-sse 2.2.4, idiomorph 0.8.0). To update one, download the new file
   from npm or a CDN and replace it.
