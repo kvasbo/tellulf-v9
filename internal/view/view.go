@@ -3,7 +3,6 @@
 package view
 
 import (
-	"html/template"
 	"math"
 	"slices"
 	"strings"
@@ -177,19 +176,24 @@ func BuildHourlyForecast(all []weather.Hourly) HourlyForecast {
 
 // --- Living sky ------------------------------------------------------------------
 
-// Sky feeds the WebGL background. The CSS values contain rgba(...) and
-// brightness(...), which html/template would otherwise reject as unsafe CSS,
-// so they are marked as trusted template.CSS (they're constants from sky).
+// Sky feeds the WebGL background and the adaptive text/glass colours.
 type Sky struct {
-	Fg, FgMuted, FgFaint, Line        template.CSS
-	GlassBg, GlassBorder, GlassShadow template.CSS
-	IconFilter                        template.CSS
-	C1, C2, C3                        string
-	Arc, Cloud, Night                 string
+	// RootCSS sets the theme variables, e.g. ":root{--fg:#1a1d22;...}". It is
+	// built only from the constant palettes in package sky, so it is safe to
+	// write into a <style> element unescaped.
+	RootCSS           string
+	C1, C2, C3        string
+	Arc, Cloud, Night string
 }
 
 var cloudCoverage = map[sky.Condition]float64{sky.Clear: 0.05, sky.Partly: 0.4, sky.Cloudy: 0.85, sky.Precip: 1.0}
 var nightFactor = map[sky.Phase]float64{sky.Night: 1, sky.Dawn: 0.5, sky.Dusk: 0.5, sky.Day: 0}
+
+func rootCSS(c sky.CSS) string {
+	return ":root{--fg:" + c.Fg + ";--fg-muted:" + c.FgMuted + ";--fg-faint:" + c.FgFaint +
+		";--line:" + c.Line + ";--glass-bg:" + c.GlassBg + ";--glass-border:" + c.GlassBorder +
+		";--glass-shadow:" + c.GlassShadow + ";--icon-filter:" + c.IconFilter + ";}"
+}
 
 func rgb(c sky.RGB) string {
 	return Fixed(c[0], 3) + "," + Fixed(c[1], 3) + "," + Fixed(c[2], 3)
@@ -212,16 +216,13 @@ func BuildSky(hours []weather.Hourly, now time.Time) Sky {
 	s := sky.BuildState(phase, condition, sky.GetPrecip(symbol, temp), arc)
 
 	return Sky{
-		Fg: template.CSS(s.CSS.Fg), FgMuted: template.CSS(s.CSS.FgMuted),
-		FgFaint: template.CSS(s.CSS.FgFaint), Line: template.CSS(s.CSS.Line),
-		GlassBg: template.CSS(s.CSS.GlassBg), GlassBorder: template.CSS(s.CSS.GlassBorder),
-		GlassShadow: template.CSS(s.CSS.GlassShadow), IconFilter: template.CSS(s.CSS.IconFilter),
-		C1:    rgb(s.Colors.C1),
-		C2:    rgb(s.Colors.C2),
-		C3:    rgb(s.Colors.C3),
-		Arc:   Fixed(arc, 4),
-		Cloud: Fixed(cloudCoverage[condition], 2),
-		Night: Fixed(nightFactor[phase], 2),
+		RootCSS: rootCSS(s.CSS),
+		C1:      rgb(s.Colors.C1),
+		C2:      rgb(s.Colors.C2),
+		C3:      rgb(s.Colors.C3),
+		Arc:     Fixed(arc, 4),
+		Cloud:   Fixed(cloudCoverage[condition], 2),
+		Night:   Fixed(nightFactor[phase], 2),
 	}
 }
 

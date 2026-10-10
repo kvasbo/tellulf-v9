@@ -65,15 +65,11 @@ func TestFormatSSEPrefixesEveryLine(t *testing.T) {
 	}
 }
 
-// newTestServer runs the real templates and static files from the repo,
+// newTestServer serves the real static files from the repo,
 // with data sources that have no data yet.
 func newTestServer(t *testing.T) *Server {
 	t.Helper()
-	s, err := New(Sources{Weather: weather.New(), Entur: entur.New()}, os.DirFS("../.."), false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return s
+	return New(Sources{Weather: weather.New(), Entur: entur.New()}, os.DirFS("../.."))
 }
 
 func TestPageAndStaticFiles(t *testing.T) {

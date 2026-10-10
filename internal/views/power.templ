@@ -1,0 +1,32 @@
+package views
+
+import "github.com/kvasbo/tellulf-v9/internal/view"
+
+templ Power(p view.Power) {
+	<strong>{ p.Header }</strong>
+	if p.HasData {
+		<table class="footerTable">
+			<tbody>
+				<tr><td>Forbruk</td><td>Kost</td><td>Pris</td></tr>
+				<tr>
+					<td>{ p.Usage }</td>
+					<td>{ p.Cost }</td>
+					<td>{ p.Price }</td>
+				</tr>
+				<tr class="monthlyStatus">
+					<td>{ p.MonthlyStatus }</td>
+					<td>{ p.MonthlyCost }</td>
+					<td style={ "color: " + p.PriceColor }>{ p.PriceStatus }</td>
+				</tr>
+			</tbody>
+		</table>
+		<div class="powerShow">
+			<div class="powerBar" style={ "background-color: " + p.BgColor + "; width: " + p.PowerWidth + "%" }>
+				{ p.PowerDisplay }&nbsp;kW
+			</div>
+			<div class="maxBar" style={ "width: " + p.MaxWidth + "%" }></div>
+			<div class="avgBar" style={ "width: " + p.AvgWidth + "%" }></div>
+			<div class="minBar" style={ "background-color: " + p.MinBgColor + "; width: " + p.MinWidth + "%" }></div>
+		</div>
+	}
+}

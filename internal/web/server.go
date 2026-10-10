@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -14,12 +13,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/a-h/templ"
+
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/smarthouse"
 	"github.com/kvasbo/tellulf-v9/internal/tibber"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 	"github.com/kvasbo/tellulf-v9/internal/view"
+	"github.com/kvasbo/tellulf-v9/internal/views"
 	"github.com/kvasbo/tellulf-v9/internal/weather"
 )
 
@@ -35,10 +37,8 @@ type Sources struct {
 
 type Server struct {
 	src     Sources
-	assets  fs.FS // contains views/, static/ and public/
-	dev     bool  // re-read templates on every render
+	assets  fs.FS // contains static/ and public/
 	version string
-	tmpl    *template.Template
 	hub     *Hub
 }
 
@@ -46,32 +46,14 @@ type Server struct {
 // hides the ones that don't fit.
 const calendarDays = 14
 
-func New(src Sources, assets fs.FS, dev bool) (*Server, error) {
-	s := &Server{
+func New(src Sources, assets fs.FS) *Server {
+	return &Server{
 		src:    src,
 		assets: assets,
-		dev:    dev,
 		// A new version makes open browsers reload, so deploys show up.
 		version: time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		hub:     NewHub(),
 	}
-	tmpl, err := s.parseTemplates()
-	if err != nil {
-		return nil, err
-	}
-	s.tmpl = tmpl
-	return s, nil
-}
-
-func (s *Server) parseTemplates() (*template.Template, error) {
-	return template.ParseFS(s.assets, "views/layout.html", "views/partials/*.html")
-}
-
-func (s *Server) templates() (*template.Template, error) {
-	if s.dev {
-		return s.parseTemplates()
-	}
-	return s.tmpl, nil
 }
 
 func (s *Server) Handler() http.Handler {
@@ -84,35 +66,29 @@ func (s *Server) Handler() http.Handler {
 
 // --- Rendering ---------------------------------------------------------------------
 
-func (s *Server) render(name string, data any) (string, error) {
-	t, err := s.templates()
-	if err != nil {
-		return "", err
-	}
+func render(c templ.Component) (string, error) {
 	var buf bytes.Buffer
-	if err := t.ExecuteTemplate(&buf, name, data); err != nil {
+	if err := c.Render(context.Background(), &buf); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
 }
 
-// Each fragment pairs an SSE event name with the template and data that
-// render it.
+// A fragment is one part of the page that is pushed over SSE on its own.
 type fragment struct {
-	event, template string
-	data            func(now time.Time) any
+	event     string
+	component func(now time.Time) templ.Component
 }
 
 func (s *Server) fragments() map[string]fragment {
-	hourly := func() []weather.Hourly { return s.src.Weather.HourlyForecasts(weather.Oslo) }
 	list := []fragment{
-		{"sky", "sky", func(now time.Time) any { return view.BuildSky(hourly(), now) }},
-		{"current-weather", "currentWeather", func(now time.Time) any { return view.BuildCurrentWeather(s.readings(), now) }},
-		{"hourly-forecast", "hourlyForecast", func(time.Time) any { return view.BuildHourlyForecast(hourly()) }},
-		{"calendar", "calendar", func(now time.Time) any { return s.calendar(now) }},
-		{"power-home", "power", func(now time.Time) any { return s.power(tibber.Home, now) }},
-		{"power-cabin", "power", func(now time.Time) any { return s.power(tibber.Cabin, now) }},
-		{"entur", "entur", func(time.Time) any { return view.BuildTrains(s.src.Entur.Trains()) }},
+		{"sky", func(now time.Time) templ.Component { return views.Sky(s.sky(now)) }},
+		{"current-weather", func(now time.Time) templ.Component { return views.CurrentWeather(s.currentWeather(now)) }},
+		{"hourly-forecast", func(time.Time) templ.Component { return views.HourlyForecast(s.hourlyForecast()) }},
+		{"calendar", func(now time.Time) templ.Component { return views.Calendar(s.calendar(now)) }},
+		{"power-home", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Home, now)) }},
+		{"power-cabin", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Cabin, now)) }},
+		{"entur", func(time.Time) templ.Component { return views.Entur(s.trains()) }},
 	}
 	m := make(map[string]fragment, len(list))
 	for _, f := range list {
@@ -120,6 +96,33 @@ func (s *Server) fragments() map[string]fragment {
 	}
 	return m
 }
+
+func (s *Server) page(now time.Time) views.Page {
+	return views.Page{
+		Version:        s.version,
+		Sky:            s.sky(now),
+		CurrentWeather: s.currentWeather(now),
+		HourlyForecast: s.hourlyForecast(),
+		Calendar:       s.calendar(now),
+		PowerHome:      s.power(tibber.Home, now),
+		PowerCabin:     s.power(tibber.Cabin, now),
+		Trains:         s.trains(),
+	}
+}
+
+func (s *Server) sky(now time.Time) view.Sky {
+	return view.BuildSky(s.src.Weather.HourlyForecasts(weather.Oslo), now)
+}
+
+func (s *Server) currentWeather(now time.Time) view.CurrentWeather {
+	return view.BuildCurrentWeather(s.readings(), now)
+}
+
+func (s *Server) hourlyForecast() view.HourlyForecast {
+	return view.BuildHourlyForecast(s.src.Weather.HourlyForecasts(weather.Oslo))
+}
+
+func (s *Server) trains() []view.Train { return view.BuildTrains(s.src.Entur.Trains()) }
 
 func (s *Server) readings() smarthouse.Readings {
 	if s.src.Smarthouse == nil {
@@ -150,20 +153,7 @@ func (s *Server) power(p tibber.Place, now time.Time) view.Power {
 // --- Handlers ----------------------------------------------------------------------
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
-	now := tz.Now()
-	frag := s.fragments()
-	data := func(name string) any { return frag[name].data(now) }
-	page := map[string]any{
-		"Version":        s.version,
-		"Sky":            data("sky"),
-		"CurrentWeather": data("current-weather"),
-		"HourlyForecast": data("hourly-forecast"),
-		"Calendar":       data("calendar"),
-		"PowerHome":      data("power-home"),
-		"PowerCabin":     data("power-cabin"),
-		"Trains":         data("entur"),
-	}
-	html, err := s.render("layout.html", page)
+	html, err := render(views.Layout(s.page(tz.Now())))
 	if err != nil {
 		slog.Error("render page", "err", err)
 		http.Error(w, "render error", http.StatusInternalServerError)
@@ -236,8 +226,7 @@ func (s *Server) Publish(ctx context.Context) {
 	publish := func(names ...string) {
 		now := tz.Now()
 		for _, name := range names {
-			f := frag[name]
-			html, err := s.render(f.template, f.data(now))
+			html, err := render(frag[name].component(now))
 			if err != nil {
 				slog.Error("render fragment", "fragment", name, "err", err)
 				continue

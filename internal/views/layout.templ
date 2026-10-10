@@ -1,0 +1,87 @@
+// Package views holds the page's templ components. `go tool templ generate`
+// turns each .templ file into Go code (the committed *_templ.go files).
+package views
+
+import "github.com/kvasbo/tellulf-v9/internal/view"
+
+// Page is everything the full page renders. Each part is also sent on its
+// own over SSE when it changes.
+type Page struct {
+	Version        string // the server's start time; a change reloads open screens
+	Sky            view.Sky
+	CurrentWeather view.CurrentWeather
+	HourlyForecast view.HourlyForecast
+	Calendar       view.Calendar
+	PowerHome      view.Power
+	PowerCabin     view.Power
+	Trains         []view.Train
+}
+
+// Layout is the full page. #server-version carries sse-swap="version" only so
+// that htmx listens for "version" events (it ignores event names no element
+// asks for); client.js reloads the page when the value changes.
+templ Layout(p Page) {
+	<!DOCTYPE html>
+	<html lang="nb">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>Tellulf</title>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap"/>
+			<link rel="stylesheet" href="/styles.css"/>
+			<script src="/vendor/htmx.min.js"></script>
+			<script src="/vendor/sse.js"></script>
+			<script src="/vendor/idiomorph-ext.min.js"></script>
+		</head>
+		<body hx-ext="sse,morph" sse-connect="/sse">
+			<canvas class="sky" aria-hidden="true"></canvas>
+			<div id="sky-driver" sse-swap="sky" hx-swap="innerHTML" hidden>
+				@Sky(p.Sky)
+			</div>
+			<tl-topbar>
+				<tl-clock>
+					<div id="now_time"></div>
+					<div id="date_week">
+						<div id="now_date"></div>
+						<div id="now_week"></div>
+					</div>
+				</tl-clock>
+				<tl-currentweather>
+					<div id="current-weather-content" sse-swap="current-weather" hx-swap="innerHTML">
+						@CurrentWeather(p.CurrentWeather)
+					</div>
+				</tl-currentweather>
+			</tl-topbar>
+			<tl-nowcast>
+				<svg width="0" height="0">
+					<defs>
+						<filter id="shape-shadow">
+							<feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#333333" flood-opacity="0.2"></feDropShadow>
+						</filter>
+					</defs>
+				</svg>
+				<div id="hourly-forecast-content" sse-swap="hourly-forecast" hx-swap="innerHTML">
+					@HourlyForecast(p.HourlyForecast)
+				</div>
+			</tl-nowcast>
+			<tl-calendar id="calendar-content" sse-swap="calendar" hx-swap="innerHTML">
+				@Calendar(p.Calendar)
+			</tl-calendar>
+			<footer>
+				<div id="power-home-content" class="footerBox" sse-swap="power-home" hx-swap="morph:innerHTML">
+					@Power(p.PowerHome)
+				</div>
+				<div id="power-cabin-content" class="footerBox" sse-swap="power-cabin" hx-swap="morph:innerHTML">
+					@Power(p.PowerCabin)
+				</div>
+				<div id="entur-content" class="footerBox" sse-swap="entur" hx-swap="innerHTML">
+					@Entur(p.Trains)
+				</div>
+			</footer>
+			<span id="server-version" data-version={ p.Version } sse-swap="version" hx-swap="none"></span>
+			<script type="module" src="/client.js"></script>
+		</body>
+	</html>
+}

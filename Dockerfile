@@ -7,9 +7,11 @@ RUN go mod download
 
 COPY . .
 
-# Check, test, then build a static binary with all templates and static
-# files embedded.
-RUN go vet ./... \
+# Regenerate the templ components (so the build never uses stale generated
+# code), check, test, then build a static binary with all static files
+# embedded.
+RUN go generate ./... \
+	&& go vet ./... \
 	&& go test ./... \
 	&& CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /tellulf .
 

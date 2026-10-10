@@ -1,0 +1,15 @@
+package views
+
+import "github.com/kvasbo/tellulf-v9/internal/view"
+
+templ CurrentWeather(w view.CurrentWeather) {
+	<div id="current_temperature">{ w.Temperature }</div>
+	<div id="aux-weather-info">
+		<span><img alt="" src="/sunrise.png" width="22"/>&nbsp;{ w.Sunrise }&nbsp;&nbsp;</span><span><img alt="" src="/sunset.png" width="22"/>&nbsp;{ w.Sunset }</span>
+		<div id="current_pressure">{ w.Pressure } hPa</div>
+		<div id="current_humidity">{ w.Humidity } hum</div>
+		if w.ShowTempTime {
+			<div id="current_temperature_time" style="color: rgba(255, 0, 0, 0.35)">{ w.TempTimeStr }</div>
+		}
+	</div>
+}

@@ -1,0 +1,86 @@
+package views
+
+import (
+	"strconv"
+
+	"github.com/kvasbo/tellulf-v9/internal/calendar"
+	"github.com/kvasbo/tellulf-v9/internal/view"
+)
+
+templ Calendar(c view.Calendar) {
+	for _, d := range c.Days {
+		@day(d)
+	}
+	if c.BhgDaysLeft != nil {
+		<div class="bhg-count">bhg: { strconv.Itoa(*c.BhgDaysLeft) }</div>
+	}
+}
+
+templ day(d view.Day) {
+	<tl-day>
+		<div class="dateHeader">
+			<span class="dateLabel">
+				<span>{ d.Weekday }</span>
+				switch d.KidsStatus {
+					case calendar.KidsArriving:
+						<span class="kids-arrow">→</span><img alt="kids" class="calendaricon kids" src="kids.svg"/>
+					case calendar.KidsLeaving:
+						<img alt="kids" class="calendaricon kids" src="kids.svg"/><span class="kids-arrow">→</span>
+					case calendar.KidsFull:
+						<img alt="kids" class="calendaricon kids" src="kids.svg"/>
+				}
+			</span>
+			if f := d.Forecast; f != nil {
+				<div class="headerWeather">
+					<div class="headerWeatherPrepArea">
+						if f.ShowLightRain {
+							<div class="weatherPrep light">
+								<img alt="light rain" class="headerWeatherIconPrep light" style="filter: url(#shape-shadow)" src="weather-icons-animated/rain.svg"/>
+								<span class="rainProb">{ f.LightRain }%</span>
+							</div>
+						}
+						if f.ShowHeavyRain {
+							<div class="weatherPrep heavy">
+								<img alt="heavy rain" class="headerWeatherIconPrep heavy" style="filter: url(#shape-shadow)" src="weather-icons-animated/extreme-rain.svg"/>
+								<span class="rainProb">{ f.HeavyRain }%</span>
+							</div>
+						}
+					</div>
+					<img alt="cold" class="headerWeatherTempIcon" src="low-temperature.png"/>
+					{ f.MinTemp }&deg;
+					<img alt="warm" class="headerWeatherTempIcon" src="high-temperature.png"/>
+					{ f.MaxTemp }&deg;
+				</div>
+			}
+		</div>
+		<div class="dinner">
+			for _, e := range d.Dinners {
+				<div class="dinner"><img alt="dinner" class="calendaricon birthday" src="dinner.svg"/>{ e.DisplayTitle }</div>
+			}
+		</div>
+		<div class="birthdays">
+			for _, e := range d.Birthdays {
+				<div class="birthday"><img alt="cake" class="calendaricon birthday" src="birthday.svg"/>{ e.DisplayTitle }</div>
+			}
+		</div>
+		<div class="events">
+			for _, e := range d.Events {
+				@event(e)
+			}
+		</div>
+	</tl-day>
+}
+
+templ event(e view.Event) {
+	<div class={ "event", templ.KV("faded", e.Faded) }>
+		if e.FullDay {
+			{ e.DisplayTitle }
+			if h := e.Hytta; h != nil {
+				<span class="hytta-weather">({ h.Temperature }&deg;, { h.RainProbability }% regn)</span>
+			}
+		} else {
+			<span class="event-time timespan">{ e.DisplayTime.Start } { e.DisplayTime.Spacer } { e.DisplayTime.End }</span>
+			{ e.DisplayTitle }
+		}
+	</div>
+}

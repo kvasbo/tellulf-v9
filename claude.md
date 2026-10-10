@@ -11,8 +11,10 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - **net/http** server with SSE (`internal/web`). A single publisher goroutine renders each
   fragment on a schedule (power 1s, weather/calendar 15s, trains 30s, version 60s) and a
   `Hub` fans out only fragments that changed. New connections get a snapshot first.
-- **html/template** templates (`views/`), one `{{define}}` per partial. All formatting
-  happens in `internal/view`, so templates stay dumb. `view.Fixed`/`view.Num` mimic
+- **templ** components (`internal/views/*.templ`, generated `*_templ.go` committed), one
+  component per partial, typed by the structs in `internal/view`. All formatting happens
+  in `internal/view`, so templates stay dumb. templ doesn't interpolate inside `<style>`,
+  so the sky's theme variables are written with `templ.Raw` (constants only). `view.Fixed`/`view.Num` mimic
   JavaScript's `toFixed`/`String()` so numbers render exactly as the old TS version did.
 - **HTMX** + SSE extension on the client for reactive DOM updates (vendored in `static/vendor/`)
 - **Client JS** (`public/client.js`, `public/sky.js`, plain ES modules, no build step) for
@@ -46,14 +48,17 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - `internal/tibber` — live feed (own graphql-transport-ws client on coder/websocket),
   daily price list, monthly consumption, Norgespris maths
 - `internal/sky`, `internal/sun` — living-sky logic and NOAA sunrise/sunset
-- `internal/view` — builds template data; `internal/web` — HTTP, SSE hub, static files
+- `internal/view` — builds template data; `internal/views` — templ components;
+  `internal/web` — HTTP, SSE hub, static files
 
 ## Running
 
-- `TELLULF_DEV=1 go run .` — development; templates and static files are read from disk
+- `TELLULF_DEV=1 go run .` — development; static files are read from disk
+- `go generate ./...` — regenerate templ components after editing a `.templ` file
+  (or `go tool templ generate --watch --cmd="go run ."` to regenerate and restart on save)
 - `go test ./...` — tests
 - `go build -o tellulf .` — production binary (self-contained)
-- `docker build .` — runs vet, test and build; distroless image
+- `docker build .` — runs generate, vet, test and build; distroless image
 
 ## APIs
 

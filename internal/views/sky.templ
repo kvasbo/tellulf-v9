@@ -1,0 +1,11 @@
+package views
+
+import "github.com/kvasbo/tellulf-v9/internal/view"
+
+// Sky sets the theme variables and the shader targets that client sky.js
+// fades towards. templ doesn't fill in expressions inside <style>, so the
+// element is written raw; RootCSS only contains the constant palettes.
+templ Sky(s view.Sky) {
+	@templ.Raw("<style>" + s.RootCSS + "</style>")
+	<i id="sky-uniforms" data-c1={ s.C1 } data-c2={ s.C2 } data-c3={ s.C3 } data-arc={ s.Arc } data-cloud={ s.Cloud } data-night={ s.Night }></i>
+}

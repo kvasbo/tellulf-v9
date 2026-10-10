@@ -1,0 +1,22 @@
+package views
+
+import "github.com/kvasbo/tellulf-v9/internal/view"
+
+templ Entur(trains []view.Train) {
+	<strong>Neste baner</strong>
+	<table class="footerTable">
+		<tbody>
+			for _, t := range trains {
+				<tr>
+					<td class="number">
+						{ t.Time }
+						if t.Dot != "" {
+							<span class={ "train-dot", "train-dot-" + t.Dot }></span>
+						}
+					</td>
+					<td>{ t.Destination }</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}

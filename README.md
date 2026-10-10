@@ -23,9 +23,15 @@ that panel stays empty and the log says why.
 
 ## Development
 
-- `TELLULF_DEV=1` reads templates (`views/`) and static files (`static/`, `public/`)
-  from disk on every request, so edits show up on reload. Run it from the repo root.
-  Go code changes still need a restart.
+- `TELLULF_DEV=1` reads static files (`static/`, `public/`) from disk on every request,
+  so CSS and JavaScript edits show up on reload. Run it from the repo root.
+- Templates are [templ](https://templ.guide) components in `internal/views/*.templ`. After
+  editing one, run `go generate ./...` (which runs `go tool templ generate`) and restart.
+  The generated `*_templ.go` files are committed, so a plain `go build` always works.
+- Or let templ watch: `TELLULF_DEV=1 go tool templ generate --watch --cmd="go run ."`
+  regenerates on save, applies text changes to the running server without a restart, and
+  restarts it when the Go code in a template changes. Reload the browser to see changes.
+- Go code changes outside templates need a restart.
 - `go test ./...` runs the tests. Add `-race` to check for data races.
 - `go vet ./...` and `gofmt -l .` for checks and formatting.
 
@@ -46,10 +52,10 @@ go build -o tellulf .
 ./tellulf
 ```
 
-The binary is self-contained: templates, static files, the client JavaScript and the time
+The binary is self-contained: compiled templates, static files, the client JavaScript and the time
 zone database are embedded, so it can run from any directory.
 
-`docker build .` runs vet, test and build, and produces a distroless image.
+`docker build .` regenerates the templates, then runs vet, test and build, and produces a distroless image.
 GitHub Actions builds and pushes an image to `ghcr.io/kvasbo/tellulf-v9` on every push,
 tagged with the branch name and commit SHA. `docker-compose.yml` runs the `main` image.
 
@@ -67,7 +73,7 @@ Three ways to set them:
 | Variable | Used for |
 |---|---|
 | `EXPOSE_PORT` | Port to listen on (default 3000) |
-| `TELLULF_DEV` | Set to anything to serve templates and static files from disk |
+| `TELLULF_DEV` | Set to anything to serve static files from disk |
 | `MQTT_HOST`, `MQTT_USER`, `MQTT_PASS` | Outdoor sensors, e.g. `mqtt://broker:1883` (port defaults to 1883) |
 | `TIBBER_KEY`, `TIBBER_ID_HOME`, `TIBBER_ID_CABIN` | Power usage and price; all three are required |
 | `GOOGLE_KEY_B64` | Base64-encoded Google service account key (JSON) |
@@ -83,7 +89,6 @@ The calendar needs `GOOGLE_KEY_B64` plus at least one `CAL_ID_*`.
 
 ```
 main.go               wiring: reads config, starts data sources and the web server
-views/                html/template layout and partials
 static/               icons, vendored htmx
 public/               CSS and the browser JavaScript (clock, WebGL sky, calendar overflow)
 internal/
@@ -94,6 +99,7 @@ internal/
   tibber/             live power feed, prices, monthly totals, Norgespris
   sky/, sun/          living-sky logic, sunrise/sunset
   view/               turns data into what the templates print
+  views/              templ components (*.templ) and their generated Go code
   web/                HTTP handlers, SSE hub, static files
 ```
 

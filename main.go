@@ -27,7 +27,7 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/web"
 )
 
-//go:embed views static public
+//go:embed static public
 var embedded embed.FS
 
 func main() {
@@ -77,18 +77,14 @@ func run() error {
 		wg.Go(func() { t.Run(ctx) })
 	}
 
-	// TELLULF_DEV=1 serves templates and static files straight from disk, so
-	// edits show up on reload without rebuilding.
-	dev := os.Getenv("TELLULF_DEV") != ""
+	// TELLULF_DEV=1 serves static files straight from disk, so CSS and
+	// JavaScript edits show up on reload without rebuilding.
 	var assets fs.FS = embedded
-	if dev {
+	if os.Getenv("TELLULF_DEV") != "" {
 		assets = os.DirFS(".")
-		slog.Info("dev mode: serving templates and static files from disk")
+		slog.Info("dev mode: serving static files from disk")
 	}
-	server, err := web.New(src, assets, dev)
-	if err != nil {
-		return err
-	}
+	server := web.New(src, assets)
 	wg.Go(func() { server.Publish(ctx) })
 
 	port := os.Getenv("EXPOSE_PORT")

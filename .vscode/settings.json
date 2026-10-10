@@ -3,7 +3,7 @@
 	"[go]": {
 		"editor.defaultFormatter": "golang.go"
 	},
-	"files.associations": {
-		"views/**/*.html": "gotmpl"
+	"[templ]": {
+		"editor.defaultFormatter": "a-h.templ"
 	}
 }
