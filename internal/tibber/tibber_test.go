@@ -3,6 +3,8 @@ package tibber
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -212,5 +214,47 @@ func TestNorgesprisPriceChangesOnNewYear2027(t *testing.T) {
 	}
 	if got := n.AccumulatedCost(Home, hours); !near(got, 2*0.5+2*0.5625) {
 		t.Errorf("cost across the change: got %v", got)
+	}
+}
+
+func TestReconnectPlan(t *testing.T) {
+	other := errors.New("network trouble")
+	within := func(d time.Duration, attempt int) bool {
+		ceiling := min(baseBackoff<<min(attempt-1, 20), maxBackoff)
+		return d >= ceiling/2 && d <= ceiling
+	}
+
+	if _, _, stop := reconnectPlan(3, true, errUnauthorized); !stop {
+		t.Error("a rejected token must stop the feed")
+	}
+	if next, d, _ := reconnectPlan(3, false, errNoDevice); next != 3 || d != noDeviceRecheck {
+		t.Errorf("no device: got %d, %v", next, d)
+	}
+	if next, d, _ := reconnectPlan(4, true, errGoingAway); next != 0 || d < time.Second || d > time.Minute {
+		t.Errorf("going away after data: got %d, %v", next, d)
+	}
+	if next, d, _ := reconnectPlan(4, true, other); next != 1 || !within(d, 1) {
+		t.Errorf("a working connection dropping should start over: got %d, %v", next, d)
+	}
+	if next, d, _ := reconnectPlan(2, false, other); next != 3 || !within(d, 3) {
+		t.Errorf("repeated failures should back off: got %d, %v", next, d)
+	}
+
+	// Being kicked as a duplicate keeps growing the wait, even when data
+	// arrived first, so two clients don't fight over the feed.
+	attempt := 0
+	for i := 1; i <= 5; i++ {
+		var d time.Duration
+		attempt, d, _ = reconnectPlan(attempt, true, errDuplicate)
+		if attempt != i || !within(d, i) {
+			t.Errorf("duplicate #%d: got attempt %d, delay %v", i, attempt, d)
+		}
+	}
+}
+
+func TestClassifyDuplicateConnection(t *testing.T) {
+	err := websocket.CloseError{Code: 4429, Reason: "duplicate connection"}
+	if got := classify(fmt.Errorf("failed to get reader: %w", err)); !errors.Is(got, errDuplicate) {
+		t.Errorf("got %v, want errDuplicate", got)
 	}
 }

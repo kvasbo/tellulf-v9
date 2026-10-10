@@ -71,6 +71,11 @@ const (
 // a random 1-60 second delay before reconnecting.
 var errGoingAway = errors.New("tibber server going away")
 
+// errDuplicate is close code 4429 ("duplicate connection"): Tibber already
+// has a subscription for this home with the same token, e.g. a previous
+// instance that hasn't been cleaned up yet, or another integration.
+var errDuplicate = errors.New("tibber: duplicate connection")
+
 // backoff returns the delay before reconnect attempt n (1-based): half fixed,
 // half random, so clients don't reconnect in lockstep.
 func backoff(attempt int) time.Duration {
@@ -96,30 +101,52 @@ func (f *feed) run(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
-		if gotData {
-			attempt = 0
-		}
-
 		var delay time.Duration
+		var stop bool
+		attempt, delay, stop = reconnectPlan(attempt, gotData, err)
+		wait := delay.Round(time.Second)
 		switch {
-		case errors.Is(err, errUnauthorized):
+		case stop:
 			log.Error("Tibber rejected the token; live feed stopped until restart", "err", err)
 			return
 		case errors.Is(err, errNoDevice):
-			log.Warn("home has no real-time device; checking again later", "in", noDeviceRecheck)
-			delay = noDeviceRecheck
+			log.Warn("home has no real-time device; checking again later", "in", wait)
 		case errors.Is(err, errGoingAway):
-			delay = time.Second + rand.N(59*time.Second)
-			log.Info("Tibber feed restarting", "reconnect_in", delay.Round(time.Second))
+			log.Info("Tibber feed restarting", "reconnect_in", wait)
+		case errors.Is(err, errDuplicate):
+			log.Warn("Tibber closed the feed as a duplicate: another connection for this home uses the same token",
+				"reconnect_in", wait)
 		default:
-			attempt++
-			delay = backoff(attempt)
-			log.Warn("Tibber feed disconnected", "err", err, "reconnect_in", delay.Round(time.Second))
+			log.Warn("Tibber feed disconnected", "err", err, "reconnect_in", wait)
 		}
 		if !schedule.Sleep(ctx, delay) {
 			return
 		}
 	}
+}
+
+// reconnectPlan decides what to do after a connection ends. attempt counts
+// consecutive failed connections; it returns the new count, how long to
+// wait before reconnecting, and whether to give up.
+func reconnectPlan(attempt int, gotData bool, err error) (next int, delay time.Duration, stop bool) {
+	switch {
+	case errors.Is(err, errUnauthorized):
+		return attempt, 0, true
+	case errors.Is(err, errNoDevice):
+		return attempt, noDeviceRecheck, false
+	case errors.Is(err, errDuplicate):
+		// Another client holds this home's feed. Even if we got data before
+		// being kicked, keep backing off so two clients don't take turns
+		// kicking each other every few seconds.
+		return attempt + 1, backoff(attempt + 1), false
+	}
+	if gotData {
+		attempt = 0 // the connection worked; start the backoff over
+	}
+	if errors.Is(err, errGoingAway) {
+		return attempt, time.Second + rand.N(59*time.Second), false
+	}
+	return attempt + 1, backoff(attempt + 1), false
 }
 
 var errNoDevice = errors.New("no real-time device")
@@ -250,6 +277,8 @@ func classify(err error) error {
 		return errGoingAway
 	case 4401, 4403: // graphql-transport-ws: Unauthorized / Forbidden
 		return errUnauthorized
+	case 4429:
+		return errDuplicate
 	}
 	return err
 }
