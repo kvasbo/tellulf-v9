@@ -8,7 +8,7 @@ HTMX swaps the fragments in on the client.
 
 ## Requirements
 
-- Go 1.26 or newer. That's all: the browser bundle is built by esbuild, which runs as a
+- Go 1.27.2 or newer. That's all: the browser bundle is built by esbuild, which runs as a
   Go tool, so no Node or Bun is needed.
 
 ## Quick start
