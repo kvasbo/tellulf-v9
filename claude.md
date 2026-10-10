@@ -15,9 +15,8 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   happens in `internal/view`, so templates stay dumb. `view.Fixed`/`view.Num` mimic
   JavaScript's `toFixed`/`String()` so numbers render exactly as the old TS version did.
 - **HTMX** + SSE extension on the client for reactive DOM updates (vendored in `static/vendor/`)
-- **Client TS** (`client/`) for clock, living sky (WebGL), calendar overflow, version check.
-  Bundled to `public/client.js` by esbuild via `go generate` (esbuild runs as a Go tool,
-  no Node/Bun needed).
+- **Client JS** (`public/client.js`, `public/sky.js`, plain ES modules, no build step) for
+  clock, living sky (WebGL), calendar overflow, version check.
 - Templates, `static/` and `public/` are embedded in the binary with `go:embed`.
 - Every data source is a struct with a `Run(ctx)` loop and state behind a mutex; getters
   return copies. Missing config for calendar/MQTT/Tibber disables that panel with a warning.
@@ -51,11 +50,10 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 ## Running
 
-- `go generate ./...` — bundle the client (needed once, and after editing `client/`)
 - `TELLULF_DEV=1 go run .` — development; templates and static files are read from disk
 - `go test ./...` — tests
 - `go build -o tellulf .` — production binary (self-contained)
-- `docker build .` — runs generate, vet, test and build; distroless image
+- `docker build .` — runs vet, test and build; distroless image
 
 ## APIs
 

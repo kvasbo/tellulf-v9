@@ -60,9 +60,6 @@ func New(src Sources, assets fs.FS, dev bool) (*Server, error) {
 		return nil, err
 	}
 	s.tmpl = tmpl
-	if _, err := fs.Stat(assets, "public/client.js"); err != nil {
-		slog.Warn("public/client.js is missing; run `go generate` to bundle the client")
-	}
 	return s, nil
 }
 

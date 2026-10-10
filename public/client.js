@@ -14,7 +14,7 @@ const dateFmt = new Intl.DateTimeFormat('nb-NO', {
 });
 
 // Cache DOM refs
-function mustGet(id: string): HTMLElement {
+function mustGet(id) {
 	const el = document.getElementById(id);
 	if (!el) throw new Error(`Missing element #${id}`);
 	return el;
@@ -53,9 +53,7 @@ function checkCalendarVisibility() {
 	if (!calendarEl) return;
 
 	const containerHeight = calendarEl.clientHeight;
-	const dayElements = Array.from(
-		calendarEl.querySelectorAll('tl-day'),
-	) as HTMLElement[];
+	const dayElements = calendarEl.querySelectorAll('tl-day');
 
 	let cumulativeHeight = 0;
 
@@ -69,7 +67,7 @@ function checkCalendarVisibility() {
 const initialVersion =
 	document.getElementById('server-version')?.dataset?.version;
 
-document.body.addEventListener('htmx:sseMessage', ((evt: CustomEvent) => {
+document.body.addEventListener('htmx:sseMessage', (evt) => {
 	if (evt.detail.type === 'calendar') {
 		requestAnimationFrame(checkCalendarVisibility);
 	}
@@ -78,7 +76,7 @@ document.body.addEventListener('htmx:sseMessage', ((evt: CustomEvent) => {
 			window.location.reload();
 		}
 	}
-}) as EventListener);
+});
 
 // Run visibility check on resize
 const calendarEl = document.querySelector('tl-calendar');

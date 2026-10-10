@@ -5,6 +5,5 @@ README.md
 .vscode
 .idea
 .claude
-public/client.js
 /tellulf
 **/.env

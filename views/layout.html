@@ -66,6 +66,6 @@
 	<!-- sse-swap makes htmx listen for "version" events (it ignores event names
 	     no element asks for); client.ts reloads the page when the value changes. -->
 	<span id="server-version" data-version="{{.Version}}" sse-swap="version" hx-swap="none"></span>
-	<script src="/client.js"></script>
+	<script type="module" src="/client.js"></script>
 </body>
 </html>

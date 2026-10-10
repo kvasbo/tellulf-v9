@@ -8,21 +8,18 @@ HTMX swaps the fragments in on the client.
 
 ## Requirements
 
-- Go 1.27.2 or newer. That's all: the browser bundle is built by esbuild, which runs as a
-  Go tool, so no Node or Bun is needed.
+- Go 1.27.2 or newer. That's all: the browser code is plain JavaScript served as is, so
+  there is no Node, Bun or bundling step.
 
 ## Quick start
 
 ```sh
-go generate ./...          # bundle client/*.ts into public/client.js
 TELLULF_DEV=1 go run .     # http://localhost:3000
 ```
 
 Without any environment variables you get weather and metro departures. Calendar,
 sensors and power each need their own variables (see below); when they are missing,
 that panel stays empty and the log says why.
-
-Run `go generate ./...` again after editing anything in `client/`.
 
 ## Development
 
@@ -45,15 +42,14 @@ TELLULF_DEV=1 go run .
 ## Building and deploying
 
 ```sh
-go generate ./...
 go build -o tellulf .
 ./tellulf
 ```
 
-The binary is self-contained: templates, static files, the client bundle and the time
+The binary is self-contained: templates, static files, the client JavaScript and the time
 zone database are embedded, so it can run from any directory.
 
-`docker build .` runs generate, vet, test and build, and produces a distroless image.
+`docker build .` runs vet, test and build, and produces a distroless image.
 GitHub Actions builds and pushes an image to `ghcr.io/kvasbo/tellulf-v9` on every push,
 tagged with the branch name and commit SHA. `docker-compose.yml` runs the `main` image.
 
@@ -87,9 +83,9 @@ The calendar needs `GOOGLE_KEY_B64` plus at least one `CAL_ID_*`.
 
 ```
 main.go               wiring: reads config, starts data sources and the web server
-client/               browser TypeScript (clock, WebGL sky, calendar overflow)
 views/                html/template layout and partials
-static/, public/      icons, CSS, vendored htmx; public/client.js is generated
+static/               icons, vendored htmx
+public/               CSS and the browser JavaScript (clock, WebGL sky, calendar overflow)
 internal/
   weather/            MET Norway forecasts
   calendar/           Google Calendar, kids' schedule, fading rules
@@ -104,7 +100,6 @@ internal/
 ## Updating dependencies
 
 - Go modules: `go get -u ./... && go mod tidy`
-- esbuild: `go get -tool github.com/evanw/esbuild/cmd/esbuild@latest`
 - htmx, htmx-ext-sse and idiomorph are vendored in `static/vendor/` (currently htmx
   2.0.11, htmx-ext-sse 2.2.4, idiomorph 0.8.0). To update one, download the new file
   from npm or a CDN and replace it.

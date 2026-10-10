@@ -7,10 +7,9 @@ RUN go mod download
 
 COPY . .
 
-# Bundle the browser code, check, test, then build a static binary with all
-# templates and static files embedded.
-RUN go generate ./... \
-	&& go vet ./... \
+# Check, test, then build a static binary with all templates and static
+# files embedded.
+RUN go vet ./... \
 	&& go test ./... \
 	&& CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /tellulf .
 

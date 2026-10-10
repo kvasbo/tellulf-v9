@@ -75,16 +75,7 @@ void main() {
 	gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
-interface SkyUniforms {
-	c1: [number, number, number];
-	c2: [number, number, number];
-	c3: [number, number, number];
-	arc: number;
-	night: number;
-	cloud: number;
-}
-
-const DEFAULTS: SkyUniforms = {
+const DEFAULTS = {
 	c1: [0.26, 0.54, 0.85],
 	c2: [0.5, 0.72, 0.93],
 	c3: [0.83, 0.92, 0.98],
@@ -93,11 +84,7 @@ const DEFAULTS: SkyUniforms = {
 	cloud: 0.1,
 };
 
-function compile(
-	gl: WebGLRenderingContext,
-	type: number,
-	src: string,
-): WebGLShader {
+function compile(gl, type, src) {
 	const sh = gl.createShader(type);
 	if (!sh) throw new Error('shader creation failed');
 	gl.shaderSource(sh, src);
@@ -108,19 +95,18 @@ function compile(
 	return sh;
 }
 
-function parse3(s: string | undefined): [number, number, number] | null {
+function parse3(s) {
 	if (!s) return null;
 	const parts = s.split(',').map(Number);
 	if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
 	return [parts[0], parts[1], parts[2]];
 }
 
-export function initSky(): void {
-	const canvas = document.querySelector<HTMLCanvasElement>('canvas.sky');
+export function initSky() {
+	const canvas = document.querySelector('canvas.sky');
 	if (!canvas) return;
 	const ctx = canvas.getContext('webgl', { antialias: true });
 	if (!ctx) return; // No WebGL: panels just sit on the page background.
-	// Stable non-null aliases so TS keeps the narrowing inside closures.
 	const cv = canvas;
 	const gl = ctx;
 
@@ -168,13 +154,13 @@ export function initSky(): void {
 	resize();
 	window.addEventListener('resize', resize);
 
-	const current: SkyUniforms = {
+	const current = {
 		...DEFAULTS,
 		c1: [...DEFAULTS.c1],
 		c2: [...DEFAULTS.c2],
 		c3: [...DEFAULTS.c3],
 	};
-	const target: SkyUniforms = {
+	const target = {
 		...DEFAULTS,
 		c1: [...DEFAULTS.c1],
 		c2: [...DEFAULTS.c2],
@@ -208,18 +194,18 @@ export function initSky(): void {
 	}
 
 	// Re-read whenever the server pushes a new sky frame.
-	document.body.addEventListener('htmx:sseMessage', ((evt: CustomEvent) => {
+	document.body.addEventListener('htmx:sseMessage', (evt) => {
 		if (evt.detail?.type === 'sky') requestAnimationFrame(readTargets);
-	}) as EventListener);
+	});
 	readTargets();
 
-	const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+	const lerp = (a, b, k) => a + (b - a) * k;
 	const FPS = 10;
 	const frameInterval = 1000 / FPS;
 	let last = 0;
 	const start = performance.now();
 
-	function frame(now: number) {
+	function frame(now) {
 		requestAnimationFrame(frame);
 		// Cap the framerate hard: the only continuous motion is slow cloud drift,
 		// which looks fine at 10fps, and each rendered frame forces the three

@@ -27,10 +27,6 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/web"
 )
 
-// The browser code is TypeScript; esbuild (run via `go generate`) bundles it
-// into public/client.js, which is then embedded with everything else.
-//go:generate go tool esbuild client/client.ts --bundle --outfile=public/client.js --log-level=warning
-
 //go:embed views static public
 var embedded embed.FS
 
