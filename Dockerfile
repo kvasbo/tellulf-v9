@@ -1,15 +1,23 @@
-FROM oven/bun:1
+FROM golang:1.26-alpine AS build
 
-WORKDIR /app
+WORKDIR /src
 
-COPY package.json bun.lock ./
-
-RUN bun install --frozen-lockfile
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
 
-RUN bun run build
+# Bundle the browser code, check, test, then build a static binary with all
+# templates and static files embedded.
+RUN go generate ./... \
+	&& go vet ./... \
+	&& go test ./... \
+	&& CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /tellulf .
+
+FROM gcr.io/distroless/static-debian12
+
+COPY --from=build /tellulf /tellulf
 
 EXPOSE 3000
 
-CMD ["bun", "src/server.ts"]
+ENTRYPOINT ["/tellulf"]
