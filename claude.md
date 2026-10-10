@@ -64,3 +64,6 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 CAL_ID_AUDUN, CAL_ID_BARNEUKER, CAL_ID_BURSDAG, CAL_ID_FELLES, CAL_ID_KINDERGARDEN,
 CAL_ID_MIDDAG, EXPOSE_PORT, GOOGLE_KEY_B64, MQTT_HOST, MQTT_PASS, MQTT_USER,
 TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV (optional)
+
+Loaded from the environment, plus `.env` in the working directory if present (godotenv;
+existing environment variables win).

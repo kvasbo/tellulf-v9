@@ -17,6 +17,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/smarthouse"
@@ -34,6 +36,7 @@ var embedded embed.FS
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
+	loadDotEnv()
 	if err := run(); err != nil {
 		slog.Error("fatal", "err", err)
 		os.Exit(1)
@@ -117,6 +120,19 @@ func run() error {
 	wg.Wait()
 	slog.Info("stopped")
 	return nil
+}
+
+// loadDotEnv reads .env from the working directory, like Bun did for the
+// TypeScript version. Variables already set in the environment win, so
+// Docker/compose settings are never overridden. A missing file is fine.
+func loadDotEnv() {
+	err := godotenv.Load()
+	switch {
+	case err == nil:
+		slog.Info("loaded .env")
+	case !errors.Is(err, fs.ErrNotExist):
+		slog.Warn("could not read .env", "err", err)
+	}
 }
 
 func newCalendar(ctx context.Context) (*calendar.Calendar, error) {

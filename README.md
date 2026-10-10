@@ -59,6 +59,15 @@ tagged with the branch name and commit SHA. `docker-compose.yml` runs the `main`
 
 ## Environment variables
 
+Three ways to set them:
+
+- **`.env` file** (local development): copy `.env.example` to `.env` in the repo root and
+  fill it in. The app reads it at startup, the way Bun did. It's gitignored.
+- **Shell**: `TIBBER_KEY=... go run .` or `export`. Shell values win over `.env`.
+- **Docker**: `docker-compose.yml` passes the variables into the container. Compose itself
+  fills `${...}` from a `.env` next to the compose file (or `stack.env` in Portainer).
+  The `.env` in the repo is never copied into the image.
+
 | Variable | Used for |
 |---|---|
 | `EXPOSE_PORT` | Port to listen on (default 3000) |

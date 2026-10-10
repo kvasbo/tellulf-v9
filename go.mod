@@ -7,6 +7,7 @@ tool github.com/evanw/esbuild/cmd/esbuild
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/eclipse/paho.mqtt.golang v1.5.1
+	github.com/joho/godotenv v1.5.1
 	google.golang.org/api v0.301.0
 )
 
