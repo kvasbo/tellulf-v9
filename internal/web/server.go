@@ -198,7 +198,9 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 		}
 		return rc.Flush() == nil
 	}
-	for _, e := range snapshot {
+	// Send the version right away too, so a browser that reconnects after a
+	// restart reloads immediately instead of waiting for the minute tick.
+	for _, e := range append(snapshot, Event{"version", s.version}) {
 		if !send(e) {
 			return
 		}

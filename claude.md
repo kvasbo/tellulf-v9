@@ -23,6 +23,21 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   return copies. Missing config for calendar/MQTT/Tibber disables that panel with a warning.
 - All wall-clock logic uses `tz.Oslo` (tzdata embedded).
 
+## Gotchas
+
+- The kiosk runs **Firefox** (on an M3 MacBook). The client may use APIs Firefox has,
+  e.g. `Temporal` (Firefox 139+). Playwright's bundled Chromium lacks `Temporal`, so
+  client.js throws there and stops before registering its listeners; stub it
+  (`window.Temporal = { Now: { plainDateISO: () => ({ weekOfYear: 1 }) } }`) when
+  testing in headless Chromium.
+- The htmx SSE extension only listens for event names that some element declares in
+  `sse-swap` (or `hx-trigger="sse:..."`). An event no element asks for is silently
+  dropped and never reaches `htmx:sseMessage`. That's why `#server-version` has
+  `sse-swap="version" hx-swap="none"`.
+- Auto-reload: the server's version is its start time. It's in the page and sent
+  right after each SSE snapshot, plus every minute; `client.ts` reloads when it
+  changes, so any restart reloads open screens within seconds.
+
 ## Packages
 
 - `internal/weather` — MET Norway forecasts (hourly + subseasonal), Oslo and the cabin

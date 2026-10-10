@@ -137,15 +137,31 @@ func TestSSEStartsWithSnapshot(t *testing.T) {
 	if ct := res.Header.Get("Content-Type"); ct != "text/event-stream" {
 		t.Errorf("content type %q", ct)
 	}
-	var events []string
+	// Read whole events (name + data) until the snapshot and version are in.
+	var names []string
+	data := map[string]string{}
 	sc := bufio.NewScanner(res.Body)
-	for sc.Scan() && len(events) < 7 {
-		if name, ok := strings.CutPrefix(sc.Text(), "event: "); ok {
-			events = append(events, name)
+	sc.Buffer(make([]byte, 1<<20), 1<<20)
+	var name string
+	for len(names) < 8 && sc.Scan() {
+		line := sc.Text()
+		switch {
+		case strings.HasPrefix(line, "event: "):
+			name = strings.TrimPrefix(line, "event: ")
+		case strings.HasPrefix(line, "data: "):
+			data[name] += strings.TrimPrefix(line, "data: ")
+		case line == "" && name != "":
+			names = append(names, name)
+			name = ""
 		}
 	}
-	want := "sky current-weather hourly-forecast calendar power-home power-cabin entur"
-	if got := strings.Join(events, " "); got != want {
+	// The version follows the snapshot, so a browser reconnecting after a
+	// restart can reload at once.
+	want := "sky current-weather hourly-forecast calendar power-home power-cabin entur version"
+	if got := strings.Join(names, " "); got != want {
 		t.Errorf("events = %q, want %q", got, want)
+	}
+	if data["version"] != s.version {
+		t.Errorf("version = %q, want %q", data["version"], s.version)
 	}
 }
