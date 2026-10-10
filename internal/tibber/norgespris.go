@@ -1,10 +1,6 @@
 package tibber
 
-import (
-	"time"
-
-	"github.com/kvasbo/tellulf-v9/internal/tz"
-)
+import "time"
 
 // Norgespris: a fixed price per kWh up to a monthly cap per place, spot price
 // above it.
@@ -22,6 +18,9 @@ var defaultNorgespris = Norgespris{
 	Start:           time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC),
 }
 
+// NorgesprisActive reports whether the Norgespris scheme has started.
+func NorgesprisActive() bool { return defaultNorgespris.Active() }
+
 func (n Norgespris) Active() bool { return !time.Now().Before(n.Start) }
 
 func (n Norgespris) Cap(p Place) float64 {
@@ -31,26 +30,12 @@ func (n Norgespris) Cap(p Place) float64 {
 	return n.CabinCap
 }
 
-type calculation struct {
-	SubsidizedConsumption float64
-	MarketConsumption     float64
-	EffectivePrice        float64
-}
-
-func (n Norgespris) Calculate(p Place, monthlyConsumption, spotPrice float64) calculation {
-	if !n.Active() {
-		return calculation{MarketConsumption: monthlyConsumption, EffectivePrice: spotPrice}
+// EffectivePrice is what the next kWh costs given this month's consumption.
+func (n Norgespris) EffectivePrice(p Place, monthlyConsumption, spotPrice float64) float64 {
+	if !n.Active() || monthlyConsumption >= n.Cap(p) {
+		return spotPrice
 	}
-	limit := n.Cap(p)
-	effective := n.SubsidizedPrice
-	if monthlyConsumption > limit {
-		effective = spotPrice
-	}
-	return calculation{
-		SubsidizedConsumption: min(monthlyConsumption, limit),
-		MarketConsumption:     max(0, monthlyConsumption-limit),
-		EffectivePrice:        effective,
-	}
+	return n.SubsidizedPrice
 }
 
 type hourlyUsage struct {
@@ -83,38 +68,3 @@ func (n Norgespris) AccumulatedCost(p Place, hours []hourlyUsage) float64 {
 	}
 	return total
 }
-
-func (n Norgespris) EffectivePriceNow(p Place, monthlyConsumption, spotPrice float64) float64 {
-	if !n.Active() || monthlyConsumption >= n.Cap(p) {
-		return spotPrice
-	}
-	return n.SubsidizedPrice
-}
-
-// consumptionTracker remembers each place's consumption for the current
-// month, starting over at zero when the month changes.
-type consumptionTracker struct {
-	month       map[Place]string // "2006-01" the value belongs to
-	consumption map[Place]float64
-}
-
-func newConsumptionTracker() *consumptionTracker {
-	return &consumptionTracker{month: map[Place]string{}, consumption: map[Place]float64{}}
-}
-
-func thisMonth() string { return tz.Now().Format("2006-01") }
-
-func (c *consumptionTracker) Update(p Place, kWh float64) {
-	c.month[p] = thisMonth()
-	c.consumption[p] = kWh
-}
-
-func (c *consumptionTracker) Monthly(p Place) float64 {
-	if c.month[p] != thisMonth() {
-		c.Update(p, 0)
-	}
-	return c.consumption[p]
-}
-
-// NorgesprisActive reports whether the Norgespris scheme has started.
-func NorgesprisActive() bool { return defaultNorgespris.Active() }

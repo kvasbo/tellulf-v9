@@ -2,7 +2,7 @@
 {{if not .Forecasts -}}
 <div class="weather"></div>
 {{- else -}}
-<div class="weather" style="background: {{.Background}}">
+<div class="weather">
 	{{- range .Forecasts}}
 	<tl-forecast class="{{if .Raining}}raining{{end}}">
 		<div class="zeroLine" style="bottom: {{$.ZeroLineBottom}}%; display: {{$.DisplayZeroLine}};"></div>

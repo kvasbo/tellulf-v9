@@ -122,9 +122,9 @@ func run() error {
 	return nil
 }
 
-// loadDotEnv reads .env from the working directory, like Bun did for the
-// TypeScript version. Variables already set in the environment win, so
-// Docker/compose settings are never overridden. A missing file is fine.
+// loadDotEnv reads .env from the working directory. Variables already set
+// in the environment win, so Docker/compose settings are never overridden.
+// A missing file is fine.
 func loadDotEnv() {
 	err := godotenv.Load()
 	switch {

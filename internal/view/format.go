@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// Num formats a number the way JavaScript's String(x) does, so templates
-// print "7.3", "10" and "-0.5" just like the TypeScript version.
+// Num formats a number the way JavaScript's String(x) does: "7.3", "10",
+// "-0.5", never "1e+01" or "-0".
 func Num(x float64) string {
 	if x == 0 {
 		return "0" // also turns -0 into "0", as JS does
@@ -47,7 +47,7 @@ func Fixed(x float64, digits int) string {
 
 var weekdays = [...]string{"søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"}
 
-// niceDate formats a date like "mandag 10." (Luxon's "cccc d." in nb).
+// niceDate formats a date like "mandag 10."
 func niceDate(t time.Time) string {
 	return weekdays[t.Weekday()] + " " + strconv.Itoa(t.Day()) + "."
 }

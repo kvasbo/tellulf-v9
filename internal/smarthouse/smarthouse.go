@@ -17,8 +17,8 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
-// Readings are the latest sensor values. The sentinels match the TypeScript
-// version, so a missing sensor shows up as -9999° on the display.
+// Readings are the latest sensor values. Until a sensor reports, its value
+// is a -9999 sentinel, so a missing sensor is obvious on the display.
 type Readings struct {
 	TempOut      float64
 	LastTempTime time.Time // zero until the sensor has reported a time
@@ -86,8 +86,8 @@ func (s *Smarthouse) Close() {
 	}
 }
 
-// brokerURL accepts the same host strings mqtt.js did, adding the default
-// port when it's missing since paho needs one.
+// brokerURL accepts "host", "mqtt://host" or "mqtts://host:port", adding the
+// default port when it's missing since paho needs one.
 func brokerURL(host string) (string, error) {
 	if !strings.Contains(host, "://") {
 		host = "mqtt://" + host

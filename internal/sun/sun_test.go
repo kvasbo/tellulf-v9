@@ -7,8 +7,8 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
-// Reference values from sunrise-sunset-js (NREL SPA), which the TypeScript
-// version used, for Slemdal (59.9508, 10.6847).
+// Reference values from sunrise-sunset-js (NREL's Solar Position Algorithm),
+// for Slemdal (59.9508, 10.6847).
 func TestTimesMatchReference(t *testing.T) {
 	cases := []struct{ date, rise, set string }{
 		{"2026-01-01", "2026-01-01T08:19:02Z", "2026-01-01T14:22:49Z"},

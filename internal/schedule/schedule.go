@@ -1,5 +1,4 @@
-// Package schedule has the two timing helpers every data source needs. They
-// replace the setTimeout/setInterval calls from the TypeScript version, but
+// Package schedule has the two timing helpers every data source needs. Both
 // stop cleanly when the context is cancelled.
 package schedule
 

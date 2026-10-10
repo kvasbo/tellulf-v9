@@ -3,7 +3,7 @@
 }
 
 /* Adaptive theme variables — overridden live by the server-pushed sky frame
-   (see views/partials/sky.eta). These are light-scheme fallbacks. */
+   (see views/partials/sky.html). These are light-scheme fallbacks. */
 :root {
 	--fg: #1a1d22;
 	--fg-muted: #4a4f57;

@@ -32,7 +32,7 @@ const liveQuery = `subscription($homeId: ID!) {
     timestamp power
     accumulatedConsumption accumulatedProduction accumulatedCost accumulatedReward
     minPower averagePower maxPower
-    powerProduction minPowerProduction maxPowerProduction
+    powerProduction maxPowerProduction
   }
 }`
 
@@ -48,7 +48,6 @@ type liveMeasurement struct {
 	AveragePower           float64  `json:"averagePower"`
 	MaxPower               float64  `json:"maxPower"`
 	PowerProduction        *float64 `json:"powerProduction"`
-	MinPowerProduction     *float64 `json:"minPowerProduction"`
 	MaxPowerProduction     *float64 `json:"maxPowerProduction"`
 }
 

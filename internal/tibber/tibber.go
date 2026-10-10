@@ -26,22 +26,16 @@ const (
 type PowerData struct {
 	Timestamp              time.Time // last live measurement; zero until the feed delivers
 	AccumulatedConsumption float64   // kWh since midnight, net of production
+	AccumulatedCost        float64   // kr since midnight
 	CurrentPower           float64   // W, negative when producing
-	AccumulatedProduction  float64
-	AccumulatedCost        float64 // kr since midnight
-	AccumulatedReward      float64
-	MinPower               float64
+	MinPower               float64   // W since midnight
 	AveragePower           float64
 	MaxPower               float64
-	PowerProduction        float64
-	MinPowerProduction     float64
 	MaxPowerProduction     float64
 	CurrentPrice           float64 // spot price incl. VAT, kr/kWh
-	MonthlyConsumption     float64 // kWh this month
-	MonthlyCost            float64
-	SubsidizedConsumption  float64
-	MarketConsumption      float64
 	EffectivePrice         float64 // what a kWh costs right now under Norgespris
+	MonthlyConsumption     float64 // kWh this month
+	MonthlyCost            float64 // kr this month
 	Cap                    float64 // Norgespris monthly cap, kWh
 }
 
@@ -56,14 +50,12 @@ type Tibber struct {
 	homeIDs    map[Place]string
 	norgespris Norgespris
 
-	mu      sync.RWMutex
-	data    map[Place]*PowerData
-	prices  map[Place][]pricePoint
-	tracker *consumptionTracker
+	mu     sync.RWMutex
+	data   map[Place]*PowerData
+	prices map[Place][]pricePoint
 	// Monthly totals up to (not including) today, from the consumption API.
 	monthBeforeToday     map[Place]float64
 	monthCostBeforeToday map[Place]float64
-	monthFetchedAt       map[Place]time.Time
 	lastCabinProduction  float64
 }
 
@@ -78,10 +70,8 @@ func New(cfg Config) *Tibber {
 		norgespris:           defaultNorgespris,
 		data:                 map[Place]*PowerData{},
 		prices:               map[Place][]pricePoint{},
-		tracker:              newConsumptionTracker(),
 		monthBeforeToday:     map[Place]float64{},
 		monthCostBeforeToday: map[Place]float64{},
-		monthFetchedAt:       map[Place]time.Time{},
 	}
 	for _, p := range []Place{Home, Cabin} {
 		t.data[p] = &PowerData{Cap: t.norgespris.Cap(p)}
@@ -131,23 +121,18 @@ func (t *Tibber) onMeasurement(p Place, m liveMeasurement) {
 	d.MaxPower = m.MaxPower
 	d.MinPower = m.MinPower
 	d.AveragePower = m.AveragePower
-	d.PowerProduction = val(m.PowerProduction)
-	d.MinPowerProduction = val(m.MinPowerProduction)
 	d.MaxPowerProduction = val(m.MaxPowerProduction)
-	d.AccumulatedProduction = m.AccumulatedProduction
 
 	// Monthly consumption = history before today + today's live total.
 	if before, ok := t.monthBeforeToday[p]; ok {
 		d.MonthlyConsumption = before + d.AccumulatedConsumption
-		t.tracker.Update(p, d.MonthlyConsumption)
 	}
 
 	if t.norgespris.Active() {
 		// Split today's consumption into the part still under the monthly cap
 		// (subsidized) and the part above it (spot price).
 		today := d.AccumulatedConsumption
-		monthly := t.tracker.Monthly(p)
-		beforeToday := max(0, monthly-today)
+		beforeToday := max(0, d.MonthlyConsumption-today)
 		var subsidized, market float64
 		if beforeToday >= d.Cap {
 			market = today
@@ -156,11 +141,10 @@ func (t *Tibber) onMeasurement(p Place, m liveMeasurement) {
 			market = max(0, today-subsidized)
 		}
 		d.AccumulatedCost = subsidized*t.norgespris.SubsidizedPrice + market*d.CurrentPrice
-		d.EffectivePrice = t.norgespris.EffectivePriceNow(p, monthly, d.CurrentPrice)
+		d.EffectivePrice = t.norgespris.EffectivePrice(p, d.MonthlyConsumption, d.CurrentPrice)
 	} else {
 		d.AccumulatedCost = val(m.AccumulatedCost) - val(m.AccumulatedReward)
 	}
-	d.AccumulatedReward = val(m.AccumulatedReward)
 
 	if before, ok := t.monthCostBeforeToday[p]; ok {
 		d.MonthlyCost = before + d.AccumulatedCost
@@ -227,11 +211,8 @@ func (t *Tibber) updatePrice(p Place, now time.Time) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	d := t.data[p]
-	calc := t.norgespris.Calculate(p, d.MonthlyConsumption, spot)
 	d.CurrentPrice = spot
-	d.EffectivePrice = calc.EffectivePrice
-	d.SubsidizedConsumption = calc.SubsidizedConsumption
-	d.MarketConsumption = calc.MarketConsumption
+	d.EffectivePrice = t.norgespris.EffectivePrice(p, d.MonthlyConsumption, spot)
 }
 
 // --- Monthly consumption ----------------------------------------------------------
@@ -253,38 +234,27 @@ func (t *Tibber) runMonthly(ctx context.Context, p Place) {
 
 func (t *Tibber) updateMonthly(ctx context.Context, p Place) {
 	now := tz.Now()
-	t.mu.RLock()
-	fresh := now.Sub(t.monthFetchedAt[p]) < time.Hour
-	t.mu.RUnlock()
-
-	if !fresh {
-		hours := now.Day()*24 + now.Hour() + 3
-		nodes, err := t.gql.hourlyConsumption(ctx, t.homeIDs[p], hours)
-		if err != nil {
-			slog.Error("could not fetch monthly consumption", "place", p, "err", err)
-			return
-		}
-		usage := monthHoursBeforeToday(nodes, now)
-		total := 0.0
-		for _, h := range usage {
-			total += h.Consumption
-		}
-		cost := t.norgespris.AccumulatedCost(p, usage)
-
-		t.mu.Lock()
-		t.monthBeforeToday[p] = total
-		t.monthCostBeforeToday[p] = cost
-		t.monthFetchedAt[p] = now
-		t.mu.Unlock()
-		slog.Info("monthly consumption fetched", "place", p, "kwh_before_today", total)
+	hours := now.Day()*24 + now.Hour() + 3
+	nodes, err := t.gql.hourlyConsumption(ctx, t.homeIDs[p], hours)
+	if err != nil {
+		slog.Error("could not fetch monthly consumption", "place", p, "err", err)
+		return
 	}
+	usage := monthHoursBeforeToday(nodes, now)
+	total := 0.0
+	for _, h := range usage {
+		total += h.Consumption
+	}
+	cost := t.norgespris.AccumulatedCost(p, usage)
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	t.monthBeforeToday[p] = total
+	t.monthCostBeforeToday[p] = cost
 	d := t.data[p]
-	d.MonthlyConsumption = t.monthBeforeToday[p] + d.AccumulatedConsumption
-	t.tracker.Update(p, d.MonthlyConsumption)
-	d.MonthlyCost = t.monthCostBeforeToday[p] + d.AccumulatedCost
+	d.MonthlyConsumption = total + d.AccumulatedConsumption
+	d.MonthlyCost = cost + d.AccumulatedCost
+	slog.Info("monthly consumption fetched", "place", p, "kwh_before_today", total)
 }
 
 // monthHoursBeforeToday picks the hours from the start of the month up to

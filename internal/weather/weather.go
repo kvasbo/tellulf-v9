@@ -77,11 +77,12 @@ func New() *Weather {
 	}
 }
 
-// Run keeps every location's forecasts fresh until ctx is cancelled.
+// Run keeps the forecasts fresh until ctx is cancelled: hourly for Oslo
+// (the only one displayed), daily for every location.
 func (w *Weather) Run(ctx context.Context) {
 	var wg sync.WaitGroup
+	wg.Go(func() { w.runForecast(ctx, Oslo) })
 	for loc := range places {
-		wg.Go(func() { w.runForecast(ctx, loc) })
 		wg.Go(func() {
 			schedule.Every(ctx, refreshInterval, func(ctx context.Context) { w.updateLongTerm(ctx, loc) })
 		})

@@ -2,8 +2,6 @@ services:
   tellulf:
     image: ghcr.io/kvasbo/tellulf-v9:main
     restart: unless-stopped
-    stdin_open: true
-    tty: true
     ports:
       - "${EXPOSE_PORT}:3000"
     environment:

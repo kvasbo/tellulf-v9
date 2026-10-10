@@ -1,6 +1,5 @@
-// Package tz holds the one time zone Tellulf cares about, plus a couple of
-// rounding/formatting helpers that mimic JavaScript so the port renders the
-// same numbers as the TypeScript version did.
+// Package tz holds the one time zone Tellulf cares about, plus JavaScript-style
+// rounding.
 package tz
 
 import (

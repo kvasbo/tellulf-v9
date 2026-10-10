@@ -4,7 +4,7 @@ import "time"
 
 // The structs below describe just the parts of MET Norway's responses that
 // Tellulf reads. encoding/json ignores everything else, and fails loudly if a
-// field has the wrong type, which covers most of what the zod schemas did.
+// field has the wrong type.
 
 // locationforecast/2.0/complete
 type forecastResponse struct {

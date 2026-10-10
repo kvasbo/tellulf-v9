@@ -60,7 +60,6 @@ const windDisplayThreshold = 5
 type HourlyForecast struct {
 	Forecasts       []ForecastHour
 	Min, Max        string
-	Background      string
 	DisplayZeroLine string
 	ZeroLineBottom  string
 }
@@ -132,7 +131,6 @@ func BuildHourlyForecast(all []weather.Hourly) HourlyForecast {
 	out := HourlyForecast{
 		Min:             Num(lo),
 		Max:             Num(hi),
-		Background:      "none",
 		DisplayZeroLine: "none",
 		ZeroLineBottom:  toRange(0),
 	}
