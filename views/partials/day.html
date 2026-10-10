@@ -1,0 +1,67 @@
+{{define "day" -}}
+<tl-day>
+	<div class="dateHeader">
+		<span class="dateLabel">
+		    <span>
+			{{.Weekday}}
+			</span>
+			{{- if eq .KidsStatus "arriving"}}
+			<span class="kids-arrow">→</span><img alt="kids" class="calendaricon kids" src="kids.svg" />
+			{{- else if eq .KidsStatus "leaving"}}
+			<img alt="kids" class="calendaricon kids" src="kids.svg" /><span class="kids-arrow">→</span>
+			{{- else if .KidsStatus}}
+			<img alt="kids" class="calendaricon kids" src="kids.svg" />
+			{{- end}}
+		</span>
+		{{- with .Forecast}}
+		<div class="headerWeather">
+			<div class="headerWeatherPrepArea">
+				{{- if .ShowLightRain}}
+				<div class="weatherPrep light">
+					<img alt="light rain" class="headerWeatherIconPrep light" style="filter: url(#shape-shadow);" src="weather-icons-animated/rain.svg" />
+					<span class="rainProb">{{.LightRain}}%</span>
+				</div>
+				{{- end}}
+				{{- if .ShowHeavyRain}}
+				<div class="weatherPrep heavy">
+					<img alt="heavy rain" class="headerWeatherIconPrep heavy" style="filter: url(#shape-shadow);" src="weather-icons-animated/extreme-rain.svg" />
+					<span class="rainProb">{{.HeavyRain}}%</span>
+				</div>
+				{{- end}}
+			</div>
+			<img alt="cold" class="headerWeatherTempIcon" src="low-temperature.png" />
+			{{.MinTemp}}&deg;
+			<img alt="warm" class="headerWeatherTempIcon" src="high-temperature.png" />
+			{{.MaxTemp}}&deg;
+		</div>
+		{{- end}}
+	</div>
+	<div class="dinner">
+		{{- range .Dinners}}
+		<div class="dinner"><img alt="dinner" class="calendaricon birthday" src="dinner.svg" />{{.DisplayTitle}}</div>
+		{{- end}}
+	</div>
+	<div class="birthdays">
+		{{- range .Birthdays}}
+		<div class="birthday"><img alt="cake" class="calendaricon birthday" src="birthday.svg" />{{.DisplayTitle}}</div>
+		{{- end}}
+	</div>
+	<div class="events">
+		{{- range .Events}}
+			{{- if .FullDay}}
+			<div class="event{{if .Faded}} faded{{end}}">
+				{{.DisplayTitle}}
+				{{- with .Hytta}}
+				<span class="hytta-weather">({{.Temperature}}&deg;, {{.RainProbability}}% regn)</span>
+				{{- end}}
+			</div>
+			{{- else}}
+			<div class="event{{if .Faded}} faded{{end}}">
+				<span class="event-time timespan">{{.DisplayTime.Start}} {{.DisplayTime.Spacer}} {{.DisplayTime.End}}</span>
+				{{.DisplayTitle}}
+			</div>
+			{{- end}}
+		{{- end}}
+	</div>
+</tl-day>
+{{- end}}

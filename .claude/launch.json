@@ -3,8 +3,9 @@
 	"configurations": [
 		{
 			"name": "tellulf",
-			"runtimeExecutable": "bun",
-			"runtimeArgs": ["dev"],
+			"runtimeExecutable": "go",
+			"runtimeArgs": ["run", "."],
+			"env": { "TELLULF_DEV": "1" },
 			"port": 3000
 		}
 	]

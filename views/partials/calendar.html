@@ -1,0 +1,8 @@
+{{define "calendar" -}}
+{{range .Days}}
+{{template "day" .}}
+{{end}}
+{{- with .BhgDaysLeft}}
+<div class="bhg-count">bhg: {{.}}</div>
+{{- end}}
+{{- end}}

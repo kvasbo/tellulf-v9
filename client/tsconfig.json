@@ -1,0 +1,13 @@
+{
+	// Editor type-checking only. The bundle is built by esbuild via
+	// `go generate`, which strips types without checking them.
+	"compilerOptions": {
+		"target": "ES2024",
+		"lib": ["ES2024", "DOM", "DOM.Iterable"],
+		"module": "ES2022",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"noEmit": true
+	},
+	"include": ["*.ts"]
+}

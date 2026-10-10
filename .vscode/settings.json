@@ -1,19 +1,9 @@
 {
-	"editor.defaultFormatter": "biomejs.biome",
 	"editor.formatOnSave": true,
-	"[css]": {
-		"editor.defaultFormatter": "biomejs.biome"
+	"[go]": {
+		"editor.defaultFormatter": "golang.go"
 	},
-	"[javascript]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"[typescript]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"[json]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"[jsonc]": {
-		"editor.defaultFormatter": "biomejs.biome"
+	"files.associations": {
+		"views/**/*.html": "gotmpl"
 	}
 }
