@@ -85,7 +85,7 @@ func TestPageAndStaticFiles(t *testing.T) {
 		status         int
 	}{
 		{"/", `sse-connect="/sse"`, 200},
-		{"/", "-9999&deg;", 200}, // no sensor data yet
+		{"/", `<div id="current_temperature">–</div>`, 200}, // no sensor data yet
 		{"/styles.css", "", 200},
 		{"/vendor/htmx.min.js", "htmx", 200},
 		{"/kids.svg", "<svg", 200},

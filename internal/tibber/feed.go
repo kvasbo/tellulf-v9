@@ -30,7 +30,7 @@ import (
 const liveQuery = `subscription($homeId: ID!) {
   liveMeasurement(homeId: $homeId) {
     timestamp power
-    accumulatedConsumption accumulatedProduction accumulatedCost accumulatedReward
+    accumulatedConsumption accumulatedProduction
     minPower averagePower maxPower
     powerProduction maxPowerProduction
   }
@@ -42,8 +42,6 @@ type liveMeasurement struct {
 	Power                  float64  `json:"power"`
 	AccumulatedConsumption float64  `json:"accumulatedConsumption"`
 	AccumulatedProduction  float64  `json:"accumulatedProduction"`
-	AccumulatedCost        *float64 `json:"accumulatedCost"`
-	AccumulatedReward      *float64 `json:"accumulatedReward"`
 	MinPower               float64  `json:"minPower"`
 	AveragePower           float64  `json:"averagePower"`
 	MaxPower               float64  `json:"maxPower"`

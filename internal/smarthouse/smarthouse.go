@@ -17,13 +17,13 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
-// Readings are the latest sensor values. Until a sensor reports, its value
-// is a -9999 sentinel, so a missing sensor is obvious on the display.
+// Readings are the latest sensor values; nil until the sensor reports.
+// Each update stores a fresh pointer, so copies of Readings never change.
 type Readings struct {
-	TempOut      float64
+	TempOut      *float64
 	LastTempTime time.Time // zero until the sensor has reported a time
-	HumOut       float64
-	Pressure     float64
+	HumOut       *float64
+	Pressure     *float64
 }
 
 type Config struct {
@@ -40,7 +40,7 @@ type Smarthouse struct {
 }
 
 func New() *Smarthouse {
-	return &Smarthouse{data: Readings{TempOut: -9999, HumOut: -9999}}
+	return &Smarthouse{}
 }
 
 // Connect starts the MQTT client. Paho reconnects on its own, both for the
@@ -134,7 +134,7 @@ func (s *Smarthouse) handle(topic, payload string) {
 		return
 	}
 
-	var target *float64
+	var target **float64
 	switch topic {
 	case "tellulf/weather/tempOut":
 		target = &s.data.TempOut
@@ -150,6 +150,6 @@ func (s *Smarthouse) handle(topic, payload string) {
 		slog.Warn("MQTT: bad number", "topic", topic, "payload", payload)
 		return
 	}
-	*target = v
+	*target = &v
 	slog.Info("MQTT value set", "topic", topic, "value", v)
 }

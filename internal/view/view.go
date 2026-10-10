@@ -37,9 +37,12 @@ type CurrentWeather struct {
 
 func BuildCurrentWeather(r smarthouse.Readings, now time.Time) CurrentWeather {
 	cw := CurrentWeather{
-		Temperature: Num(r.TempOut),
-		Pressure:    Num(tz.Round(r.Pressure)),
-		Humidity:    Num(tz.Round(r.HumOut)),
+		Temperature: "–",
+		Pressure:    orDash(r.Pressure, func(v float64) string { return Num(tz.Round(v)) }),
+		Humidity:    orDash(r.HumOut, func(v float64) string { return Num(tz.Round(v)) + "%" }),
+	}
+	if r.TempOut != nil {
+		cw.Temperature = Num(*r.TempOut) + "°"
 	}
 	if rise, set, ok := sun.Times(now.In(tz.Oslo), osloLat, osloLon); ok {
 		cw.Sunrise = rise.Format("15:04")
@@ -50,6 +53,14 @@ func BuildCurrentWeather(r smarthouse.Readings, now time.Time) CurrentWeather {
 		cw.TempTimeStr = r.LastTempTime.In(tz.Oslo).Format("15:04:05")
 	}
 	return cw
+}
+
+// orDash formats a sensor value, or "–" when the sensor hasn't reported.
+func orDash(v *float64, format func(float64) string) string {
+	if v == nil {
+		return "–"
+	}
+	return format(*v)
 }
 
 // --- Hourly forecast -------------------------------------------------------------
@@ -87,8 +98,9 @@ func weatherIcon(symbol string) string {
 	if !ok {
 		return ""
 	}
+	// The night icons without precipitation use the still versions.
 	folder := "animated"
-	if slices.Contains([]string{"clearsky_night", "partly-cloudy-night"}, symbol) {
+	if slices.Contains([]string{"clear-night", "partly-cloudy-night"}, name) {
 		folder = "static"
 	}
 	return "/weather-icons-" + folder + "/" + name + ".svg"
@@ -242,7 +254,7 @@ const (
 
 func BuildPower(d tibber.PowerData, place tibber.Place, now time.Time) Power {
 	now = now.In(tz.Oslo)
-	norgespris := tibber.NorgesprisActive() && d.Cap != 0
+	norgespris := d.Cap != 0
 	underCap := norgespris && d.MonthlyConsumption < d.Cap
 
 	p := Power{

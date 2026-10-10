@@ -50,3 +50,19 @@ func TestNumMatchesJavaScript(t *testing.T) {
 		}
 	}
 }
+
+func TestWeatherIcon(t *testing.T) {
+	cases := map[string]string{
+		"clearsky_night":     "/weather-icons-static/clear-night.svg",
+		"fair_night":         "/weather-icons-static/partly-cloudy-night.svg",
+		"partlycloudy_night": "/weather-icons-static/partly-cloudy-night.svg",
+		"clearsky_day":       "/weather-icons-animated/clear-day.svg",
+		"rainshowers_night":  "/weather-icons-animated/partly-cloudy-night-rain.svg",
+		"no_such_symbol":     "",
+	}
+	for symbol, want := range cases {
+		if got := weatherIcon(symbol); got != want {
+			t.Errorf("%s: got %q, want %q", symbol, got, want)
+		}
+	}
+}

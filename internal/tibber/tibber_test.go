@@ -97,7 +97,7 @@ func TestFeedProtocol(t *testing.T) {
 	if !gotData || err != errGoingAway {
 		t.Fatalf("connectOnce = %v, %v; want data and errGoingAway", gotData, err)
 	}
-	if len(got) != 1 || got[0].Power != 1234 || got[0].AccumulatedCost != nil {
+	if len(got) != 1 || got[0].Power != 1234 || got[0].PowerProduction != nil {
 		t.Errorf("got measurements %+v", got)
 	}
 }
@@ -122,7 +122,7 @@ func TestBackoffGrowsAndStaysBounded(t *testing.T) {
 }
 
 func TestAccumulatedCostCrossesCap(t *testing.T) {
-	n := Norgespris{SubsidizedPrice: 0.5, HomeCap: 10, CabinCap: 5, Start: time.Time{}}
+	n := Norgespris{Prices: []PricePeriod{{Price: 0.5}}, HomeCap: 10, CabinCap: 5}
 	hours := []hourlyUsage{
 		{Consumption: 6, Price: 2}, // all subsidized: 3.0
 		{Consumption: 6, Price: 2}, // 4 subsidized + 2 at spot: 2.0 + 4.0
@@ -135,7 +135,7 @@ func TestAccumulatedCostCrossesCap(t *testing.T) {
 
 func TestOnMeasurementSplitsTodayAtTheCap(t *testing.T) {
 	tb := New(Config{})
-	tb.norgespris = Norgespris{SubsidizedPrice: 0.5, HomeCap: 100, CabinCap: 10, Start: time.Time{}}
+	tb.norgespris = Norgespris{Prices: []PricePeriod{{Price: 0.5}}, HomeCap: 100, CabinCap: 10}
 	tb.data[Home].Cap = 100
 	tb.data[Home].CurrentPrice = 2
 	tb.monthBeforeToday[Home] = 95
@@ -178,5 +178,39 @@ func TestMonthHoursBeforeToday(t *testing.T) {
 	got := monthHoursBeforeToday(nodes, now)
 	if len(got) != 3 || !got[0].Start.Equal(at(10, 1, 0)) || got[1].Price != 1.5 || got[2].Consumption != 0 {
 		t.Errorf("got %+v", got)
+	}
+}
+
+func TestNorgesprisPriceChangesOnNewYear2027(t *testing.T) {
+	n := defaultNorgespris
+	oslo := func(y int, m time.Month, d, h, min int) time.Time { return time.Date(y, m, d, h, min, 0, 0, tz.Oslo) }
+	cases := []struct {
+		at   time.Time
+		want float64
+	}{
+		{oslo(2025, 10, 1, 0, 0), 0.50},
+		{oslo(2026, 12, 31, 23, 59), 0.50},
+		{oslo(2027, 1, 1, 0, 0), 0.5625}, // 45 øre + 25 % VAT
+		{oslo(2027, 6, 1, 12, 0), 0.5625},
+	}
+	for _, c := range cases {
+		if got := n.PriceAt(c.at); !near(got, c.want) {
+			t.Errorf("%s: got %v, want %v", c.at, got, c.want)
+		}
+		if got := n.EffectivePrice(Home, c.at, 100, 3); !near(got, c.want) {
+			t.Errorf("%s under the cap: got %v, want %v", c.at, got, c.want)
+		}
+	}
+	if got := n.EffectivePrice(Home, oslo(2027, 1, 5, 12, 0), 5000, 3); got != 3 {
+		t.Errorf("at the cap the spot price applies, got %v", got)
+	}
+
+	// Each hour is priced at the rate in effect when it was used.
+	hours := []hourlyUsage{
+		{Start: oslo(2026, 12, 31, 23, 0), Consumption: 2, Price: 1},
+		{Start: oslo(2027, 1, 1, 0, 0), Consumption: 2, Price: 1},
+	}
+	if got := n.AccumulatedCost(Home, hours); !near(got, 2*0.5+2*0.5625) {
+		t.Errorf("cost across the change: got %v", got)
 	}
 }

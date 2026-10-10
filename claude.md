@@ -54,10 +54,12 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - **Entur**: Train departures (RUT Line 1, Slemdal station)
 - **MQTT**: Sensor data (temperature, humidity, pressure)
 
-## Norgespris (active from 2025-10-01)
+## Norgespris
 
-- Home cap: 5000 kWh/month @ 0.50 kr/kWh, spot price above
-- Cabin cap: 1000 kWh/month @ 0.50 kr/kWh, spot price above
+- Home cap: 5000 kWh/month, cabin cap: 1000 kWh/month; spot price above the cap
+- Fixed price (incl. 25 % VAT): 0.50 kr/kWh from 2025-10-01, 0.5625 kr/kWh (45 øre + mva)
+  from 2027-01-01. Each kWh is priced at the rate in effect when it was used.
+  Schedule lives in `defaultNorgespris` in `internal/tibber/norgespris.go`.
 
 ## Environment Variables
 

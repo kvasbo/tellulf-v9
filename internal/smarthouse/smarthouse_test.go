@@ -17,14 +17,15 @@ func TestHandle(t *testing.T) {
 	s.handle("tellulf/other", "1")                  // ignored
 
 	got := s.Readings()
-	want := Readings{
-		TempOut:      -3.5,
-		HumOut:       81.2,
-		Pressure:     1013,
-		LastTempTime: time.Date(2026, 3, 10, 14, 5, 0, 0, tz.Oslo),
+	if got.TempOut == nil || *got.TempOut != -3.5 ||
+		got.HumOut == nil || *got.HumOut != 81.2 ||
+		got.Pressure == nil || *got.Pressure != 1013 ||
+		!got.LastTempTime.Equal(time.Date(2026, 3, 10, 14, 5, 0, 0, tz.Oslo)) {
+		t.Errorf("got %+v", got)
 	}
-	if got != want {
-		t.Errorf("got %+v, want %+v", got, want)
+
+	if r := New().Readings(); r.TempOut != nil || r.HumOut != nil || r.Pressure != nil {
+		t.Errorf("readings before any message should be nil, got %+v", r)
 	}
 }
 

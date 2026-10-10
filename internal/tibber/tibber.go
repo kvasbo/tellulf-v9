@@ -128,23 +128,15 @@ func (t *Tibber) onMeasurement(p Place, m liveMeasurement) {
 		d.MonthlyConsumption = before + d.AccumulatedConsumption
 	}
 
-	if t.norgespris.Active() {
-		// Split today's consumption into the part still under the monthly cap
-		// (subsidized) and the part above it (spot price).
-		today := d.AccumulatedConsumption
-		beforeToday := max(0, d.MonthlyConsumption-today)
-		var subsidized, market float64
-		if beforeToday >= d.Cap {
-			market = today
-		} else {
-			subsidized = min(today, d.Cap-beforeToday)
-			market = max(0, today-subsidized)
-		}
-		d.AccumulatedCost = subsidized*t.norgespris.SubsidizedPrice + market*d.CurrentPrice
-		d.EffectivePrice = t.norgespris.EffectivePrice(p, d.MonthlyConsumption, d.CurrentPrice)
-	} else {
-		d.AccumulatedCost = val(m.AccumulatedCost) - val(m.AccumulatedReward)
-	}
+	// Split today's consumption into the part still under the monthly cap
+	// (Norgespris) and the part above it (spot price).
+	now := time.Now()
+	today := d.AccumulatedConsumption
+	beforeToday := max(0, d.MonthlyConsumption-today)
+	subsidized := max(0, min(today, d.Cap-beforeToday))
+	market := today - subsidized
+	d.AccumulatedCost = subsidized*t.norgespris.PriceAt(now) + market*d.CurrentPrice
+	d.EffectivePrice = t.norgespris.EffectivePrice(p, now, d.MonthlyConsumption, d.CurrentPrice)
 
 	if before, ok := t.monthCostBeforeToday[p]; ok {
 		d.MonthlyCost = before + d.AccumulatedCost
@@ -212,7 +204,7 @@ func (t *Tibber) updatePrice(p Place, now time.Time) {
 	defer t.mu.Unlock()
 	d := t.data[p]
 	d.CurrentPrice = spot
-	d.EffectivePrice = t.norgespris.EffectivePrice(p, d.MonthlyConsumption, spot)
+	d.EffectivePrice = t.norgespris.EffectivePrice(p, now, d.MonthlyConsumption, spot)
 }
 
 // --- Monthly consumption ----------------------------------------------------------

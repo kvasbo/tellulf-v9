@@ -126,7 +126,7 @@ func (s *Server) fragments() map[string]fragment {
 
 func (s *Server) readings() smarthouse.Readings {
 	if s.src.Smarthouse == nil {
-		return smarthouse.New().Readings() // the "no data" sentinels
+		return smarthouse.Readings{} // all nil: shown as dashes
 	}
 	return s.src.Smarthouse.Readings()
 }
