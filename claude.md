@@ -26,7 +26,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 ## Gotchas
 
-- The kiosk runs **Chrome** (on an M3 MacBook). The client may use APIs current Chrome
+- The kiosk runs the latest **Chrome** on macOS (M3 MacBook). The client may use APIs current Chrome
   has, e.g. `Temporal` (Chrome 144+). Playwright's bundled Chromium is older and lacks `Temporal`, so
   client.js throws there and stops before registering its listeners; stub it
   (`window.Temporal = { Now: { plainDateISO: () => ({ weekOfYear: 1 }) } }`) when
