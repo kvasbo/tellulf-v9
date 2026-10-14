@@ -105,43 +105,65 @@ function parse3(s) {
 export function initSky() {
 	const canvas = document.querySelector('canvas.sky');
 	if (!canvas) return;
-	const ctx = canvas.getContext('webgl', { antialias: true });
-	if (!ctx) return; // No WebGL: panels just sit on the page background.
 	const cv = canvas;
-	const gl = ctx;
+	// Without a context (no WebGL yet, or it was lost) the canvas is blank and
+	// the themed page background behind it shows instead.
+	let gl = null;
+	let u = null;
 
-	const program = gl.createProgram();
-	if (!program) throw new Error('program creation failed');
-	gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT));
-	gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG));
-	gl.linkProgram(program);
-	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-		throw new Error(gl.getProgramInfoLog(program) ?? 'program link failed');
+	// Builds the program and buffers. Runs again after a lost context is
+	// restored, since everything on the old context is gone.
+	function setup() {
+		const program = gl.createProgram();
+		if (!program) throw new Error('program creation failed');
+		gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT));
+		gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG));
+		gl.linkProgram(program);
+		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+			throw new Error(gl.getProgramInfoLog(program) ?? 'program link failed');
+		}
+		gl.useProgram(program);
+
+		// Fullscreen triangle.
+		const buf = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+		gl.bufferData(
+			gl.ARRAY_BUFFER,
+			new Float32Array([-1, -1, 3, -1, -1, 3]),
+			gl.STATIC_DRAW,
+		);
+		const aPos = gl.getAttribLocation(program, 'aPos');
+		gl.enableVertexAttribArray(aPos);
+		gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+		u = {
+			res: gl.getUniformLocation(program, 'uRes'),
+			time: gl.getUniformLocation(program, 'uTime'),
+			c1: gl.getUniformLocation(program, 'uC1'),
+			c2: gl.getUniformLocation(program, 'uC2'),
+			c3: gl.getUniformLocation(program, 'uC3'),
+			arc: gl.getUniformLocation(program, 'uArc'),
+			night: gl.getUniformLocation(program, 'uNight'),
+			cloud: gl.getUniformLocation(program, 'uCloud'),
+		};
+		resize();
 	}
-	gl.useProgram(program);
 
-	// Fullscreen triangle.
-	const buf = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-	gl.bufferData(
-		gl.ARRAY_BUFFER,
-		new Float32Array([-1, -1, 3, -1, -1, 3]),
-		gl.STATIC_DRAW,
-	);
-	const aPos = gl.getAttribLocation(program, 'aPos');
-	gl.enableVertexAttribArray(aPos);
-	gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+	// The kiosk sleeps its display overnight, and the GPU can drop the context
+	// then. preventDefault lets the browser restore it instead of giving up.
+	cv.addEventListener('webglcontextlost', (e) => {
+		e.preventDefault();
+		u = null;
+	});
+	cv.addEventListener('webglcontextrestored', setup);
 
-	const u = {
-		res: gl.getUniformLocation(program, 'uRes'),
-		time: gl.getUniformLocation(program, 'uTime'),
-		c1: gl.getUniformLocation(program, 'uC1'),
-		c2: gl.getUniformLocation(program, 'uC2'),
-		c3: gl.getUniformLocation(program, 'uC3'),
-		arc: gl.getUniformLocation(program, 'uArc'),
-		night: gl.getUniformLocation(program, 'uNight'),
-		cloud: gl.getUniformLocation(program, 'uCloud'),
-	};
+	// getContext can also fail outright, e.g. on the midnight reload while the
+	// display is off. Keep trying rather than staying blank all day.
+	function acquire() {
+		gl = cv.getContext('webgl', { antialias: true });
+		if (gl) setup();
+		else setTimeout(acquire, 60000);
+	}
 
 	// Render below display resolution: the sky is all soft gradients, glow and
 	// clouds, so the CSS upscale is invisible but the GPU does ~3x less work.
@@ -149,9 +171,8 @@ export function initSky() {
 	function resize() {
 		cv.width = Math.round(window.innerWidth * RENDER_SCALE);
 		cv.height = Math.round(window.innerHeight * RENDER_SCALE);
-		gl.viewport(0, 0, cv.width, cv.height);
+		if (gl) gl.viewport(0, 0, cv.width, cv.height);
 	}
-	resize();
 	window.addEventListener('resize', resize);
 
 	const current = {
@@ -225,6 +246,7 @@ export function initSky() {
 		current.night = lerp(current.night, target.night, k);
 		current.cloud = lerp(current.cloud, target.cloud, k);
 
+		if (!u || gl.isContextLost()) return;
 		gl.uniform2f(u.res, cv.width, cv.height);
 		gl.uniform1f(u.time, (now - start) / 1000);
 		gl.uniform3fv(u.c1, current.c1);
@@ -236,5 +258,6 @@ export function initSky() {
 
 		gl.drawArrays(gl.TRIANGLES, 0, 3);
 	}
+	acquire();
 	requestAnimationFrame(frame);
 }

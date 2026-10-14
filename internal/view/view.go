@@ -192,7 +192,8 @@ var nightFactor = map[sky.Phase]float64{sky.Night: 1, sky.Dawn: 0.5, sky.Dusk: 0
 func rootCSS(c sky.CSS) string {
 	return ":root{--fg:" + c.Fg + ";--fg-muted:" + c.FgMuted + ";--fg-faint:" + c.FgFaint +
 		";--line:" + c.Line + ";--glass-bg:" + c.GlassBg + ";--glass-border:" + c.GlassBorder +
-		";--glass-shadow:" + c.GlassShadow + ";--icon-filter:" + c.IconFilter + ";}"
+		";--glass-shadow:" + c.GlassShadow + ";--icon-filter:" + c.IconFilter +
+		";--page-bg:" + c.PageBg + ";}"
 }
 
 func rgb(c sky.RGB) string {

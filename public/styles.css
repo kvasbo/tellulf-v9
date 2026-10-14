@@ -13,6 +13,14 @@
 	--glass-border: rgba(255, 255, 255, 0.38);
 	--glass-shadow: rgba(30, 50, 80, 0.18);
 	--icon-filter: brightness(0.45);
+	--page-bg: linear-gradient(#428ad9, #80b8ed 50%, #d4ebfa);
+}
+
+/* Shown only when the sky canvas isn't drawing (no WebGL or a lost context),
+   so the background always matches the text scheme. */
+html {
+	min-height: 100%;
+	background: var(--page-bg);
 }
 
 /* Living-sky WebGL canvas, behind everything. */

@@ -49,6 +49,10 @@ type CSS struct {
 	Fg, FgMuted, FgFaint, Line        string
 	GlassBg, GlassBorder, GlassShadow string
 	IconFilter                        string // filter() to recolour monochrome icons
+	// PageBg sits behind the WebGL canvas. It only shows when the canvas
+	// doesn't draw (no WebGL, or the context was lost), and keeps the page
+	// in the same scheme as the text so it stays readable.
+	PageBg string
 }
 
 type State struct {
@@ -192,6 +196,7 @@ var lightUI = CSS{
 	GlassShadow: "rgba(30, 50, 80, 0.18)",
 	// kids.svg ships as #999 grey; darken it to sit with the dark muted text.
 	IconFilter: "brightness(0.45)",
+	PageBg:     "linear-gradient(#428ad9, #80b8ed 50%, #d4ebfa)",
 }
 
 var darkUI = CSS{
@@ -204,6 +209,7 @@ var darkUI = CSS{
 	GlassShadow: "rgba(0, 0, 10, 0.35)",
 	// Lighten the grey icon to match the light muted text at night.
 	IconFilter: "brightness(1.25)",
+	PageBg:     "linear-gradient(#080a1c, #0f142b 50%, #1c213d)",
 }
 
 // Dawn/day use dark text on light glass; dusk/night use light text on dark glass.
