@@ -230,8 +230,8 @@ export function initSky() {
 		requestAnimationFrame(frame);
 		// Cap the framerate hard: the only continuous motion is slow cloud drift,
 		// which looks fine at 10fps, and each rendered frame forces the three
-		// glass panels to re-run their (expensive, esp. on Firefox/Safari)
-		// backdrop-filter blur over the canvas. 10fps cuts that reblur load 3x.
+		// glass panels to re-run their expensive backdrop-filter blur over the
+		// canvas. 10fps cuts that reblur load 3x.
 		if (last && now - last < frameInterval) return;
 		const dt = last ? Math.min((now - last) / 1000, 0.1) : 0.016;
 		last = now;
