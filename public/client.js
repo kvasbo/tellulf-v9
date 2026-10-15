@@ -68,8 +68,14 @@ const stampFmt = new Intl.DateTimeFormat('nb-NO', {
 	second: '2-digit',
 	timeZone: 'Europe/Oslo',
 });
-mustGet('stamp-loaded').textContent = stampFmt.format(new Date());
-const elStampData = mustGet('stamp-data');
+const loadedAt = stampFmt.format(new Date());
+let dataAt = '–';
+// The calendar swap replaces these spans, so look them up every time.
+function fillStamps() {
+	mustGet('stamp-loaded').textContent = loadedAt;
+	mustGet('stamp-data').textContent = dataAt;
+}
+fillStamps();
 
 // Calendar visibility - hide days that overflow
 function checkCalendarVisibility() {
@@ -92,7 +98,8 @@ const initialVersion =
 	document.getElementById('server-version')?.dataset?.version;
 
 document.body.addEventListener('htmx:sseMessage', (evt) => {
-	elStampData.textContent = stampFmt.format(new Date());
+	dataAt = stampFmt.format(new Date());
+	fillStamps();
 	if (evt.detail.type === 'calendar') {
 		requestAnimationFrame(checkCalendarVisibility);
 	}

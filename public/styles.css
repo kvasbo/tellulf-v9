@@ -163,26 +163,21 @@ tl-calendar {
 	flex-wrap: nowrap;
 }
 
-/* Days left of kindergarten - discreet counter in the calendar corner */
-.bhg-count {
+/* Build/start/reload/data times and days left of kindergarten: one discreet
+   line in the calendar corner. */
+.corner {
 	position: absolute;
 	bottom: 4px;
 	right: 10px;
-	font-size: 12px;
-	opacity: 0.35;
-}
-
-/* Build/start/reload/last-data times, tiny, just above the bhg counter in the
-   calendar's corner. Fixed, because the calendar's content is swapped out. */
-#stamps {
-	position: fixed;
-	right: 25px; /* body padding 15 + .bhg-count's 10 */
-	bottom: 35px; /* one line above .bhg-count */
 	display: flex;
+	align-items: baseline;
 	gap: 0.8em;
 	font-size: 11px;
 	opacity: 0.35;
-	pointer-events: none;
+}
+
+.corner .bhg-count {
+	font-size: 12px;
 }
 
 tl-day {

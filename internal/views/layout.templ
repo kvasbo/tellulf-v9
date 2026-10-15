@@ -68,7 +68,7 @@ templ Layout(p Page) {
 				</div>
 			</tl-nowcast>
 			<tl-calendar id="calendar-content" sse-swap="calendar" hx-swap="innerHTML">
-				@Calendar(p.Calendar)
+				@Calendar(p.Calendar, p.Stamps)
 			</tl-calendar>
 			<footer>
 				<div id="power-home-content" class="footerBox" sse-swap="power-home" hx-swap="morph:innerHTML">
@@ -81,12 +81,6 @@ templ Layout(p Page) {
 					@Entur(p.Trains)
 				</div>
 			</footer>
-			<div id="stamps">
-				<span>bygd { p.Stamps.Built }</span>
-				<span>start { p.Stamps.Started }</span>
-				<span>lastet <span id="stamp-loaded"></span></span>
-				<span>data <span id="stamp-data">–</span></span>
-			</div>
 			<span id="server-version" data-version={ p.Version } sse-swap="version" hx-swap="none"></span>
 			<script type="module" src="/client.js"></script>
 		</body>

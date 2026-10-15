@@ -90,7 +90,9 @@ func (s *Server) fragments() map[string]fragment {
 		{"sky", func(now time.Time) templ.Component { return views.Sky(s.sky(now)) }},
 		{"current-weather", func(now time.Time) templ.Component { return views.CurrentWeather(s.currentWeather(now)) }},
 		{"hourly-forecast", func(time.Time) templ.Component { return views.HourlyForecast(s.hourlyForecast()) }},
-		{"calendar", func(now time.Time) templ.Component { return views.Calendar(s.calendar(now)) }},
+		{"calendar", func(now time.Time) templ.Component {
+			return views.Calendar(s.calendar(now), view.BuildStamps(s.started))
+		}},
 		{"power-home", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Home, now)) }},
 		{"power-cabin", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Cabin, now)) }},
 		{"entur", func(time.Time) templ.Component { return views.Entur(s.trains()) }},

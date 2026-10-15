@@ -7,13 +7,22 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/view"
 )
 
-templ Calendar(c view.Calendar) {
+// Calendar lays out the days, with a faint line of build/start/reload/data
+// times and the kindergarten counter in the corner. client.js fills in the
+// reload and data times again after each swap.
+templ Calendar(c view.Calendar, st view.Stamps) {
 	for _, d := range c.Days {
 		@day(d)
 	}
-	if c.BhgDaysLeft != nil {
-		<div class="bhg-count">bhg: { strconv.Itoa(*c.BhgDaysLeft) }</div>
-	}
+	<div class="corner">
+		<span>bygd { st.Built }</span>
+		<span>start { st.Started }</span>
+		<span>lastet <span id="stamp-loaded"></span></span>
+		<span>data <span id="stamp-data"></span></span>
+		if c.BhgDaysLeft != nil {
+			<span class="bhg-count">bhg: { strconv.Itoa(*c.BhgDaysLeft) }</span>
+		}
+	</div>
 }
 
 templ day(d view.Day) {
