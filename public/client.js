@@ -1,3 +1,4 @@
+import { connect } from './live.js';
 import { report } from './report.js';
 import { initSky } from './sky.js';
 
@@ -93,21 +94,21 @@ function checkCalendarVisibility() {
 	}
 }
 
-// Handle SSE messages from HTMX
-const initialVersion =
-	document.getElementById('server-version')?.dataset?.version;
-
-document.body.addEventListener('htmx:sseMessage', (evt) => {
+// Every fragment counts as fresh data; a new calendar may overflow.
+document.addEventListener('fragment', (e) => {
 	dataAt = stampFmt.format(new Date());
 	fillStamps();
-	if (evt.detail.type === 'calendar') {
+	if (e.detail === 'calendar') {
 		requestAnimationFrame(checkCalendarVisibility);
 	}
-	if (evt.detail.type === 'version' && initialVersion) {
-		if (evt.detail.data && evt.detail.data !== initialVersion) {
-			window.location.reload();
-		}
-	}
+});
+
+// The server sends its version after each snapshot and every minute; a new
+// one means it restarted, maybe with new code, so reload.
+connect('/sse', {
+	version: (v) => {
+		if (v !== document.body.dataset.version) window.location.reload();
+	},
 });
 
 // Run visibility check on resize

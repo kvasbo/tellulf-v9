@@ -63,6 +63,9 @@ type Weather struct {
 	client  *http.Client
 	baseURL string
 
+	cacheMu sync.Mutex
+	cache   map[string]cacheInfo // by URL
+
 	mu       sync.RWMutex
 	forecast map[Location][]timeSeries
 	longTerm map[Location][]longTermDay
@@ -72,6 +75,7 @@ func New() *Weather {
 	return &Weather{
 		client:   &http.Client{Timeout: 30 * time.Second},
 		baseURL:  "https://api.met.no/weatherapi",
+		cache:    map[string]cacheInfo{},
 		forecast: map[Location][]timeSeries{},
 		longTerm: map[Location][]longTermDay{},
 	}
@@ -113,7 +117,8 @@ func (w *Weather) updateForecast(ctx context.Context, loc Location) error {
 	p := places[loc]
 	var resp forecastResponse
 	url := fmt.Sprintf("%s/locationforecast/2.0/complete?lat=%v&lon=%v", w.baseURL, p.lat, p.lon)
-	if err := w.getJSON(ctx, url, &resp); err != nil {
+	changed, err := w.getJSON(ctx, url, &resp)
+	if err != nil || !changed {
 		return err
 	}
 	series := resp.Properties.Timeseries
@@ -123,7 +128,7 @@ func (w *Weather) updateForecast(ctx context.Context, loc Location) error {
 	w.mu.Lock()
 	w.forecast[loc] = series
 	w.mu.Unlock()
-	slog.Info("forecast updated", "location", loc, "series", len(series))
+	slog.Debug("forecast updated", "location", loc, "series", len(series))
 	return nil
 }
 
@@ -131,42 +136,81 @@ func (w *Weather) updateLongTerm(ctx context.Context, loc Location) {
 	p := places[loc]
 	var resp longTermResponse
 	url := fmt.Sprintf("%s/subseasonal/1.0/complete?lat=%v&lon=%v", w.baseURL, p.lat, p.lon)
-	if err := w.getJSON(ctx, url, &resp); err != nil {
+	changed, err := w.getJSON(ctx, url, &resp)
+	if err != nil {
 		slog.Error("could not update long-term forecast", "location", loc, "err", err)
+		return
+	}
+	if !changed {
 		return
 	}
 	w.mu.Lock()
 	w.longTerm[loc] = resp.Properties.Timeseries
 	w.mu.Unlock()
-	slog.Info("long-term forecast updated", "location", loc, "days", len(resp.Properties.Timeseries))
+	slog.Debug("long-term forecast updated", "location", loc, "days", len(resp.Properties.Timeseries))
 }
 
-func (w *Weather) getJSON(ctx context.Context, url string, into any) error {
+// cacheInfo is what MET said about the last response for a URL. MET's terms
+// ask clients not to fetch again before Expires, and to send
+// If-Modified-Since so an unchanged forecast costs only a 304.
+type cacheInfo struct {
+	lastModified string
+	expires      time.Time
+}
+
+// getJSON decodes url into into. changed is false when MET's cache headers
+// say there is nothing new, in which case into is left alone.
+func (w *Weather) getJSON(ctx context.Context, url string, into any) (changed bool, err error) {
+	w.cacheMu.Lock()
+	cached := w.cache[url]
+	w.cacheMu.Unlock()
+	if time.Now().Before(cached.expires) {
+		return false, nil
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return err
+		return false, err
 	}
 	req.Header.Set("User-Agent", userAgent)
+	if cached.lastModified != "" {
+		req.Header.Set("If-Modified-Since", cached.lastModified)
+	}
 	res, err := w.client.Do(req)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s: %s", url, res.Status)
+
+	switch res.StatusCode {
+	case http.StatusOK:
+		if err := json.NewDecoder(res.Body).Decode(into); err != nil {
+			return false, err
+		}
+		cached.lastModified = res.Header.Get("Last-Modified")
+		changed = true
+	case http.StatusNotModified:
+	default:
+		return false, fmt.Errorf("%s: %s", url, res.Status)
 	}
-	return json.NewDecoder(res.Body).Decode(into)
+	cached.expires, _ = http.ParseTime(res.Header.Get("Expires")) // zero if missing
+	w.cacheMu.Lock()
+	w.cache[url] = cached
+	w.cacheMu.Unlock()
+	return changed, nil
 }
 
 // HourlyForecasts returns the hourly forecast for loc, starting with the
-// current hour.
-func (w *Weather) HourlyForecasts(loc Location) []Hourly {
+// hour now falls in. The stored forecast can be up to half an hour old (or
+// much older if MET is down), so hours that have passed are left out here.
+func (w *Weather) HourlyForecasts(loc Location, now time.Time) []Hourly {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
+	thisHour := now.Truncate(time.Hour) // Oslo's offset is whole hours
 	var out []Hourly
 	for _, s := range w.forecast[loc] {
 		next := s.Data.Next1Hours
-		if next == nil {
+		if next == nil || s.Time.Before(thisHour) {
 			continue
 		}
 		in := s.Data.Instant.Details

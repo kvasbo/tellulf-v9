@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 const sampleForecast = `{"properties":{"timeseries":[
@@ -47,7 +48,7 @@ func TestHourlyForecasts(t *testing.T) {
 	if err := w.updateForecast(context.Background(), Oslo); err != nil {
 		t.Fatal(err)
 	}
-	got := w.HourlyForecasts(Oslo)
+	got := w.HourlyForecasts(Oslo, time.Date(2026, 10, 10, 6, 30, 0, 0, time.UTC))
 	if len(got) != 2 { // the entry without next_1_hours is skipped
 		t.Fatalf("got %d hours, want 2", len(got))
 	}
@@ -58,8 +59,54 @@ func TestHourlyForecasts(t *testing.T) {
 	if got[1].AirTemperature != nil || got[1].WindSpeed != nil {
 		t.Errorf("missing values should stay nil, got %+v", got[1])
 	}
-	if len(w.HourlyForecasts(Hytta)) != 0 {
+	if len(w.HourlyForecasts(Hytta, time.Time{})) != 0 {
 		t.Error("Hytta has not been fetched yet")
+	}
+
+	// Later, the hours that have passed drop out.
+	later := w.HourlyForecasts(Oslo, time.Date(2026, 10, 10, 7, 5, 0, 0, time.UTC))
+	if len(later) != 1 || later[0].Hour != 9 {
+		t.Errorf("at 07:05Z got %+v, want only the 07:00Z hour", later)
+	}
+}
+
+func TestFollowsMETCacheHeaders(t *testing.T) {
+	const lastModified = "Sat, 10 Oct 2026 06:00:00 GMT"
+	requests := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		if r.Header.Get("If-Modified-Since") == lastModified {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+		w.Header().Set("Last-Modified", lastModified)
+		w.Write([]byte(sampleForecast))
+	}))
+	defer srv.Close()
+	w := New()
+	w.baseURL = srv.URL
+	ctx := context.Background()
+
+	if err := w.updateForecast(ctx, Oslo); err != nil {
+		t.Fatal(err)
+	}
+	// No Expires was sent, so ask again, with If-Modified-Since; the 304
+	// keeps the forecast.
+	if err := w.updateForecast(ctx, Oslo); err != nil {
+		t.Fatal(err)
+	}
+	if requests != 2 || len(w.forecast[Oslo]) != 3 {
+		t.Errorf("requests = %d, series = %d; want 2 and 3", requests, len(w.forecast[Oslo]))
+	}
+
+	// Before Expires, don't ask at all.
+	url := srv.URL + "/locationforecast/2.0/complete?lat=59.9508&lon=10.6848"
+	w.cache[url] = cacheInfo{expires: time.Now().Add(time.Hour)}
+	if err := w.updateForecast(ctx, Oslo); err != nil {
+		t.Fatal(err)
+	}
+	if requests != 2 {
+		t.Errorf("fetched before Expires: %d requests", requests)
 	}
 }
 

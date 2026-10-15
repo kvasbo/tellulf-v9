@@ -130,6 +130,6 @@ func (e *Entur) Update(ctx context.Context) error {
 	e.mu.Lock()
 	e.trains = trains
 	e.mu.Unlock()
-	slog.Info("Entur updated", "trains", len(trains))
+	slog.Debug("Entur updated", "trains", len(trains))
 	return nil
 }

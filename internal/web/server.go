@@ -89,13 +89,13 @@ func (s *Server) fragments() map[string]fragment {
 	list := []fragment{
 		{"sky", func(now time.Time) templ.Component { return views.Sky(s.sky(now)) }},
 		{"current-weather", func(now time.Time) templ.Component { return views.CurrentWeather(s.currentWeather(now)) }},
-		{"hourly-forecast", func(time.Time) templ.Component { return views.HourlyForecast(s.hourlyForecast()) }},
+		{"hourly-forecast", func(now time.Time) templ.Component { return views.HourlyForecast(s.hourlyForecast(now)) }},
 		{"calendar", func(now time.Time) templ.Component {
 			return views.Calendar(s.calendar(now), view.BuildStamps(s.started))
 		}},
 		{"power-home", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Home, now)) }},
 		{"power-cabin", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Cabin, now)) }},
-		{"entur", func(time.Time) templ.Component { return views.Entur(s.trains()) }},
+		{"entur", func(now time.Time) templ.Component { return views.Entur(s.trains(now)) }},
 	}
 	m := make(map[string]fragment, len(list))
 	for _, f := range list {
@@ -110,27 +110,29 @@ func (s *Server) page(now time.Time) views.Page {
 		Stamps:         view.BuildStamps(s.started),
 		Sky:            s.sky(now),
 		CurrentWeather: s.currentWeather(now),
-		HourlyForecast: s.hourlyForecast(),
+		HourlyForecast: s.hourlyForecast(now),
 		Calendar:       s.calendar(now),
 		PowerHome:      s.power(tibber.Home, now),
 		PowerCabin:     s.power(tibber.Cabin, now),
-		Trains:         s.trains(),
+		Trains:         s.trains(now),
 	}
 }
 
 func (s *Server) sky(now time.Time) view.Sky {
-	return view.BuildSky(s.src.Weather.HourlyForecasts(weather.Oslo), now)
+	return view.BuildSky(s.src.Weather.HourlyForecasts(weather.Oslo, now), now)
 }
 
 func (s *Server) currentWeather(now time.Time) view.CurrentWeather {
 	return view.BuildCurrentWeather(s.readings(), now)
 }
 
-func (s *Server) hourlyForecast() view.HourlyForecast {
-	return view.BuildHourlyForecast(s.src.Weather.HourlyForecasts(weather.Oslo))
+func (s *Server) hourlyForecast(now time.Time) view.HourlyForecast {
+	return view.BuildHourlyForecast(s.src.Weather.HourlyForecasts(weather.Oslo, now))
 }
 
-func (s *Server) trains() []view.Train { return view.BuildTrains(s.src.Entur.Trains()) }
+func (s *Server) trains(now time.Time) []view.Train {
+	return view.BuildTrains(s.src.Entur.Trains(), now)
+}
 
 func (s *Server) readings() smarthouse.Readings {
 	if s.src.Smarthouse == nil {

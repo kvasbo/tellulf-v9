@@ -18,9 +18,11 @@ type Page struct {
 	Trains         []view.Train
 }
 
-// Layout is the full page. #server-version carries sse-swap="version" only so
-// that htmx listens for "version" events (it ignores event names no element
-// asks for); client.js reloads the page when the value changes.
+// Layout is the full page. The content of each element with data-sse is
+// replaced by the fragment of that name from the event stream (see
+// public/live.js); data-morph morphs it instead, so CSS transitions keep
+// running. data-version on <body> is the server's start time; client.js
+// reloads when the server reports a new one.
 templ Layout(p Page) {
 	<!DOCTYPE html>
 	<html lang="nb">
@@ -32,13 +34,10 @@ templ Layout(p Page) {
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap"/>
 			<link rel="stylesheet" href="/styles.css"/>
-			<script src="/vendor/htmx.min.js"></script>
-			<script src="/vendor/sse.js"></script>
-			<script src="/vendor/idiomorph-ext.min.js"></script>
 		</head>
-		<body hx-ext="sse,morph" sse-connect="/sse">
+		<body data-version={ p.Version }>
 			<canvas class="sky" aria-hidden="true"></canvas>
-			<div id="sky-driver" sse-swap="sky" hx-swap="innerHTML" hidden>
+			<div id="sky-driver" data-sse="sky" hidden>
 				@Sky(p.Sky)
 			</div>
 			<tl-topbar>
@@ -50,7 +49,7 @@ templ Layout(p Page) {
 					</div>
 				</tl-clock>
 				<tl-currentweather>
-					<div id="current-weather-content" sse-swap="current-weather" hx-swap="innerHTML">
+					<div id="current-weather-content" data-sse="current-weather">
 						@CurrentWeather(p.CurrentWeather)
 					</div>
 				</tl-currentweather>
@@ -63,25 +62,24 @@ templ Layout(p Page) {
 						</filter>
 					</defs>
 				</svg>
-				<div id="hourly-forecast-content" sse-swap="hourly-forecast" hx-swap="innerHTML">
+				<div id="hourly-forecast-content" data-sse="hourly-forecast">
 					@HourlyForecast(p.HourlyForecast)
 				</div>
 			</tl-nowcast>
-			<tl-calendar id="calendar-content" sse-swap="calendar" hx-swap="innerHTML">
+			<tl-calendar id="calendar-content" data-sse="calendar">
 				@Calendar(p.Calendar, p.Stamps)
 			</tl-calendar>
 			<footer>
-				<div id="power-home-content" class="footerBox" sse-swap="power-home" hx-swap="morph:innerHTML">
+				<div id="power-home-content" class="footerBox" data-sse="power-home" data-morph>
 					@Power(p.PowerHome)
 				</div>
-				<div id="power-cabin-content" class="footerBox" sse-swap="power-cabin" hx-swap="morph:innerHTML">
+				<div id="power-cabin-content" class="footerBox" data-sse="power-cabin" data-morph>
 					@Power(p.PowerCabin)
 				</div>
-				<div id="entur-content" class="footerBox" sse-swap="entur" hx-swap="innerHTML">
+				<div id="entur-content" class="footerBox" data-sse="entur">
 					@Entur(p.Trains)
 				</div>
 			</footer>
-			<span id="server-version" data-version={ p.Version } sse-swap="version" hx-swap="none"></span>
 			<script type="module" src="/client.js"></script>
 		</body>
 	</html>

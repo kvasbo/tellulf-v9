@@ -126,7 +126,7 @@ func (c *Calendar) refreshEvents(ctx context.Context) {
 	}
 	sortByStart(all)
 	c.update(func(s *Snapshot) { s.Events = all })
-	slog.Info("events fetched", "count", len(all))
+	slog.Debug("events fetched", "count", len(all))
 }
 
 func (c *Calendar) refreshList(ctx context.Context, name, id string, set func(*Snapshot, []Event)) {
@@ -140,7 +140,7 @@ func (c *Calendar) refreshList(ctx context.Context, name, id string, set func(*S
 		return
 	}
 	c.update(func(s *Snapshot) { set(s, events) })
-	slog.Info("calendar fetched", "calendar", name, "count", len(events))
+	slog.Debug("calendar fetched", "calendar", name, "count", len(events))
 }
 
 // refreshBhgCount counts remaining kindergarten ("bhg") days until Engebret
@@ -162,7 +162,7 @@ func (c *Calendar) refreshBhgCount(ctx context.Context) {
 		}
 	}
 	c.update(func(s *Snapshot) { s.BhgDaysLeft = &n })
-	slog.Info("bhg days left", "count", n)
+	slog.Debug("bhg days left", "count", n)
 }
 
 func googleFetcher(svc *gcal.Service) fetchFunc {

@@ -130,7 +130,7 @@ func (s *Smarthouse) handle(topic, payload string) {
 			return
 		}
 		s.data.LastTempTime = t
-		slog.Info("MQTT temperature time set", "time", t)
+		slog.Debug("MQTT temperature time set", "time", t)
 		return
 	}
 
@@ -151,5 +151,5 @@ func (s *Smarthouse) handle(topic, payload string) {
 		return
 	}
 	*target = &v
-	slog.Info("MQTT value set", "topic", topic, "value", v)
+	slog.Debug("MQTT value set", "topic", topic, "value", v)
 }

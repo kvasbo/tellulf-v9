@@ -4,7 +4,7 @@ Personal project. Nothing to see here, move along.
 
 A home status display (weather, calendars, metro departures, power usage) that runs as a
 1920x1080 kiosk. A Go server renders the HTML and keeps it live over server-sent events;
-HTMX swaps the fragments in on the client.
+a few lines of JavaScript (`public/live.js`) swap the fragments in on the client.
 
 ## Requirements
 
@@ -33,6 +33,9 @@ that panel stays empty and the log says why.
   restarts it when the Go code in a template changes. Reload the browser to see changes.
 - Go code changes outside templates need a restart.
 - `go test ./...` runs the tests. Add `-race` to check for data races.
+- The browser code is linted and formatted with [Biome](https://biomejs.dev) (config in
+  `biome.json`; CI runs `biome ci`). Locally: `npx @biomejs/biome@2.5.15 check --write`.
+- `TELLULF_DEBUG=1` also logs the routine fetches (forecasts, departures, calendars).
 - `go vet ./...` and `gofmt -l .` for checks and formatting.
 
 To try power data without your own account, use Tibber's public demo token and home
@@ -74,6 +77,7 @@ Three ways to set them:
 |---|---|
 | `EXPOSE_PORT` | Port to listen on (default 3000) |
 | `TELLULF_DEV` | Set to anything to serve static files from disk |
+| `TELLULF_DEBUG` | Set to anything to log routine fetches too |
 | `MQTT_HOST`, `MQTT_USER`, `MQTT_PASS` | Outdoor sensors, e.g. `mqtt://broker:1883` (port defaults to 1883) |
 | `TIBBER_KEY`, `TIBBER_ID_HOME`, `TIBBER_ID_CABIN` | Power usage and price; all three are required |
 | `GOOGLE_KEY_B64` | Base64-encoded Google service account key (JSON) |
@@ -89,7 +93,7 @@ The calendar needs `GOOGLE_KEY_B64` plus at least one `CAL_ID_*`.
 
 ```
 main.go               wiring: reads config, starts data sources and the web server
-static/               icons, vendored htmx
+static/               icons, vendored idiomorph
 public/               CSS and the browser JavaScript (clock, WebGL sky, calendar overflow)
 internal/
   weather/            MET Norway forecasts
@@ -112,6 +116,6 @@ Docker build image and GitHub Actions. To check or update by hand:
 - Security: `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`
 - Go modules: `go get -u ./... && go mod tidy`, then `go test ./...`
 - templ: `go get -u tool`, then `go generate ./...` to refresh the generated files
-- htmx, htmx-ext-sse and idiomorph are vendored in `static/vendor/` (currently htmx
-  2.0.11, htmx-ext-sse 2.2.4, idiomorph 0.8.0). To update one, download the new file
-  from npm or a CDN and replace it.
+- idiomorph is vendored as `static/vendor/idiomorph.esm.js` (currently 0.8.0, the
+  `dist/idiomorph.esm.js` file from the npm package). To update, replace that file.
+- Biome is pinned in `biome.json` (`$schema`) and `.github/workflows/check.yml`; bump both.

@@ -2,7 +2,7 @@ package web
 
 import "sync"
 
-// Event is one server-sent event: an HTML fragment for htmx to swap in.
+// Event is one server-sent event: an HTML fragment for public/live.js to swap in.
 type Event struct {
 	Name string
 	Data string

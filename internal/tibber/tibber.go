@@ -246,7 +246,7 @@ func (t *Tibber) updateMonthly(ctx context.Context, p Place) {
 	d := t.data[p]
 	d.MonthlyConsumption = total + d.AccumulatedConsumption
 	d.MonthlyCost = cost + d.AccumulatedCost
-	slog.Info("monthly consumption fetched", "place", p, "kwh_before_today", total)
+	slog.Debug("monthly consumption fetched", "place", p, "kwh_before_today", total)
 }
 
 // monthHoursBeforeToday picks the hours from the start of the month up to

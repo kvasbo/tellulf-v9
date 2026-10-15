@@ -77,7 +77,7 @@ func (s Snapshot) forDate(events []Event, k kind, d time.Time) []EnrichedEvent {
 		dayType := getDayType(e, d)
 		out = append(out, EnrichedEvent{
 			Event:        e,
-			DisplayTitle: displayTitle(e, k, tz.Now().Year()),
+			DisplayTitle: displayTitle(e, k, d.In(tz.Oslo).Year()),
 			DayType:      dayType,
 			DisplayTime:  displayTime(e, dayType),
 			Faded:        isFaded(e, d, kids),

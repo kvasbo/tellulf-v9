@@ -14,11 +14,13 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - **templ** components (`internal/views/*.templ`, generated `*_templ.go` committed), one
   component per partial, typed by the structs in `internal/view`. All formatting happens
   in `internal/view`, so templates stay dumb. templ doesn't interpolate inside `<style>`,
-  so the sky's theme variables are written with `templ.Raw` (constants only). `view.Fixed`/`view.Num` mimic
-  JavaScript's `toFixed`/`String()` so numbers render exactly as the old TS version did.
-- **HTMX** + SSE extension on the client for reactive DOM updates (vendored in `static/vendor/`)
-- **Client JS** (`public/client.js`, `public/sky.js`, plain ES modules, no build step) for
-  clock, living sky (WebGL), calendar overflow, version check.
+  so the sky's theme variables are written with `templ.Raw` (constants only).
+- **Client JS**: plain ES modules, no build step. `public/live.js` opens an `EventSource`
+  and puts each fragment into the element whose `data-sse` names it (`data-morph` morphs
+  with idiomorph, vendored in `static/vendor/`, so the power bars animate), then dispatches
+  a `fragment` event on `document`. `client.js` (clock, calendar overflow, version check,
+  corner times), `sky.js` (WebGL sky), `report.js` (logging to the server).
+- **Biome** lints and formats `public/` (`biome.json`); CI runs `biome ci`.
 - Templates, `static/` and `public/` are embedded in the binary with `go:embed`.
 - Every data source is a struct with a `Run(ctx)` loop and state behind a mutex; getters
   return copies. Missing config for calendar/MQTT/Tibber disables that panel with a warning.
@@ -31,10 +33,9 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   client.js throws there and stops before registering its listeners; stub it
   (`window.Temporal = { Now: { plainDateISO: () => ({ weekOfYear: 1 }) } }`) when
   testing in headless Chromium.
-- The htmx SSE extension only listens for event names that some element declares in
-  `sse-swap` (or `hx-trigger="sse:..."`). An event no element asks for is silently
-  dropped and never reaches `htmx:sseMessage`. That's why `#server-version` has
-  `sse-swap="version" hx-swap="none"`.
+- `EventSource` only delivers named events that have a listener. `live.js` listens for
+  every `data-sse` name plus the handlers passed to `connect` (just `version`); a new
+  event that is neither is silently dropped.
 - The WebGL context can be lost while the kiosk display sleeps, or be unavailable on the
   midnight reload. The canvas is then blank, so `html` carries `--page-bg` (set per
   scheme by the server) to keep background and text in the same scheme. `sky.js`
@@ -44,8 +45,8 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   `msg=client`: page loads, visibility changes, JS errors and sky/WebGL events, plus a
   half-hourly sample of the sky's centre pixel. Read with `docker logs`.
 - Auto-reload: the server's version is its start time. It's in the page and sent
-  right after each SSE snapshot, plus every minute; `client.ts` reloads when it
-  changes, so any restart reloads open screens within seconds.
+  right after each SSE snapshot, plus every minute; `client.js` reloads when it
+  differs from `data-version` on `<body>`, so any restart reloads open screens within seconds.
 
 ## Packages
 
@@ -62,7 +63,8 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 ## Running
 
-- `TELLULF_DEV=1 go run .` — development; static files are read from disk
+- `TELLULF_DEV=1 go run .` — development; static files are read from disk.
+  `TELLULF_DEBUG=1` also logs routine fetches.
 - `go generate ./...` — regenerate templ components after editing a `.templ` file
   (or `go tool templ generate --watch --cmd="go run ."` to regenerate and restart on save)
 - `go test ./...` — tests
@@ -76,7 +78,9 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
     exponential backoff, wait 1–60s after "1001 Going away", stop on a rejected token, and
     check `realTimeConsumptionEnabled` before reconnecting.
   - Prices: today+tomorrow fetched once and cached; current price is picked locally.
-- **yr.no**: Weather forecasts (MET Norway API)
+- **yr.no**: Weather forecasts (MET Norway API). Follows MET's terms: no request before
+  `Expires`, and `If-Modified-Since` so an unchanged forecast is a 304. The stored forecast
+  can lag, so `HourlyForecasts` drops hours that have passed.
 - **Google Calendar**: Events, birthdays, dinners, barneuker, kindergarten days
 - **Entur**: Train departures (RUT Line 1, Slemdal station)
 - **MQTT**: Sensor data (temperature, humidity, pressure)
@@ -92,7 +96,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 CAL_ID_AUDUN, CAL_ID_BARNEUKER, CAL_ID_BURSDAG, CAL_ID_FELLES, CAL_ID_KINDERGARDEN,
 CAL_ID_MIDDAG, EXPOSE_PORT, GOOGLE_KEY_B64, MQTT_HOST, MQTT_PASS, MQTT_USER,
-TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV (optional)
+TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV and TELLULF_DEBUG (optional)
 
 Loaded from the environment, plus `.env` in the working directory if present (godotenv;
 existing environment variables win).

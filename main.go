@@ -31,7 +31,12 @@ import (
 var embedded embed.FS
 
 func main() {
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
+	// Routine fetches log at debug level; TELLULF_DEBUG=1 shows them.
+	level := slog.LevelInfo
+	if os.Getenv("TELLULF_DEBUG") != "" {
+		level = slog.LevelDebug
+	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level})))
 	loadDotEnv()
 	if err := run(); err != nil {
 		slog.Error("fatal", "err", err)

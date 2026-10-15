@@ -347,9 +347,18 @@ type Train struct {
 	Dot         string // "red" when delayed, "grey" without realtime data
 }
 
-func BuildTrains(trains []entur.Train) []Train {
+// BuildTrains lists the next four departures. Entur is polled every minute
+// (and its last answer kept if it fails), so trains that have left are
+// skipped here.
+func BuildTrains(trains []entur.Train, now time.Time) []Train {
 	var out []Train
-	for _, t := range trains[:min(4, len(trains))] {
+	for _, t := range trains {
+		if len(out) == 4 {
+			break
+		}
+		if t.Time.Before(now) {
+			continue
+		}
 		dot := ""
 		switch {
 		case t.Delayed:

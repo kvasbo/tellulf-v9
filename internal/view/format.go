@@ -2,47 +2,20 @@ package view
 
 import (
 	"math"
-	"math/big"
 	"strconv"
-	"strings"
 	"time"
 )
 
-// Num formats a number the way JavaScript's String(x) does: "7.3", "10",
-// "-0.5", never "1e+01" or "-0".
+// Num formats a number with as many decimals as it needs: "7.3", "10".
 func Num(x float64) string {
-	if x == 0 {
-		return "0" // also turns -0 into "0", as JS does
-	}
-	if abs := math.Abs(x); abs >= 1e21 || abs < 1e-6 {
-		s := strconv.FormatFloat(x, 'e', -1, 64) // "1e-07"
-		mantissa, exp, _ := strings.Cut(s, "e")
-		sign, digits := exp[:1], strings.TrimLeft(exp[1:], "0")
-		return mantissa + "e" + sign + digits
-	}
-	return strconv.FormatFloat(x, 'f', -1, 64)
+	return strconv.FormatFloat(x+0, 'f', -1, 64) // +0 turns -0 into 0
 }
 
-// Fixed is JavaScript's x.toFixed(digits). Unlike strconv, which rounds
-// exact halves to even, toFixed rounds them away from zero: (1.25).toFixed(1)
-// is "1.3". Halves are common here (watts/1000, kWh*0.5), so the arithmetic
-// is done exactly with big.Float.
+// Fixed formats x with exactly digits decimals, rounding halves away from
+// zero ("1.3" for 1.25), and never as "-0.0".
 func Fixed(x float64, digits int) string {
-	v := new(big.Float).SetPrec(256).SetFloat64(math.Abs(x))
-	v.Mul(v, new(big.Float).SetPrec(256).SetFloat64(math.Pow10(digits)))
-	v.Add(v, big.NewFloat(0.5))
-	n, _ := v.Int(nil) // truncates, i.e. floors the positive value
-	s := n.String()
-	if digits > 0 {
-		if len(s) <= digits {
-			s = strings.Repeat("0", digits-len(s)+1) + s
-		}
-		s = s[:len(s)-digits] + "." + s[len(s)-digits:]
-	}
-	if x < 0 { // JS keeps the sign even when the result rounds to zero
-		s = "-" + s
-	}
-	return s
+	p := math.Pow10(digits)
+	return strconv.FormatFloat(math.Round(x*p)/p+0, 'f', digits, 64)
 }
 
 var weekdays = [...]string{"søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"}

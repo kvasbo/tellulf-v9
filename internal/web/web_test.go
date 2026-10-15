@@ -80,10 +80,11 @@ func TestPageAndStaticFiles(t *testing.T) {
 		path, contains string
 		status         int
 	}{
-		{"/", `sse-connect="/sse"`, 200},
+		{"/", `data-sse="calendar"`, 200},
 		{"/", `<div id="current_temperature">–</div>`, 200}, // no sensor data yet
 		{"/styles.css", "", 200},
-		{"/vendor/htmx.min.js", "htmx", 200},
+		{"/vendor/idiomorph.esm.js", "export {Idiomorph}", 200},
+		{"/live.js", "EventSource", 200},
 		{"/kids.svg", "<svg", 200},
 		{"/nope.txt", "", 404},
 		{"/../go.mod", "", 404},

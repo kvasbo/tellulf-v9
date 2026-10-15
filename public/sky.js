@@ -250,8 +250,8 @@ export function initSky() {
 	}
 
 	// Re-read whenever the server pushes a new sky frame.
-	document.body.addEventListener('htmx:sseMessage', (evt) => {
-		if (evt.detail?.type === 'sky') requestAnimationFrame(readTargets);
+	document.addEventListener('fragment', (e) => {
+		if (e.detail === 'sky') readTargets();
 	});
 	readTargets();
 
@@ -307,7 +307,15 @@ export function initSky() {
 	let lastProbe = -PROBE_INTERVAL;
 	function probe() {
 		const px = new Uint8Array(4);
-		gl.readPixels(cv.width >> 1, cv.height >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+		gl.readPixels(
+			cv.width >> 1,
+			cv.height >> 1,
+			1,
+			1,
+			gl.RGBA,
+			gl.UNSIGNED_BYTE,
+			px,
+		);
 		report(
 			`sky: ${cv.width}x${cv.height} centre=${px.join(',')} night=${target.night} ${document.visibilityState}`,
 		);
