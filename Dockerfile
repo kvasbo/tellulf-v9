@@ -13,7 +13,9 @@ COPY . .
 RUN go generate ./... \
 	&& go vet ./... \
 	&& go test ./... \
-	&& CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /tellulf .
+	&& CGO_ENABLED=0 go build -trimpath \
+		-ldflags="-s -w -X github.com/kvasbo/tellulf-v9/internal/buildinfo.Time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+		-o /tellulf .
 
 FROM gcr.io/distroless/static-debian12
 

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kvasbo/tellulf-v9/internal/buildinfo"
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/sky"
@@ -172,6 +173,24 @@ func BuildHourlyForecast(all []weather.Hourly) HourlyForecast {
 		})
 	}
 	return out
+}
+
+// --- Corner stamps ---------------------------------------------------------------
+
+// Stamps are the build and server start times shown small in the corner, so
+// it's easy to see which version the screen runs and when it last restarted.
+type Stamps struct {
+	Built, Started string
+}
+
+func stamp(t time.Time) string { return t.In(tz.Oslo).Format("02.01 15:04") }
+
+func BuildStamps(started time.Time) Stamps {
+	built := "dev"
+	if t, ok := buildinfo.Built(); ok {
+		built = stamp(t)
+	}
+	return Stamps{Built: built, Started: stamp(started)}
 }
 
 // --- Living sky ------------------------------------------------------------------

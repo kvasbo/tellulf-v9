@@ -8,6 +8,7 @@ import "github.com/kvasbo/tellulf-v9/internal/view"
 // own over SSE when it changes.
 type Page struct {
 	Version        string // the server's start time; a change reloads open screens
+	Stamps         view.Stamps
 	Sky            view.Sky
 	CurrentWeather view.CurrentWeather
 	HourlyForecast view.HourlyForecast
@@ -80,6 +81,12 @@ templ Layout(p Page) {
 					@Entur(p.Trains)
 				</div>
 			</footer>
+			<div id="stamps">
+				<span>bygd { p.Stamps.Built }</span>
+				<span>start { p.Stamps.Started }</span>
+				<span>lastet <span id="stamp-loaded"></span></span>
+				<span>data <span id="stamp-data">–</span></span>
+			</div>
 			<span id="server-version" data-version={ p.Version } sse-swap="version" hx-swap="none"></span>
 			<script type="module" src="/client.js"></script>
 		</body>

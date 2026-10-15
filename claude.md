@@ -56,6 +56,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - `internal/tibber` — live feed (own graphql-transport-ws client on coder/websocket),
   daily price list, monthly consumption, Norgespris maths
 - `internal/sky`, `internal/sun` — living-sky logic and NOAA sunrise/sunset
+- `internal/buildinfo` — build time, set by the Dockerfile via `-ldflags -X` (shown as "dev" otherwise)
 - `internal/view` — builds template data; `internal/views` — templ components;
   `internal/web` — HTTP, SSE hub, static files
 

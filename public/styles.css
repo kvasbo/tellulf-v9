@@ -172,6 +172,19 @@ tl-calendar {
 	opacity: 0.35;
 }
 
+/* Build/start/reload/last-data times, tiny, just above the bhg counter in the
+   calendar's corner. Fixed, because the calendar's content is swapped out. */
+#stamps {
+	position: fixed;
+	right: 25px; /* body padding 15 + .bhg-count's 10 */
+	bottom: 35px; /* one line above .bhg-count */
+	display: flex;
+	gap: 0.8em;
+	font-size: 11px;
+	opacity: 0.35;
+	pointer-events: none;
+}
+
 tl-day {
 	flex-shrink: 0;
 	padding-bottom: 10px;

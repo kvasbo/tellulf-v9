@@ -61,6 +61,16 @@ updateClock();
 // Reload page when clicking the clock
 elTime.addEventListener('click', () => window.location.reload());
 
+// Corner stamps: when this page loaded, and when data last arrived
+const stampFmt = new Intl.DateTimeFormat('nb-NO', {
+	hour: '2-digit',
+	minute: '2-digit',
+	second: '2-digit',
+	timeZone: 'Europe/Oslo',
+});
+mustGet('stamp-loaded').textContent = stampFmt.format(new Date());
+const elStampData = mustGet('stamp-data');
+
 // Calendar visibility - hide days that overflow
 function checkCalendarVisibility() {
 	const calendarEl = document.querySelector('tl-calendar');
@@ -82,6 +92,7 @@ const initialVersion =
 	document.getElementById('server-version')?.dataset?.version;
 
 document.body.addEventListener('htmx:sseMessage', (evt) => {
+	elStampData.textContent = stampFmt.format(new Date());
 	if (evt.detail.type === 'calendar') {
 		requestAnimationFrame(checkCalendarVisibility);
 	}

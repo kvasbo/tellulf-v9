@@ -39,6 +39,7 @@ type Sources struct {
 type Server struct {
 	src     Sources
 	assets  fs.FS // contains static/ and public/
+	started time.Time
 	version string
 	hub     *Hub
 }
@@ -48,11 +49,13 @@ type Server struct {
 const calendarDays = 14
 
 func New(src Sources, assets fs.FS) *Server {
+	started := time.Now()
 	return &Server{
-		src:    src,
-		assets: assets,
+		src:     src,
+		assets:  assets,
+		started: started,
 		// A new version makes open browsers reload, so deploys show up.
-		version: time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
+		version: started.UTC().Format("2006-01-02T15:04:05.000Z"),
 		hub:     NewHub(),
 	}
 }
@@ -102,6 +105,7 @@ func (s *Server) fragments() map[string]fragment {
 func (s *Server) page(now time.Time) views.Page {
 	return views.Page{
 		Version:        s.version,
+		Stamps:         view.BuildStamps(s.started),
 		Sky:            s.sky(now),
 		CurrentWeather: s.currentWeather(now),
 		HourlyForecast: s.hourlyForecast(),
