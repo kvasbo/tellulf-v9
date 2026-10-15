@@ -1,4 +1,18 @@
+import { report } from './report.js';
 import { initSky } from './sky.js';
+
+report(
+	`page: loaded ${window.innerWidth}x${window.innerHeight} ${document.visibilityState} ${navigator.userAgent}`,
+);
+window.addEventListener('error', (e) =>
+	report(`error: ${e.message} (${e.filename}:${e.lineno})`),
+);
+window.addEventListener('unhandledrejection', (e) =>
+	report(`error: ${e.reason}`),
+);
+document.addEventListener('visibilitychange', () =>
+	report(`page: ${document.visibilityState}`),
+);
 
 // Living weather-reactive sky background
 initSky();

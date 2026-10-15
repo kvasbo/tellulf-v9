@@ -3,6 +3,8 @@
 // All weather/time reasoning happens on the server; this only reads the
 // uniform targets the server pushes into #sky-uniforms and lerps toward them.
 
+import { report } from './report.js';
+
 const VERT = `
 attribute vec2 aPos;
 varying vec2 vUv;
@@ -103,13 +105,13 @@ function parse3(s) {
 }
 
 export function initSky() {
-	const canvas = document.querySelector('canvas.sky');
-	if (!canvas) return;
-	const cv = canvas;
+	let cv = document.querySelector('canvas.sky');
+	if (!cv) return;
 	// Without a context (no WebGL yet, or it was lost) the canvas is blank and
 	// the themed page background behind it shows instead.
 	let gl = null;
 	let u = null;
+	let lostAt = 0;
 
 	// Builds the program and buffers. Runs again after a lost context is
 	// restored, since everything on the old context is gone.
@@ -147,23 +149,56 @@ export function initSky() {
 			cloud: gl.getUniformLocation(program, 'uCloud'),
 		};
 		resize();
+		report(`sky: ready ${cv.width}x${cv.height}`);
 	}
 
 	// The kiosk sleeps its display overnight, and the GPU can drop the context
 	// then. preventDefault lets the browser restore it instead of giving up.
-	cv.addEventListener('webglcontextlost', (e) => {
-		e.preventDefault();
-		u = null;
-	});
-	cv.addEventListener('webglcontextrestored', setup);
+	function listen(c) {
+		c.addEventListener('webglcontextlost', (e) => {
+			e.preventDefault();
+			u = null;
+			lostAt = performance.now();
+			report('sky: context lost');
+		});
+		c.addEventListener('webglcontextrestored', () => {
+			lostAt = 0;
+			report('sky: context restored');
+			setup();
+		});
+	}
+	listen(cv);
 
-	// getContext can also fail outright, e.g. on the midnight reload while the
-	// display is off. Keep trying rather than staying blank all day.
 	function acquire() {
 		gl = cv.getContext('webgl', { antialias: true });
 		if (gl) setup();
-		else setTimeout(acquire, 60000);
+		else report('sky: no WebGL context');
 	}
+
+	// Chrome doesn't always restore a lost context. A fresh canvas gets a
+	// fresh context, so swap one in rather than staying blank.
+	function replaceCanvas() {
+		const fresh = cv.cloneNode(false);
+		listen(fresh);
+		cv.replaceWith(fresh);
+		cv = fresh;
+		gl = null;
+		u = null;
+		lostAt = 0;
+		report('sky: new canvas');
+		acquire();
+	}
+
+	// getContext can also fail outright, e.g. on the midnight reload while the
+	// display is off. Check every minute and when the page is shown again.
+	function heal() {
+		if (!gl) acquire();
+		else if (lostAt && performance.now() - lostAt > 15000) replaceCanvas();
+	}
+	setInterval(heal, 60000);
+	document.addEventListener('visibilitychange', () => {
+		if (document.visibilityState === 'visible') heal();
+	});
 
 	// Render below display resolution: the sky is all soft gradients, glow and
 	// clouds, so the CSS upscale is invisible but the GPU does ~3x less work.
@@ -247,6 +282,9 @@ export function initSky() {
 		current.cloud = lerp(current.cloud, target.cloud, k);
 
 		if (!u || gl.isContextLost()) return;
+		// The page can load while the display sleeps and get a bogus size;
+		// the resize event doesn't always follow when it wakes.
+		if (cv.width !== Math.round(window.innerWidth * RENDER_SCALE)) resize();
 		gl.uniform2f(u.res, cv.width, cv.height);
 		gl.uniform1f(u.time, (now - start) / 1000);
 		gl.uniform3fv(u.c1, current.c1);
@@ -257,6 +295,22 @@ export function initSky() {
 		gl.uniform1f(u.cloud, current.cloud);
 
 		gl.drawArrays(gl.TRIANGLES, 0, 3);
+		if (now - lastProbe > PROBE_INTERVAL) {
+			lastProbe = now;
+			probe();
+		}
+	}
+
+	// Every so often, log what the canvas actually shows, so a wrong-looking
+	// sky can be told apart from a blank one in the server log.
+	const PROBE_INTERVAL = 30 * 60 * 1000;
+	let lastProbe = -PROBE_INTERVAL;
+	function probe() {
+		const px = new Uint8Array(4);
+		gl.readPixels(cv.width >> 1, cv.height >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+		report(
+			`sky: ${cv.width}x${cv.height} centre=${px.join(',')} night=${target.night} ${document.visibilityState}`,
+		);
 	}
 	acquire();
 	requestAnimationFrame(frame);

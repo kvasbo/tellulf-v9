@@ -101,6 +101,19 @@ func TestPageAndStaticFiles(t *testing.T) {
 	}
 }
 
+func TestClientLog(t *testing.T) {
+	srv := httptest.NewServer(newTestServer(t).Handler())
+	defer srv.Close()
+	res, err := http.Post(srv.URL+"/log", "text/plain", strings.NewReader("sky: context lost"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusNoContent {
+		t.Errorf("POST /log: %d", res.StatusCode)
+	}
+}
+
 func TestSSEStartsWithSnapshot(t *testing.T) {
 	s := newTestServer(t)
 	ctx, cancel := context.WithCancel(context.Background())

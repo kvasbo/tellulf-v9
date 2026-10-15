@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -60,6 +61,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", s.handleIndex)
 	mux.HandleFunc("GET /sse", s.handleSSE)
+	mux.HandleFunc("POST /log", handleLog)
 	mux.HandleFunc("GET /", s.handleStatic)
 	return mux
 }
@@ -202,6 +204,17 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+// handleLog writes a line from the browser to the server log.
+func handleLog(w http.ResponseWriter, r *http.Request) {
+	msg, err := io.ReadAll(io.LimitReader(r.Body, 1024))
+	if err != nil {
+		http.Error(w, "read error", http.StatusBadRequest)
+		return
+	}
+	slog.Info("client", "msg", string(msg))
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // handleStatic serves files from static/, then public/.

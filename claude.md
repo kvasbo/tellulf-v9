@@ -38,7 +38,11 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - The WebGL context can be lost while the kiosk display sleeps, or be unavailable on the
   midnight reload. The canvas is then blank, so `html` carries `--page-bg` (set per
   scheme by the server) to keep background and text in the same scheme. `sky.js`
-  rebuilds on `webglcontextrestored` and retries `getContext` every minute.
+  rebuilds on `webglcontextrestored`, swaps in a fresh canvas if Chrome never restores
+  it, and retries `getContext` every minute and when the page becomes visible.
+- `public/report.js` POSTs lines to `/log`, which the server writes to its log as
+  `msg=client`: page loads, visibility changes, JS errors and sky/WebGL events, plus a
+  half-hourly sample of the sky's centre pixel. Read with `docker logs`.
 - Auto-reload: the server's version is its start time. It's in the page and sent
   right after each SSE snapshot, plus every minute; `client.ts` reloads when it
   changes, so any restart reloads open screens within seconds.
