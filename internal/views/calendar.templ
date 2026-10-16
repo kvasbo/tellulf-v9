@@ -82,14 +82,12 @@ templ day(d view.Day) {
 
 templ event(e view.Event) {
 	<div class={ "event", templ.KV("faded", e.Faded) }>
-		if e.FullDay {
-			{ e.DisplayTitle }
-			if h := e.Hytta; h != nil {
-				<span class="hytta-weather">({ h.Temperature }&deg;, { h.RainProbability }% regn)</span>
-			}
-		} else {
+		if !e.FullDay {
 			<span class="event-time timespan">{ e.DisplayTime.Start } { e.DisplayTime.Spacer } { e.DisplayTime.End }</span>
-			{ e.DisplayTitle }
+		}
+		{ e.DisplayTitle }
+		if h := e.Hytta; h != nil {
+			<span class="hytta-weather">({ h.Temperature }&deg;, { h.RainProbability }% regn)</span>
 		}
 	</div>
 }

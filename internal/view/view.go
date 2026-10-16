@@ -432,8 +432,9 @@ func BuildCalendar(cal calendar.Snapshot, daily, dailyHytta map[string]weather.D
 		}
 		for _, e := range cal.EventsForDate(date) {
 			ev := Event{EnrichedEvent: e}
-			// Full-day "Hytta" events get the cabin's forecast.
-			if f, ok := dailyHytta[iso]; ok && e.FullDay && strings.Contains(strings.ToLower(e.Title), "hytta") {
+			// "Hytta" events, full-day or timed, get the cabin's forecast on
+			// every day they touch.
+			if f, ok := dailyHytta[iso]; ok && strings.Contains(strings.ToLower(e.Title), "hytta") {
 				ev.Hytta = &HyttaWeather{Temperature: Num(tz.Round(f.MaxTemp)), RainProbability: Num(f.LightRainProbability)}
 			}
 			d.Events = append(d.Events, ev)
