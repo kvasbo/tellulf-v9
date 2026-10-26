@@ -4,7 +4,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -60,9 +59,5 @@ func Capitalize(s string) string {
 	return string(unicode.ToUpper(r)) + s[size:]
 }
 
+// weekdays is indexed by time.Weekday.
 var weekdays = [...]string{"søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"}
-
-// niceDate formats a date like "mandag 10."
-func niceDate(t time.Time) string {
-	return weekdays[t.Weekday()] + " " + strconv.Itoa(t.Day()) + "."
-}

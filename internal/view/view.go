@@ -4,15 +4,12 @@ package view
 
 import (
 	"math"
-	"strings"
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/buildinfo"
-	"github.com/kvasbo/tellulf-v9/internal/calendar"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/tibber"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
-	"github.com/kvasbo/tellulf-v9/internal/weather"
 )
 
 const (
@@ -159,79 +156,6 @@ func BuildTrains(trains []entur.Train, now time.Time) []Train {
 			dot = "grey"
 		}
 		out = append(out, Train{Time: t.Time.In(tz.Oslo).Format("15:04"), Destination: t.Destination, Dot: dot})
-	}
-	return out
-}
-
-// --- Calendar --------------------------------------------------------------------
-
-type Calendar struct {
-	Days        []Day
-	BhgDaysLeft *int
-}
-
-type Day struct {
-	Weekday    string
-	KidsStatus calendar.KidsStatus
-	Forecast   *DayForecast
-	Dinners    []calendar.EnrichedEvent
-	Birthdays  []calendar.EnrichedEvent
-	Events     []Event
-}
-
-type DayForecast struct {
-	ShowLightRain, ShowHeavyRain bool
-	LightRain, HeavyRain         string
-	MinTemp, MaxTemp             string
-}
-
-type Event struct {
-	calendar.EnrichedEvent
-	Hytta *HyttaWeather
-}
-
-type HyttaWeather struct{ Temperature, RainProbability string }
-
-// BuildCalendar lays out the coming days, starting today.
-func BuildCalendar(cal calendar.Snapshot, daily, dailyHytta map[string]weather.Daily, now time.Time, days int) Calendar {
-	out := Calendar{BhgDaysLeft: cal.BhgDaysLeft}
-	now = now.In(tz.Oslo)
-	for i := range days {
-		date := now.AddDate(0, 0, i)
-		iso := date.Format(time.DateOnly)
-
-		d := Day{
-			Weekday:    niceDate(date),
-			KidsStatus: cal.KidsStatusForDate(date),
-			Dinners:    cal.DinnersForDate(date),
-			Birthdays:  cal.BirthdaysForDate(date),
-		}
-		switch i {
-		case 0:
-			d.Weekday = "i dag"
-		case 1:
-			d.Weekday = "i morgen"
-		}
-		if f, ok := daily[iso]; ok {
-			d.Forecast = &DayForecast{
-				ShowLightRain: f.LightRainProbability > 10,
-				ShowHeavyRain: f.HeavyRainProbability > 10,
-				LightRain:     Num(f.LightRainProbability),
-				HeavyRain:     Num(f.HeavyRainProbability),
-				MinTemp:       Num(tz.Round(f.MinTemp)),
-				MaxTemp:       Num(tz.Round(f.MaxTemp)),
-			}
-		}
-		for _, e := range cal.EventsForDate(date) {
-			ev := Event{EnrichedEvent: e}
-			// "Hytta" events, full-day or timed, get the cabin's forecast on
-			// every day they touch.
-			if f, ok := dailyHytta[iso]; ok && strings.Contains(strings.ToLower(e.Title), "hytta") {
-				ev.Hytta = &HyttaWeather{Temperature: Num(tz.Round(f.MaxTemp)), RainProbability: Num(f.LightRainProbability)}
-			}
-			d.Events = append(d.Events, ev)
-		}
-		out.Days = append(out.Days, d)
 	}
 	return out
 }

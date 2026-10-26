@@ -152,14 +152,28 @@ func displayTime(e Event, dayType DayType) DisplayTime {
 
 var birthYearPattern = regexp.MustCompile(`(?i)[A-Za-z0-9 ]+\s[0-9]+`)
 
+// Birthday parses a birthday title like "Ola Nordmann 1980" into the name
+// and the age reached in thisYear. ok is false when the title has no year.
+func (e Event) Birthday(thisYear int) (name string, age int, ok bool) {
+	title := []rune(e.Title)
+	if !birthYearPattern.MatchString(e.Title) || len(title) < 5 {
+		return "", 0, false
+	}
+	year, err := strconv.Atoi(string(title[len(title)-4:]))
+	if err != nil {
+		return "", 0, false
+	}
+	return string(title[:len(title)-5]), thisYear - year, true
+}
+
 // displayTitle turns "Ola Nordmann 1980" into "Ola Nordmann (46 år)" for
 // birthdays, and shortens long event titles.
 func displayTitle(e Event, k kind, thisYear int) string {
 	title := []rune(e.Title)
 	switch {
-	case k == kindBirthday && birthYearPattern.MatchString(e.Title) && len(title) >= 5:
-		if year, err := strconv.Atoi(string(title[len(title)-4:])); err == nil {
-			return string(title[:len(title)-5]) + " (" + strconv.Itoa(thisYear-year) + " år)"
+	case k == kindBirthday:
+		if name, age, ok := e.Birthday(thisYear); ok {
+			return name + " (" + strconv.Itoa(age) + " år)"
 		}
 	case k == kindEvent && len(title) > 50:
 		return string(title[:49]) + "…"

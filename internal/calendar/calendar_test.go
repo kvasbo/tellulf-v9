@@ -150,6 +150,16 @@ func TestDisplayTitle(t *testing.T) {
 	}
 }
 
+func TestBirthday(t *testing.T) {
+	name, age, ok := Event{Title: "Kai Lützenkirchen 1981"}.Birthday(2026)
+	if !ok || name != "Kai Lützenkirchen" || age != 45 {
+		t.Errorf("got %q %d %v, want Kai Lützenkirchen 45 true", name, age, ok)
+	}
+	if _, _, ok := (Event{Title: "Kai"}).Birthday(2026); ok {
+		t.Error("a title without a year should not parse")
+	}
+}
+
 func TestDisplayTime(t *testing.T) {
 	multi := felles(time.Date(2026, 3, 9, 20, 0, 0, 0, tz.Oslo), time.Date(2026, 3, 11, 8, 30, 0, 0, tz.Oslo))
 	cases := []struct {
