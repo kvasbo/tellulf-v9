@@ -3,7 +3,6 @@
 package view
 
 import (
-	"math"
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/buildinfo"
@@ -37,24 +36,21 @@ func BuildStamps(started time.Time) Stamps {
 
 // --- Power -----------------------------------------------------------------------
 
-// Power is one bottom-row cell: the power drawn right now with the day's
-// consumption beside it, and under it the price per kWh and how the month is
-// pacing against the Norgespris quota.
+// Power is one bottom-row cell: the power drawn right now, under it the
+// month's consumption and how much of the Norgespris quota it has used, and
+// the price only once the quota is used up, since until then every kWh costs
+// the same fixed price.
 type Power struct {
 	Label   string // "Strøm hjemme", "Hytta"
 	HasData bool   // false until the live feed has delivered
 	Power   string // "0,0 kW"
-	Today   string // "48 kWh", "3,1 kWh"; consumed since midnight
-	Detail  string // "0,50 kr · −67 %"; just the price without a cap
+	Usage   string // "2345 kWh · 47 %"; just the kWh without a cap
+	Price   string // "1,23 kr" past the cap or without one, "" under it
 }
 
 var placeLabels = map[tibber.Place]string{tibber.Home: "Strøm hjemme", tibber.Cabin: "Hytta"}
 
-// BuildPower's percentage compares the month's consumption with a
-// straight-line use of the quota (the share of the month gone times the
-// cap): "+20 %" means on course to pass the cap and pay spot price before
-// the month ends, "−67 %" well within it.
-func BuildPower(d tibber.PowerData, place tibber.Place, now time.Time) Power {
+func BuildPower(d tibber.PowerData, place tibber.Place) Power {
 	p := Power{Label: placeLabels[place], HasData: !d.Timestamp.IsZero()}
 	if !p.HasData {
 		return p
@@ -62,31 +58,19 @@ func BuildPower(d tibber.PowerData, place tibber.Place, now time.Time) Power {
 	// Tenths of a kW, so per-second watt jitter doesn't produce new HTML
 	// every tick (which would defeat the SSE dedup).
 	p.Power = KW(d.CurrentPower)
-	p.Today = KWh(d.AccumulatedConsumption)
+	p.Usage = KWh(d.MonthlyConsumption)
+	if d.Cap > 0 {
+		p.Usage += " · " + Pct(d.MonthlyConsumption/d.Cap*100)
+		if d.MonthlyConsumption < d.Cap {
+			return p
+		}
+	}
 	price := d.EffectivePrice
 	if price == 0 {
 		price = d.CurrentPrice
 	}
-	p.Detail = Kr(price)
-	if d.Cap > 0 {
-		p.Detail += " · " + paceVsQuota(d.MonthlyConsumption, d.Cap, now)
-	}
+	p.Price = Kr(price)
 	return p
-}
-
-// paceVsQuota is how far ahead (+) or behind (−) a straight-line use of cap
-// over the month the consumption is, in whole percent: "+20 %", "−67 %", "0 %".
-func paceVsQuota(consumption, cap float64, now time.Time) string {
-	now = now.In(tz.Oslo)
-	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, tz.Oslo)
-	monthEnd := monthStart.AddDate(0, 1, 0)
-	gone := float64(now.Sub(monthStart)) / float64(monthEnd.Sub(monthStart))
-	expected := math.Max(gone*cap, 1) // at midnight on the 1st nothing is expected yet
-	diff := tz.Round((consumption - expected) / expected * 100)
-	if diff > 0 {
-		return "+" + Pct(diff)
-	}
-	return Pct(diff)
 }
 
 // --- Entur -----------------------------------------------------------------------

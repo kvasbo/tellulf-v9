@@ -165,12 +165,6 @@ main {
 	white-space: nowrap;
 }
 
-.cell .today-kwh {
-	margin-left: 8px;
-	font-size: 22px;
-	color: var(--muted);
-}
-
 .cell .detail {
 	margin-top: 6px;
 	font-size: 22px;
