@@ -85,9 +85,9 @@ func TestPageAndStaticFiles(t *testing.T) {
 		{"/", "Inter+Tight", 200},
 		{"/favicon.ico", "", 200},
 		{"/styles.css", "", 200},
-		{"/vendor/idiomorph.esm.js", "export {Idiomorph}", 200},
+		{"/vendor/idiomorph.esm.js", "", 404},
 		{"/live.js", "EventSource", 200},
-		{"/kids.svg", "<svg", 200},
+		{"/kids.svg", "", 404},
 		{"/nope.txt", "", 404},
 		{"/../go.mod", "", 404},
 	}

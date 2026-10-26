@@ -1,9 +1,7 @@
 // Keeps the page live. Connects to the server's event stream and puts each
-// fragment into the element whose data-sse attribute names it. Elements with
-// data-morph are morphed rather than replaced, so CSS transitions (the power
-// bars) keep running. After each event, a 'fragment' event naming it is
-// dispatched on document for code that reacts to new content.
-import { Idiomorph } from '/vendor/idiomorph.esm.js';
+// fragment into the element whose data-sse attribute names it. After each
+// event, a 'fragment' event naming it is dispatched on document for code
+// that reacts to new content.
 import { report } from './report.js';
 
 // EventSource retries dropped connections by itself, but gives up for good
@@ -16,7 +14,9 @@ const RETRY_MS = 5000;
 export function connect(url, handlers = {}) {
 	const listeners = {};
 	for (const el of document.querySelectorAll('[data-sse]')) {
-		listeners[el.dataset.sse] = (html) => swap(el, html);
+		listeners[el.dataset.sse] = (html) => {
+			el.innerHTML = html;
+		};
 	}
 	Object.assign(listeners, handlers);
 
@@ -37,12 +37,4 @@ export function connect(url, handlers = {}) {
 		});
 	}
 	open();
-}
-
-function swap(el, html) {
-	if ('morph' in el.dataset) {
-		Idiomorph.morph(el, html, { morphStyle: 'innerHTML' });
-	} else {
-		el.innerHTML = html;
-	}
 }
