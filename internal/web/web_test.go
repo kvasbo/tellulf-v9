@@ -104,6 +104,24 @@ func TestPageAndStaticFiles(t *testing.T) {
 	}
 }
 
+// Browsers must revalidate everything on every load: the files change with
+// each deploy, and in dev mode under the browser's feet. Without this a
+// reload keeps showing old CSS and JS (heuristic freshness from Last-Modified).
+func TestNothingIsCached(t *testing.T) {
+	srv := httptest.NewServer(newTestServer(t).Handler())
+	defer srv.Close()
+	for _, p := range []string{"/", "/styles.css", "/client.js", "/favicon.ico"} {
+		res, err := http.Get(srv.URL + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if got := res.Header.Get("Cache-Control"); got != "no-cache" {
+			t.Errorf("GET %s: Cache-Control = %q, want no-cache", p, got)
+		}
+	}
+}
+
 func TestClientLog(t *testing.T) {
 	srv := httptest.NewServer(newTestServer(t).Handler())
 	defer srv.Close()

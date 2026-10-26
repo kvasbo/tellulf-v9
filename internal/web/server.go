@@ -66,7 +66,14 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /sse", s.handleSSE)
 	mux.HandleFunc("POST /log", handleLog)
 	mux.HandleFunc("GET /", s.handleStatic)
-	return mux
+	// Nothing here is worth caching: the page and the static files change
+	// with every deploy, and in dev mode under the browser's feet. no-cache
+	// makes browsers revalidate on every load instead of trusting the
+	// heuristic freshness they derive from Last-Modified.
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		mux.ServeHTTP(w, r)
+	})
 }
 
 // --- Rendering ---------------------------------------------------------------------

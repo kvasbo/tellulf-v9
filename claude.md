@@ -43,9 +43,10 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   no-break space before units); the helpers are in `internal/view/format.go`.
 - `public/report.js` POSTs lines to `/log`, which the server writes to its log as
   `msg=client`: page loads, visibility changes and JS errors. Read with `docker logs`.
-- In dev mode Chrome caches `public/*.js` heuristically (the files carry a Last-Modified
-  header), so a plain reload can keep old JS; fetch with `cache: 'reload'` or hard-reload.
-  The embedded production files have no modtime, so the kiosk always revalidates.
+- Every response carries `Cache-Control: no-cache` (set in `Server.Handler`), so browsers
+  revalidate the page, CSS and JS on every load; without it, files served from disk get
+  heuristic freshness from Last-Modified and a reload keeps old CSS. A browser that cached
+  a file before this header existed needs one hard reload.
 - Auto-reload: the server's version is its start time. It's in the page and sent
   right after each SSE snapshot, plus every minute; `client.js` reloads when it
   differs from `data-version` on `<body>`, so any restart reloads open screens within seconds.
