@@ -83,20 +83,18 @@ bredden, høyre omtrent 37 %, med luft mellom. Målene i mockupen ganget med
      minutter unna vises ikke. Sanntidsprikken beholdes: en liten prikk
      etter klokkeslettet, rød ved forsinkelse, grå uten sanntidsdata,
      ellers ingen.
-   - **STRØM HJEMME**: effekt nå i kW med én desimal («0,0 kW»), og rett
-     etter, mindre og i grått, forbruket siden midnatt: «48 kWh i dag»
-     (hele kWh fra 10 og opp, én desimal under: «3,1 kWh i dag»). Begge
-     står fast; ingen veksling mellom dem. Under, i
-     grått: pris per kWh nå med to desimaler og hvordan måneden ligger an
-     mot Norgespris-kvoten på 5000 kWh, «0,50 kr · −67 %». Prosenten
-     sammenligner forbruket så langt med et rettlinjet forbruk av kvoten
-     (andelen av måneden som er gått × kvoten): «+20 %» betyr på vei mot
-     spotpris før månedsslutt, «−67 %» godt innenfor. Negativ effekt vises
-     med «−». Dagens avrunding til 0,1 kW beholdes så fragmentet ikke
-     endres hvert sekund uten grunn.
+   - **STRØM HJEMME**: effekt nå i kW med én desimal («0,0 kW»), alene på
+     linja. Negativ effekt vises med «−». Dagens avrunding til 0,1 kW
+     beholdes så fragmentet ikke endres hvert sekund uten grunn. Under, i
+     grått: månedens forbruk og hvor mye av Norgespris-kvoten på 5000 kWh
+     det har brukt, «2345 kWh · 47 %» (hele kWh fra 10 og opp, én desimal
+     under). Prisen vises ikke så lenge forbruket er under kvoten, siden
+     hver kWh da koster den samme faste Norgespris-prisen. Når kvoten er
+     brukt opp (fra 100 %), kommer prisen per kWh med to desimaler på en
+     tredje linje i grått, «1,23 kr»; den er da `EffectivePrice`, altså spot.
+     Uten kvote vises bare kWh på andre linje, og prisen alltid.
    - **HYTTA**: samme som hjemme, med hyttas Norgespris-kvote på
-     1000 kWh: «0,50 kr · +64 %». Begge steder er prisen `EffectivePrice`,
-     som blir spot når kvoten er brukt opp.
+     1000 kWh: «1034 kWh · 103 %» og «1,23 kr» under.
    Mangler data for en celle, vises etiketten og ingenting under.
 
 ### Høyre kolonne, ovenfra
