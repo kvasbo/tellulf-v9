@@ -258,3 +258,50 @@ func TestClassifyDuplicateConnection(t *testing.T) {
 		t.Errorf("got %v, want errDuplicate", got)
 	}
 }
+
+// priceAt picks the hourly slot that contains the moment: the start is
+// inclusive, the end exclusive, and outside the cached list there is no price.
+func TestPriceAtPicksTheCurrentHour(t *testing.T) {
+	h := func(n int) time.Time { return time.Date(2026, 10, 26, n, 0, 0, 0, tz.Oslo) }
+	tb := New(Config{})
+	tb.prices[Home] = []pricePoint{{Start: h(13), Total: 1.1}, {Start: h(14), Total: 1.4}}
+	cases := []struct {
+		name  string
+		at    time.Time
+		want  float64
+		found bool
+	}{
+		{"start of a slot", h(13), 1.1, true},
+		{"last minute of a slot", h(13).Add(59 * time.Minute), 1.1, true},
+		{"next slot on the hour", h(14), 1.4, true},
+		{"after the list", h(15), 0, false},
+		{"before the list", h(13).Add(-time.Minute), 0, false},
+	}
+	for _, c := range cases {
+		got, found := tb.priceAt(Home, c.at)
+		if got != c.want || found != c.found {
+			t.Errorf("%s: got %v %v, want %v %v", c.name, got, found, c.want, c.found)
+		}
+	}
+	if _, found := tb.priceAt(Cabin, h(13)); found {
+		t.Error("the cabin has no prices cached")
+	}
+}
+
+// When the cached list doesn't cover now, the last known price stays rather
+// than dropping to zero.
+func TestUpdatePriceKeepsTheLastKnownPrice(t *testing.T) {
+	h := func(n int) time.Time { return time.Date(2026, 10, 26, n, 0, 0, 0, tz.Oslo) }
+	tb := New(Config{})
+	tb.prices[Home] = []pricePoint{{Start: h(13), Total: 1.4}}
+
+	tb.updatePrice(Home, h(13).Add(30*time.Minute))
+	d := tb.PowerData(Home)
+	if d.CurrentPrice != 1.4 || d.EffectivePrice != 0.5 {
+		t.Fatalf("in the slot: spot %v, effective %v; want 1.4 and the Norgespris 0.5", d.CurrentPrice, d.EffectivePrice)
+	}
+	tb.updatePrice(Home, h(16))
+	if got := tb.PowerData(Home).CurrentPrice; got != 1.4 {
+		t.Errorf("outside the list: spot %v, want the last known 1.4", got)
+	}
+}
