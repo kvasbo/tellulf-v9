@@ -90,8 +90,8 @@ func (s *Server) fragments() map[string]fragment {
 		{"calendar", func(now time.Time) templ.Component {
 			return views.Calendar(s.calendar(now), view.BuildStamps(s.started))
 		}},
-		{"power-home", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Home, now)) }},
-		{"power-cabin", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Cabin, now)) }},
+		{"power-home", func(time.Time) templ.Component { return views.Power(s.power(tibber.Home)) }},
+		{"power-cabin", func(time.Time) templ.Component { return views.Power(s.power(tibber.Cabin)) }},
 		{"entur", func(now time.Time) templ.Component { return views.Entur(s.trains(now)) }},
 	}
 	m := make(map[string]fragment, len(list))
@@ -106,13 +106,13 @@ func (s *Server) page(now time.Time) views.Page {
 		Version:    s.version,
 		Stamps:     view.BuildStamps(s.started),
 		Calendar:   s.calendar(now),
-		PowerHome:  s.power(tibber.Home, now),
-		PowerCabin: s.power(tibber.Cabin, now),
+		PowerHome:  s.power(tibber.Home),
+		PowerCabin: s.power(tibber.Cabin),
 		Trains:     s.trains(now),
 	}
 }
 
-func (s *Server) trains(now time.Time) []view.Train {
+func (s *Server) trains(now time.Time) view.Trains {
 	return view.BuildTrains(s.src.Entur.Trains(), now)
 }
 
@@ -134,12 +134,12 @@ func (s *Server) calendar(now time.Time) view.Calendar {
 		now, calendarDays)
 }
 
-func (s *Server) power(p tibber.Place, now time.Time) view.Power {
+func (s *Server) power(p tibber.Place) view.Power {
 	var d tibber.PowerData
 	if s.src.Tibber != nil {
 		d = s.src.Tibber.PowerData(p)
 	}
-	return view.BuildPower(d, p, now)
+	return view.BuildPower(d, p)
 }
 
 // --- Handlers ----------------------------------------------------------------------

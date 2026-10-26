@@ -3,7 +3,6 @@
 package view
 
 import (
-	"math"
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/buildinfo"
@@ -37,115 +36,63 @@ func BuildStamps(started time.Time) Stamps {
 
 // --- Power -----------------------------------------------------------------------
 
+// Power is one bottom-row cell: the power drawn right now, and under it the
+// price per kWh and how much of the month's Norgespris quota is used.
 type Power struct {
-	Header        string
-	HasData       bool
-	Usage         string
-	Cost          string
-	Price         string
-	MonthlyStatus string
-	MonthlyCost   string
-	PriceStatus   string
-	PriceColor    string
-	BgColor       string
-	PowerDisplay  string
-	PowerWidth    string
-	MaxWidth      string
-	AvgWidth      string
-	MinWidth      string
-	MinBgColor    string
+	Label   string // "Strøm hjemme", "Hytta"
+	HasData bool   // false until the live feed has delivered
+	Power   string // "0,0 kW"
+	Detail  string // "0,50 kr · 27 %"; just the price without a cap
 }
 
-const (
-	green  = "#3ef0a4"
-	orange = "#f0a43e"
-	blue   = "#3ea4f0"
-)
+var placeLabels = map[tibber.Place]string{tibber.Home: "Strøm hjemme", tibber.Cabin: "Hytta"}
 
-func BuildPower(d tibber.PowerData, place tibber.Place, now time.Time) Power {
-	now = now.In(tz.Oslo)
-	norgespris := d.Cap != 0
-	underCap := norgespris && d.MonthlyConsumption < d.Cap
-
-	p := Power{
-		Header:        map[tibber.Place]string{tibber.Home: "Hjemme", tibber.Cabin: "Hytta"}[place],
-		HasData:       !d.Timestamp.IsZero(),
-		Usage:         Fixed(d.AccumulatedConsumption, 2) + " kWh",
-		Cost:          Fixed(d.AccumulatedCost, 2) + " kr",
-		MonthlyStatus: Fixed(d.MonthlyConsumption, 1) + " kWh",
-		MonthlyCost:   Fixed(d.MonthlyCost, 0) + " kr",
-		PriceStatus:   "Spotpris",
-		PriceColor:    orange,
-		BgColor:       blue,
-		PowerDisplay:  Fixed(d.CurrentPower/1000, 1),
-		MinBgColor:    blue + "33",
+func BuildPower(d tibber.PowerData, place tibber.Place) Power {
+	p := Power{Label: placeLabels[place], HasData: !d.Timestamp.IsZero()}
+	if !p.HasData {
+		return p
 	}
+	// Tenths of a kW, so per-second watt jitter doesn't produce new HTML
+	// every tick (which would defeat the SSE dedup).
+	p.Power = KW(d.CurrentPower)
 	price := d.EffectivePrice
 	if price == 0 {
 		price = d.CurrentPrice
 	}
-	p.Price = Fixed(price, 2) + " kr"
-
-	// 30 November is "Megajouleens dag": show energy in MJ.
-	if now.Month() == time.November && now.Day() == 30 {
-		p.Usage = Num(tz.Round(d.AccumulatedConsumption*3.6)) + " MJ"
+	p.Detail = Kr(price)
+	if d.Cap > 0 {
+		p.Detail += " · " + Pct(d.MonthlyConsumption/d.Cap*100)
 	}
-
-	if norgespris {
-		// How far ahead or behind a straight-line use of the cap we are.
-		monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, tz.Oslo)
-		monthEnd := monthStart.AddDate(0, 1, 0)
-		fraction := float64(now.Sub(monthStart)) / float64(monthEnd.Sub(monthStart))
-		expected := math.Max(fraction*d.Cap, 1)
-		diff := (d.MonthlyConsumption - expected) / expected * 100
-		sign := ""
-		if diff > 0 {
-			sign = "+"
-		}
-		p.MonthlyStatus += " (" + sign + Fixed(diff, 0) + "%)"
-	}
-	if underCap {
-		p.PriceStatus, p.PriceColor = "Norgespris", green
-	}
-	if d.CurrentPower < 0 {
-		p.BgColor = green
-	}
-
-	// Bar widths are whole percent of 30 kW, so per-second watt jitter doesn't
-	// produce new HTML every tick (which would defeat the SSE dedup).
-	const maxPower = 30000.0 / 100
-	minP := d.MinPower
-	if d.MaxPowerProduction > 0 {
-		minP = math.Min(d.MinPower, -d.MaxPowerProduction)
-	}
-	if minP < 0 {
-		p.MinBgColor = green
-	}
-	p.PowerWidth = Num(tz.Round(math.Abs(d.CurrentPower / maxPower)))
-	p.MaxWidth = Num(tz.Round(d.MaxPower / maxPower))
-	p.AvgWidth = Num(tz.Round(d.AveragePower / maxPower))
-	p.MinWidth = Num(tz.Round(math.Abs(minP / maxPower)))
 	return p
 }
 
 // --- Entur -----------------------------------------------------------------------
 
-type Train struct {
-	Time        string
-	Destination string
-	Dot         string // "red" when delayed, "grey" without realtime data
+// Trains is the T-BANE cell: the next two departures and their direction.
+type Trains struct {
+	Departures []Train // at most two
+	Direction  string  // "mot Bergkrystallen"; "" without departures
 }
 
-// BuildTrains lists the next four departures. Entur is polled every minute
-// (and its last answer kept if it fails), so trains that have left are
-// skipped here.
-func BuildTrains(trains []entur.Train, now time.Time) []Train {
-	var out []Train
+type Train struct {
+	Time string // "11:48"
+	Dot  string // "red" when delayed, "grey" without realtime data
+}
+
+// minLeadTime: a train leaving sooner than this can't be reached, so it
+// isn't shown.
+const minLeadTime = 2 * time.Minute
+
+// BuildTrains lists the next two reachable departures. Entur is polled every
+// minute (and its last answer kept if it fails), so trains that have left
+// are skipped here.
+func BuildTrains(trains []entur.Train, now time.Time) Trains {
+	var out Trains
 	for _, t := range trains {
-		if len(out) == 4 {
+		if len(out.Departures) == 2 {
 			break
 		}
-		if t.Time.Before(now) {
+		if t.Time.Sub(now) < minLeadTime {
 			continue
 		}
 		dot := ""
@@ -155,7 +102,10 @@ func BuildTrains(trains []entur.Train, now time.Time) []Train {
 		case !t.Realtime:
 			dot = "grey"
 		}
-		out = append(out, Train{Time: t.Time.In(tz.Oslo).Format("15:04"), Destination: t.Destination, Dot: dot})
+		if out.Direction == "" {
+			out.Direction = "mot " + t.Destination
+		}
+		out.Departures = append(out.Departures, Train{Time: t.Time.In(tz.Oslo).Format("15:04"), Dot: dot})
 	}
 	return out
 }
