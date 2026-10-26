@@ -333,12 +333,14 @@ main {
 	background: linear-gradient(to left, transparent 50%, var(--accent) 50%);
 }
 
+/* Pinned to the page's bottom-right corner, below the calendar's bottom
+   padding, so it never meets the last day. */
 .corner {
+	position: fixed;
+	right: 12px;
+	bottom: 6px;
 	display: flex;
-	justify-content: flex-end;
-	gap: 16px;
-	height: 24px;
-	margin-top: 8px;
-	font-size: 14px;
+	gap: 12px;
+	font-size: 12px;
 	color: var(--faint);
 }

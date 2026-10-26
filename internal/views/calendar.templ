@@ -6,7 +6,8 @@ import (
 )
 
 // Calendar is the right column: today in full, the coming days on two lines
-// each, and the faint corner line. client.js hides whole .day elements from
+// each, and the faint corner line (bhg counter; b = built, s = started,
+// l = page loaded, d = last data). client.js hides whole .day elements from
 // the bottom when .days overflows, and fills the two stamp spans after each
 // swap.
 templ Calendar(c view.Calendar, st view.Stamps) {
@@ -59,10 +60,10 @@ templ Calendar(c view.Calendar, st view.Stamps) {
 		if c.Bhg != "" {
 			<span>{ c.Bhg }</span>
 		}
-		<span>bygd { st.Built }</span>
-		<span>start { st.Started }</span>
-		<span>lastet <span id="stamp-loaded"></span></span>
-		<span>data <span id="stamp-data"></span></span>
+		<span>b { st.Built }</span>
+		<span>s { st.Started }</span>
+		<span>l <span id="stamp-loaded"></span></span>
+		<span>d <span id="stamp-data"></span></span>
 	</div>
 }
 
