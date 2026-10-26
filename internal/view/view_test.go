@@ -2,12 +2,12 @@ package view
 
 import (
 	"slices"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/tibber"
+	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
 // ten is 10:00 in Oslo on an autumn day.
@@ -48,36 +48,52 @@ func TestBuildTrainsNoneReachable(t *testing.T) {
 	}
 }
 
-func TestBuildPowerHome(t *testing.T) {
-	d := tibber.PowerData{Timestamp: ten, EffectivePrice: 0.5, MonthlyConsumption: 1350, Cap: 5000}
-	want := Power{Label: "Strøm hjemme", HasData: true, Power: "0,0 kW", Detail: "0,50 kr · 27 %"}
-	if got := BuildPower(d, tibber.Home); got != want {
+// midNov is exactly half of a 30-day month, so a straight-line use of the
+// quota is half of it.
+var midNov = time.Date(2026, 11, 16, 0, 0, 0, 0, tz.Oslo)
+
+// The percentage is how far ahead (+) or behind (−) a straight-line use of
+// the Norgespris quota the month is, so heading for spot prices shows early.
+func TestBuildPowerBehindPace(t *testing.T) {
+	d := tibber.PowerData{Timestamp: ten, EffectivePrice: 0.5, MonthlyConsumption: 2000, Cap: 5000}
+	want := Power{Label: "Strøm hjemme", HasData: true, Power: "0,0 kW", Detail: "0,50 kr · −20 %"}
+	if got := BuildPower(d, tibber.Home, midNov); got != want {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 	d.CurrentPower = -400
-	if got := BuildPower(d, tibber.Home).Power; got != "−0,4 kW" {
+	if got := BuildPower(d, tibber.Home, midNov).Power; got != "−0,4 kW" {
 		t.Errorf("producing: got %q", got)
 	}
 }
 
-func TestBuildPowerAboveCap(t *testing.T) {
-	d := tibber.PowerData{Timestamp: ten, EffectivePrice: 1.2, MonthlyConsumption: 1080, Cap: 1000}
-	p := BuildPower(d, tibber.Cabin)
-	if p.Label != "Hytta" || !strings.HasSuffix(p.Detail, "108 %") {
+func TestBuildPowerAheadOfPace(t *testing.T) {
+	// 600 of 1000 kWh is under the cap, but ahead of the 500 a straight line allows.
+	d := tibber.PowerData{Timestamp: ten, EffectivePrice: 0.5, MonthlyConsumption: 600, Cap: 1000}
+	p := BuildPower(d, tibber.Cabin, midNov)
+	if p.Label != "Hytta" || p.Detail != "0,50 kr · +20 %" {
 		t.Errorf("got %+v", p)
+	}
+}
+
+func TestBuildPowerOnPace(t *testing.T) {
+	for _, kWh := range []float64{2500, 2498} { // exactly on pace, and just under: never "−0"
+		d := tibber.PowerData{Timestamp: ten, EffectivePrice: 0.5, MonthlyConsumption: kWh, Cap: 5000}
+		if got := BuildPower(d, tibber.Home, midNov).Detail; got != "0,50 kr · 0 %" {
+			t.Errorf("%v kWh: got %q", kWh, got)
+		}
 	}
 }
 
 func TestBuildPowerWithoutCap(t *testing.T) {
 	d := tibber.PowerData{Timestamp: ten, CurrentPrice: 0.22}
-	if got := BuildPower(d, tibber.Cabin).Detail; got != "0,22 kr" {
+	if got := BuildPower(d, tibber.Cabin, midNov).Detail; got != "0,22 kr" {
 		t.Errorf("got %q", got)
 	}
 }
 
 func TestBuildPowerNoData(t *testing.T) {
 	want := Power{Label: "Strøm hjemme"}
-	if got := BuildPower(tibber.PowerData{}, tibber.Home); got != want {
+	if got := BuildPower(tibber.PowerData{}, tibber.Home, midNov); got != want {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 }
