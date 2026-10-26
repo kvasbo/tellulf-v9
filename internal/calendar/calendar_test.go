@@ -195,6 +195,84 @@ func TestParseFullDayEvent(t *testing.T) {
 	}
 }
 
+func TestParseTimedEventInOslo(t *testing.T) {
+	e, err := parseGoogleEvent(&gcal.Event{
+		Summary: "PT",
+		Start:   &gcal.EventDateTime{DateTime: "2026-03-10T07:00:00Z"},
+		End:     &gcal.EventDateTime{DateTime: "2026-03-10T08:30:00+01:00"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.FullDay || e.Title != "PT" || !e.Start.Equal(at(8, 0)) || !e.End.Equal(at(8, 30)) {
+		t.Errorf("got %+v", e)
+	}
+	if e.Start.Location() != tz.Oslo {
+		t.Errorf("start is in %v, want Oslo", e.Start.Location())
+	}
+}
+
+func TestParseRejectsBrokenEvents(t *testing.T) {
+	cases := map[string]*gcal.Event{
+		"no start":       {Summary: "x", End: &gcal.EventDateTime{Date: "2026-03-11"}},
+		"no end":         {Summary: "x", Start: &gcal.EventDateTime{Date: "2026-03-10"}},
+		"bad date":       {Summary: "x", Start: &gcal.EventDateTime{Date: "10.03.2026"}, End: &gcal.EventDateTime{Date: "2026-03-11"}},
+		"bad time":       {Summary: "x", Start: &gcal.EventDateTime{DateTime: "kl 8"}, End: &gcal.EventDateTime{DateTime: "2026-03-10T09:00:00Z"}},
+		"date then time": {Summary: "x", Start: &gcal.EventDateTime{Date: "2026-03-10"}, End: &gcal.EventDateTime{DateTime: "2026-03-10T09:00:00Z"}},
+	}
+	for name, ev := range cases {
+		if _, err := parseGoogleEvent(ev); err == nil {
+			t.Errorf("%s: no error", name)
+		}
+	}
+}
+
+// The bhg counter counts the kindergarten calendar's events with "bhg" in
+// the title, in any case, until the last day of kindergarten.
+func TestBhgCountsKindergartenDays(t *testing.T) {
+	var askedFor string
+	var until time.Time
+	c := &Calendar{
+		cfg: Config{Kindergarden: "k"},
+		fetch: func(_ context.Context, id string, timeMax time.Time) ([]Event, error) {
+			askedFor, until = id, timeMax
+			return []Event{{Title: "Bhg"}, {Title: "BHG Engebret"}, {Title: "Planleggingsdag"}, {Title: "bhg"}}, nil
+		},
+	}
+	c.refreshBhgCount(context.Background())
+	got := c.Snapshot().BhgDaysLeft
+	if got == nil || *got != 3 {
+		t.Fatalf("got %v, want 3", got)
+	}
+	if askedFor != "k" || !until.Equal(time.Date(2027, 9, 1, 0, 0, 0, 0, tz.Oslo)) {
+		t.Errorf("fetched %q until %v", askedFor, until)
+	}
+}
+
+func TestBhgKeepsCountOnErrorAndClearsWithoutCalendar(t *testing.T) {
+	failing := false
+	c := &Calendar{
+		cfg: Config{Kindergarden: "k"},
+		fetch: func(context.Context, string, time.Time) ([]Event, error) {
+			if failing {
+				return nil, context.DeadlineExceeded
+			}
+			return []Event{{Title: "bhg"}, {Title: "bhg"}}, nil
+		},
+	}
+	c.refreshBhgCount(context.Background())
+	failing = true
+	c.refreshBhgCount(context.Background())
+	if got := c.Snapshot().BhgDaysLeft; got == nil || *got != 2 {
+		t.Errorf("after a failed fetch: got %v, want the previous 2", got)
+	}
+	c.cfg.Kindergarden = ""
+	c.refreshBhgCount(context.Background())
+	if got := c.Snapshot().BhgDaysLeft; got != nil {
+		t.Errorf("without a calendar: got %v, want nil (hidden)", *got)
+	}
+}
+
 func TestRefreshEventsTagsSourcesAndKeepsOldDataOnError(t *testing.T) {
 	failing := false
 	c := &Calendar{
