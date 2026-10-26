@@ -46,6 +46,39 @@ func TestNum(t *testing.T) {
 	}
 }
 
+func TestDeg(t *testing.T) {
+	cases := map[float64]string{11.4: "11°", 11.5: "12°", -3.2: "−3°", -0.4: "0°", 0: "0°"}
+	for in, want := range cases {
+		if got := Deg(in); got != want {
+			t.Errorf("Deg(%v) = %q, want %q", in, got, want)
+		}
+	}
+	if got := DegRange(4.6, 12.2); got != "5–12°" {
+		t.Errorf("DegRange = %q", got)
+	}
+	if got := DegRange(-3.4, 2); got != "−3–2°" {
+		t.Errorf("DegRange = %q", got)
+	}
+}
+
+func TestUnits(t *testing.T) {
+	cases := []struct{ got, want string }{
+		{KW(0), "0,0 kW"},
+		{KW(-400), "−0,4 kW"},
+		{KW(-40), "0,0 kW"},
+		{KW(12345), "12,3 kW"},
+		{Kr(0.5), "0,50 kr"},
+		{Pct(27.4), "27 %"},
+		{Capitalize("tirsdag"), "Tirsdag"},
+		{Capitalize(""), ""},
+	}
+	for _, c := range cases {
+		if c.got != c.want {
+			t.Errorf("got %q, want %q", c.got, c.want)
+		}
+	}
+}
+
 func TestWeatherIcon(t *testing.T) {
 	cases := map[string]string{
 		"clearsky_night":     "/weather-icons-static/clear-night.svg",
