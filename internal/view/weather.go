@@ -33,12 +33,17 @@ type Column struct {
 // wet is the precipitation (mm in an hour) that counts as rain.
 const wet = 0.1
 
-// BuildWeather prefers the outdoor sensor for the temperature now, then the
-// forecast for the current hour. hours[0] is the hour now falls in.
+// sensorMaxAge: an outdoor sensor that has been quiet longer than this is
+// treated as missing, so a dead broker can't pin an old reading on screen.
+const sensorMaxAge = 20 * time.Minute
+
+// BuildWeather prefers a fresh outdoor sensor for the temperature now, then
+// the forecast for the current hour. hours[0] is the hour now falls in.
 func BuildWeather(r smarthouse.Readings, hours []weather.Hourly, now time.Time) Weather {
 	w := Weather{Line1: line1(hours), Line2: line2(hours, now), Columns: columns(hours)}
+	sensorFresh := r.TempOut != nil && (r.LastTempTime.IsZero() || now.Sub(r.LastTempTime) <= sensorMaxAge)
 	switch {
-	case r.TempOut != nil:
+	case sensorFresh:
 		w.Temperature = Deg(*r.TempOut)
 	case len(hours) > 0 && hours[0].AirTemperature != nil:
 		w.Temperature = Deg(*hours[0].AirTemperature)
@@ -117,9 +122,9 @@ func tempPart(hours []weather.Hourly, now time.Time) string {
 		// Through 08 tomorrow.
 		end = min(end, 24-h0+8+1)
 	} else {
-		// The rest of today: until the hour number wraps.
-		for i, h := range hours {
-			if h.Hour < h0 {
+		// The rest of today: until the hour number wraps past midnight.
+		for i := 1; i < len(hours); i++ {
+			if hours[i].Hour < hours[i-1].Hour {
 				end = i
 				break
 			}

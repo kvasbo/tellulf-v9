@@ -118,6 +118,12 @@ func TestLine2(t *testing.T) {
 		t.Errorf("sleet later: got %q", got)
 	}
 
+	// Just after midnight "i dag" stops at the next midnight; tomorrow's 14° must not leak in.
+	h = hrs(0, append(repeatF(5, 24), repeatF(14, 24)...), nil, nil)
+	if got := line2(h, oslo(0)); got != "Opp mot 5° i dag" {
+		t.Errorf("after midnight: got %q", got)
+	}
+
 	if got := line2(nil, oslo(9)); got != "" {
 		t.Errorf("empty: got %q", got)
 	}
@@ -182,9 +188,18 @@ func TestColumnsWithShortForecast(t *testing.T) {
 func TestBuildWeatherTemperature(t *testing.T) {
 	now := time.Date(2026, 10, 26, 11, 0, 0, 0, tz.Oslo)
 	h := hrs(11, []float64{10.6}, nil, nil)
-	sensor := 11.4
-	if got := BuildWeather(smarthouse.Readings{TempOut: &sensor}, h, now).Temperature; got != "11°" {
+	sensor := 13.0
+	if got := BuildWeather(smarthouse.Readings{TempOut: &sensor}, h, now).Temperature; got != "13°" {
 		t.Errorf("sensor: got %q", got)
+	}
+	fresh := smarthouse.Readings{TempOut: &sensor, LastTempTime: now.Add(-5 * time.Minute)}
+	if got := BuildWeather(fresh, h, now).Temperature; got != "13°" {
+		t.Errorf("fresh sensor: got %q", got)
+	}
+	// A sensor that has gone quiet must not pin yesterday's reading on the screen.
+	stale := smarthouse.Readings{TempOut: &sensor, LastTempTime: now.Add(-21 * time.Minute)}
+	if got := BuildWeather(stale, h, now).Temperature; got != "11°" {
+		t.Errorf("stale sensor: got %q, want the forecast", got)
 	}
 	if got := BuildWeather(smarthouse.Readings{}, h, now).Temperature; got != "11°" {
 		t.Errorf("fallback: got %q", got)

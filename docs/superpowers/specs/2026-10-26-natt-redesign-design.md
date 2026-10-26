@@ -206,9 +206,9 @@ Utgangspunkt, utbyggeren stiller inn mot mockupen:
 | `--accent` | `#e3a53a` | «I DAG», neste avgang, barneprikk |
 | `--rain-1` / `--rain-2` / `--rain-3` | `#3d4f73` / `#4c6fae` / `#6a9cf0` | regnstrek lett / moderat / kraftig, og blå temperatur |
 
-Tekststørrelser ved 1080p, omtrent: klokke 280, temperatur nå 120, middag
-i dag 48, dato 40, primærtekst 28, sekundærtekst 22, etiketter 18 i
-versaler med litt sperring. Klokka og store tall i vekt 200, brødtekst i
+Tekststørrelser ved 1080p: klokke 280, temperatur nå 120, middag i dag 48,
+dato 40, verdiene i bunnraden 35, primærtekst 28, sekundærtekst 22,
+etiketter 18 i versaler med litt sperring, hjørnelinja 12. Ingen andre. Klokka og store tall i vekt 200, brødtekst i
 300, titler i 400.
 
 ## Grafiske prinsipper

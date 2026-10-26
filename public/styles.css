@@ -1,6 +1,8 @@
 /* Natt: a dark, still layout for a 1920x1080 kiosk. One font, one accent,
    nothing moves. Sizes follow the mockup in docs/superpowers/specs scaled
-   1.5x, on an 8 px grid. */
+   1.5x, on an 8 px grid. One type scale: 12 (corner), 18 (labels),
+   22 (secondary), 28 (primary), 35 (values), 40 (date), 48 (dinner),
+   then the two display sizes 120 and 280. Don't add steps. */
 
 :root {
 	--bg: #121212;
@@ -97,7 +99,7 @@ main {
 
 .line2 {
 	margin-top: 6px;
-	font-size: 24px;
+	font-size: 22px;
 	color: var(--muted);
 }
 
@@ -116,7 +118,7 @@ main {
 
 .hour .t {
 	margin-top: 8px;
-	font-size: 30px;
+	font-size: 28px;
 }
 
 .hour.rain .t {
@@ -158,14 +160,14 @@ main {
 
 .cell .value {
 	margin-top: 8px;
-	font-size: 34px;
+	font-size: 35px;
 	line-height: 1.2;
 	white-space: nowrap;
 }
 
 .cell .detail {
 	margin-top: 6px;
-	font-size: 20px;
+	font-size: 22px;
 	color: var(--muted);
 }
 
@@ -220,7 +222,7 @@ main {
 
 .note {
 	margin-top: 8px;
-	font-size: 24px;
+	font-size: 22px;
 	color: var(--muted);
 }
 
@@ -274,12 +276,12 @@ main {
 }
 
 .weekday {
-	font-size: 24px;
+	font-size: 22px;
 	color: var(--muted);
 }
 
 .row1 .dinner {
-	font-size: 26px;
+	font-size: 28px;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -295,7 +297,7 @@ main {
 .row2 {
 	margin-top: 4px;
 	padding-left: 194px; /* the dot column, the weekday column and their gaps */
-	font-size: 20px;
+	font-size: 22px;
 	color: var(--muted);
 	white-space: nowrap;
 	overflow: hidden;

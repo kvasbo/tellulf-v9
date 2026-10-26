@@ -80,20 +80,25 @@ function checkCalendarVisibility() {
 	const days = document.querySelector('.calendar .days');
 	if (!days) return;
 
-	const containerHeight = days.clientHeight;
+	// clientHeight includes the padding; the days stack from the content edge.
+	const limit =
+		days.clientHeight - Number.parseFloat(getComputedStyle(days).paddingTop);
 	let cumulativeHeight = 0;
 	for (const el of days.querySelectorAll('.day')) {
 		cumulativeHeight += el.offsetHeight;
-		el.classList.toggle('day-hidden', cumulativeHeight > containerHeight);
+		el.classList.toggle('day-hidden', cumulativeHeight > limit);
 	}
 }
 
-// Every fragment counts as fresh data; a new calendar may overflow.
+// Every fragment counts as fresh data; a new calendar may overflow. The
+// check runs right away, not in requestAnimationFrame: a hidden page (the
+// display asleep over the midnight reload) never gets an animation frame,
+// and would show an overflowing calendar until the next calendar change.
 document.addEventListener('fragment', (e) => {
 	dataAt = stampFmt.format(new Date());
 	fillStamps();
 	if (e.detail === 'calendar') {
-		requestAnimationFrame(checkCalendarVisibility);
+		checkCalendarVisibility();
 	}
 });
 
@@ -115,7 +120,7 @@ if (calendarEl) {
 }
 
 // Initial visibility check
-requestAnimationFrame(checkCalendarVisibility);
+checkCalendarVisibility();
 
 // Reload page once per day (midnight) - robust against NTP clock adjustments
 const lastDayForReload = new Date().getDate();
