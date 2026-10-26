@@ -3,11 +3,13 @@ package views
 import "github.com/kvasbo/tellulf-v9/internal/view"
 
 // Power is one bottom-row cell: the label, and once the feed has delivered,
-// the power now and a line with the price and the quota share.
+// the power now, and under it the day's consumption and a line with the
+// price and the quota share.
 templ Power(p view.Power) {
 	<span class="label">{ p.Label }</span>
 	if p.HasData {
 		<div class="value">{ p.Power }</div>
+		<div class="detail">{ p.Today } i dag</div>
 		<div class="detail">{ p.Detail }</div>
 	}
 }

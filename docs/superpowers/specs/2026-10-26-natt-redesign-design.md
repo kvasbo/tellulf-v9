@@ -83,7 +83,9 @@ bredden, høyre omtrent 37 %, med luft mellom. Målene i mockupen ganget med
      etter klokkeslettet, rød ved forsinkelse, grå uten sanntidsdata,
      ellers ingen.
    - **STRØM HJEMME**: effekt nå i kW med én desimal («0,0 kW»). Under, i
-     grått: pris per kWh nå med to desimaler og hvordan måneden ligger an
+     grått: forbruket siden midnatt, «14,3 kWh i dag» (på egen linje, siden
+     cellen er for smal til å ha det ved siden av effekten). Så
+     pris per kWh nå med to desimaler og hvordan måneden ligger an
      mot Norgespris-kvoten på 5000 kWh, «0,50 kr · −67 %». Prosenten
      sammenligner forbruket så langt med et rettlinjet forbruk av kvoten
      (andelen av måneden som er gått × kvoten): «+20 %» betyr på vei mot

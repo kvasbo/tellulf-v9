@@ -67,6 +67,8 @@ func TestUnits(t *testing.T) {
 		{KW(-400), "−0,4 kW"},
 		{KW(-40), "0,0 kW"},
 		{KW(12345), "12,3 kW"},
+		{KWh(14.25), "14,3 kWh"},
+		{KWh(-0.04), "0,0 kWh"},
 		{Kr(0.5), "0,50 kr"},
 		{Pct(27.4), "27 %"},
 		{Capitalize("tirsdag"), "Tirsdag"},
