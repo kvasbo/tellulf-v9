@@ -133,7 +133,9 @@ func buildDay(cal calendar.Snapshot, daily map[string]weather.Daily, date time.T
 		}
 		text := e.DisplayTitle
 		if e.DisplayTime.Start != "" {
-			text = e.DisplayTime.Start + " " + text
+			// A no-break space: the line may wrap inside an appointment, but
+			// never between the time and the title.
+			text = e.DisplayTime.Start + " " + text
 		}
 		d.Events = append(d.Events, DayEvent{Text: text, Faded: e.Faded})
 	}

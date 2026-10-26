@@ -68,10 +68,9 @@ func BuildPower(d tibber.PowerData, place tibber.Place) Power {
 
 // --- Entur -----------------------------------------------------------------------
 
-// Trains is the T-BANE cell: the next two departures and their direction.
+// Trains is the T-BANE cell: the next two departures.
 type Trains struct {
 	Departures []Train // at most two
-	Direction  string  // "mot Bergkrystallen"; "" without departures
 }
 
 type Train struct {
@@ -101,9 +100,6 @@ func BuildTrains(trains []entur.Train, now time.Time) Trains {
 			dot = "red"
 		case !t.Realtime:
 			dot = "grey"
-		}
-		if out.Direction == "" {
-			out.Direction = "mot " + t.Destination
 		}
 		out.Departures = append(out.Departures, Train{Time: t.Time.In(tz.Oslo).Format("15:04"), Dot: dot})
 	}

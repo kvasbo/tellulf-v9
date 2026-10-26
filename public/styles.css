@@ -145,7 +145,7 @@ main {
 
 .bottom {
 	display: grid;
-	grid-template-columns: 1.1fr 0.95fr 0.95fr 1fr;
+	grid-template-columns: repeat(4, 1fr);
 	margin-top: auto;
 	padding-top: 24px;
 	border-top: 1px solid var(--faint);
@@ -173,11 +173,6 @@ main {
 
 .next {
 	color: var(--accent);
-}
-
-.bottom .sep {
-	margin: 0 8px;
-	color: var(--faint);
 }
 
 .train-dot {
@@ -294,17 +289,25 @@ main {
 	color: var(--muted);
 }
 
+/* The appointments wrap like ordinary text, at most three lines, then "…".
+   The view joins each time to its title with a no-break space, and each
+   appointment carries its own "·", so no line starts with a dot. */
 .row2 {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	overflow: hidden;
 	margin-top: 4px;
 	padding-left: 194px; /* the dot column, the weekday column and their gaps */
 	font-size: 22px;
 	color: var(--muted);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+	/* Running text, not a column: tabular figures give "1" a wide left
+	   bearing, which opened a gap after each "·" (most times start with 1). */
+	font-variant-numeric: proportional-nums;
 }
 
-.row2 .sep {
+.row2 .item:not(:last-child)::after {
+	content: "·";
 	margin: 0 8px;
 	color: var(--faint);
 }

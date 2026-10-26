@@ -47,7 +47,9 @@ templ Calendar(c view.Calendar, st view.Stamps) {
 					<div class="row2">
 						for i, e := range d.Events {
 							if i > 0 {
-								<span class="sep">·</span>
+								// Each .item carries its own "·" (CSS); the zero-width space
+								// lets the line break after it.
+								{ "​" }
 							}
 							<span class={ "item", templ.KV("faded", e.Faded) }>{ e.Text }</span>
 						}

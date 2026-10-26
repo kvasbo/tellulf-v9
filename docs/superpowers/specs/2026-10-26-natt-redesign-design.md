@@ -76,11 +76,12 @@ bredden, høyre omtrent 37 %, med luft mellom. Målene i mockupen ganget med
    med nedbør. Regler under «Tretimerskolonnene».
 4. **Bunnrad** under en hårlinje, fire celler med liten etikett i versaler
    og hovedverdi under:
-   - **T-BANE**: neste avgang i rav, den etter i primærfarge, «mot
-     Bergkrystallen» i grått under. Avganger som er under to minutter unna
-     vises ikke. Sanntidsprikken beholdes: en liten prikk etter
-     klokkeslettet, rød ved forsinkelse, grå uten sanntidsdata, ellers
-     ingen. Retningen tas fra den første avgangen.
+   - **T-BANE**: neste avgang som hovedverdi i rav, avgangen etter på
+     linja under i grått, som detaljlinjen i de andre cellene. Ingen
+     retning: alle avganger går samme vei. Avganger som er under to
+     minutter unna vises ikke. Sanntidsprikken beholdes: en liten prikk
+     etter klokkeslettet, rød ved forsinkelse, grå uten sanntidsdata,
+     ellers ingen.
    - **STRØM HJEMME**: effekt nå i kW med én desimal («0,0 kW»). Under, i
      grått: pris per kWh nå med to desimaler og andelen av Norgespris-kvoten
      på 5000 kWh brukt denne måneden, «0,50 kr · 27 %». Andelen kan
@@ -112,7 +113,11 @@ bredden, høyre omtrent 37 %, med luft mellom. Målene i mockupen ganget med
      100 % og ikke ved 20 eller 30 %).
    - Linje 2: hendelser i grått på én linje, skilt med «·»: heldags først
      uten klokkeslett, så «11:00 PT (Lena)». Bursdager som «Kai 45 år».
-     Linja kuttes med «…» når den er for lang. Dimmede hendelser (per
+     Linja brytes som vanlig tekst, også inne i en avtale, men aldri
+     mellom klokkeslettet og første ord i tittelen. Den får maks tre
+     linjer; det som ikke får plass, erstattes av «…». Hver avtale bærer
+     sin egen «·», så ingen linje starter med en prikk. Titler er kuttet
+     til 50 tegn, så én avtale tar aldri mer enn to linjer. Dimmede hendelser (per
      hendelse, `EnrichedEvent.Faded` fra regelen i
      `internal/calendar/enrich.go`) vises enda svakere enn resten av linja.
      Dagen selv dimmes ikke.
@@ -242,12 +247,14 @@ også gjøre det der mockupen ikke sier noe.
   med luft, og hårlinjer brukes bare der luft alene ikke holder (under
   været, over bunnraden, under «I DAG»). Luften mellom grupper er alltid
   større enn luften inni dem.
-- **Konsekvente tall.** Tabulære sifre overalt. Klokkeslett alltid
+- **Konsekvente tall.** Tabulære sifre overalt, unntatt i løpende tekst
+  som avtalelinjen, der en tabulær «1» lager et hull etter «·». Klokkeslett alltid
   «HH:MM». Grader alltid hele tall med «°» rett på tallet. kW med én
   desimal, kr med to. Enheten skilles fra tallet med et smalt mellomrom
   som ikke bryter linja.
 - **Én linje er én linje.** Sekundærtekst brytes ikke; den kuttes med
-  «…». Primærtekst (middag, avtaletittel) kan bryte én gang, aldri to.
+  «…». Unntaket er avtalelinjen for kommende dager, som brytes opp til
+  tre linjer, fordi en skjult avtale er verre enn en dag færre. Primærtekst (middag, avtaletittel) kan bryte én gang, aldri to.
 - **Ingen bevegelse.** Innhold byttes uten transition. Ingenting blinker,
   glir eller toner.
 - **Tomt er tomt.** Manglende data gir ingen plassholdere som «–» eller

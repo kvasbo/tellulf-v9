@@ -24,12 +24,33 @@ func timed(title string, start time.Time, d time.Duration) calendar.Event {
 	return calendar.Event{Title: title, Start: start, End: start.Add(d)}
 }
 
+// texts reads the appointment texts with ordinary spaces, so expectations
+// stay readable; TestTimeStaysWithTitle checks the real ones.
 func texts(events []DayEvent) []string {
 	var out []string
 	for _, e := range events {
-		out = append(out, e.Text)
+		out = append(out, strings.ReplaceAll(e.Text, " ", " "))
 	}
 	return out
+}
+
+// The appointment line may wrap anywhere, also inside an appointment, but
+// never between the time and the first word of the title.
+func TestTimeStaysWithTitle(t *testing.T) {
+	tue := mon.AddDate(0, 0, 1)
+	snap := calendar.Snapshot{Events: []calendar.Event{
+		fullDay("Turdag E", tue),
+		timed("Agnes på turn", tue.Add(17*time.Hour), time.Hour),
+	}}
+	d := BuildCalendar(snap, nil, nil, calNow, 2).Days[0]
+	var got []string
+	for _, e := range d.Events {
+		got = append(got, e.Text)
+	}
+	want := []string{"Turdag E", "17:00 Agnes på turn"}
+	if !slices.Equal(got, want) {
+		t.Errorf("got %q, want %q", got, want)
+	}
 }
 
 func TestTodaySplitsDinnerNotesAndEvents(t *testing.T) {
@@ -142,7 +163,7 @@ func TestHyttaSuffixOnlyToday(t *testing.T) {
 	if got := c.Today.Events[0].Hytta; got != "(5°, 20 % regn)" {
 		t.Errorf("today hytta = %q", got)
 	}
-	if got := c.Days[0].Events[0].Text; got != "13:00 Hytta" {
+	if got := c.Days[0].Events[0].Text; got != "13:00 Hytta" {
 		t.Errorf("tomorrow text = %q", got)
 	}
 }
