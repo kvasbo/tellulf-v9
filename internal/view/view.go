@@ -3,6 +3,7 @@
 package view
 
 import (
+	"math"
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/buildinfo"
@@ -37,17 +38,21 @@ func BuildStamps(started time.Time) Stamps {
 // --- Power -----------------------------------------------------------------------
 
 // Power is one bottom-row cell: the power drawn right now, and under it the
-// price per kWh and how much of the month's Norgespris quota is used.
+// price per kWh and how the month is pacing against the Norgespris quota.
 type Power struct {
 	Label   string // "Strøm hjemme", "Hytta"
 	HasData bool   // false until the live feed has delivered
 	Power   string // "0,0 kW"
-	Detail  string // "0,50 kr · 27 %"; just the price without a cap
+	Detail  string // "0,50 kr · −67 %"; just the price without a cap
 }
 
 var placeLabels = map[tibber.Place]string{tibber.Home: "Strøm hjemme", tibber.Cabin: "Hytta"}
 
-func BuildPower(d tibber.PowerData, place tibber.Place) Power {
+// BuildPower's percentage compares the month's consumption with a
+// straight-line use of the quota (the share of the month gone times the
+// cap): "+20 %" means on course to pass the cap and pay spot price before
+// the month ends, "−67 %" well within it.
+func BuildPower(d tibber.PowerData, place tibber.Place, now time.Time) Power {
 	p := Power{Label: placeLabels[place], HasData: !d.Timestamp.IsZero()}
 	if !p.HasData {
 		return p
@@ -61,9 +66,24 @@ func BuildPower(d tibber.PowerData, place tibber.Place) Power {
 	}
 	p.Detail = Kr(price)
 	if d.Cap > 0 {
-		p.Detail += " · " + Pct(d.MonthlyConsumption/d.Cap*100)
+		p.Detail += " · " + paceVsQuota(d.MonthlyConsumption, d.Cap, now)
 	}
 	return p
+}
+
+// paceVsQuota is how far ahead (+) or behind (−) a straight-line use of cap
+// over the month the consumption is, in whole percent: "+20 %", "−67 %", "0 %".
+func paceVsQuota(consumption, cap float64, now time.Time) string {
+	now = now.In(tz.Oslo)
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, tz.Oslo)
+	monthEnd := monthStart.AddDate(0, 1, 0)
+	gone := float64(now.Sub(monthStart)) / float64(monthEnd.Sub(monthStart))
+	expected := math.Max(gone*cap, 1) // at midnight on the 1st nothing is expected yet
+	diff := tz.Round((consumption - expected) / expected * 100)
+	if diff > 0 {
+		return "+" + Pct(diff)
+	}
+	return Pct(diff)
 }
 
 // --- Entur -----------------------------------------------------------------------

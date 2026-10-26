@@ -83,12 +83,15 @@ bredden, høyre omtrent 37 %, med luft mellom. Målene i mockupen ganget med
      etter klokkeslettet, rød ved forsinkelse, grå uten sanntidsdata,
      ellers ingen.
    - **STRØM HJEMME**: effekt nå i kW med én desimal («0,0 kW»). Under, i
-     grått: pris per kWh nå med to desimaler og andelen av Norgespris-kvoten
-     på 5000 kWh brukt denne måneden, «0,50 kr · 27 %». Andelen kan
-     passere 100 %. Negativ effekt vises med «−». Dagens avrunding til 0,1 kW beholdes så fragmentet ikke
+     grått: pris per kWh nå med to desimaler og hvordan måneden ligger an
+     mot Norgespris-kvoten på 5000 kWh, «0,50 kr · −67 %». Prosenten
+     sammenligner forbruket så langt med et rettlinjet forbruk av kvoten
+     (andelen av måneden som er gått × kvoten): «+20 %» betyr på vei mot
+     spotpris før månedsslutt, «−67 %» godt innenfor. Negativ effekt vises
+     med «−». Dagens avrunding til 0,1 kW beholdes så fragmentet ikke
      endres hvert sekund uten grunn.
    - **HYTTA**: samme som hjemme, med hyttas Norgespris-kvote på
-     1000 kWh: «0,50 kr · 43 %». Begge steder er prisen `EffectivePrice`,
+     1000 kWh: «0,50 kr · +64 %». Begge steder er prisen `EffectivePrice`,
      som blir spot når kvoten er brukt opp.
    - **SOL**: «07:23 · 16:37», soloppgang og solnedgang (min avgjørelse:
      det er et stille tall, så det hører hjemme i bunnraden).
@@ -278,8 +281,8 @@ Alt som bare tjente det gamle utseendet slettes, ikke kommenteres ut:
   i `styles.css`. Lato.
 - Klikk på klokka for reload, og Megajouleens dag.
 - Min/gjennomsnitt/maks-søylene for strøm, «Forbruk»/«Kost»-tabellen,
-  fargekodet «Norgespris»/«Spotpris»-status. `MonthlyStatus`-prosenten
-  mot rettlinjet forbruk byttes med andel av kvoten.
+  fargekodet «Norgespris»/«Spotpris»-status. Prosenten mot rettlinjet
+  forbruk av kvoten beholdes, og flytter til detaljlinjen.
 
 `internal/sun` beholdes (soloppgang og solnedgang vises fortsatt).
 Dokumentasjonen (`CLAUDE.md`, `README.md`) oppdateres der den beskriver
