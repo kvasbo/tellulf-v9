@@ -87,9 +87,6 @@ type fragment struct {
 
 func (s *Server) fragments() map[string]fragment {
 	list := []fragment{
-		{"sky", func(now time.Time) templ.Component { return views.Sky(s.sky(now)) }},
-		{"current-weather", func(now time.Time) templ.Component { return views.CurrentWeather(s.currentWeather(now)) }},
-		{"hourly-forecast", func(now time.Time) templ.Component { return views.HourlyForecast(s.hourlyForecast(now)) }},
 		{"calendar", func(now time.Time) templ.Component {
 			return views.Calendar(s.calendar(now), view.BuildStamps(s.started))
 		}},
@@ -106,28 +103,13 @@ func (s *Server) fragments() map[string]fragment {
 
 func (s *Server) page(now time.Time) views.Page {
 	return views.Page{
-		Version:        s.version,
-		Stamps:         view.BuildStamps(s.started),
-		Sky:            s.sky(now),
-		CurrentWeather: s.currentWeather(now),
-		HourlyForecast: s.hourlyForecast(now),
-		Calendar:       s.calendar(now),
-		PowerHome:      s.power(tibber.Home, now),
-		PowerCabin:     s.power(tibber.Cabin, now),
-		Trains:         s.trains(now),
+		Version:    s.version,
+		Stamps:     view.BuildStamps(s.started),
+		Calendar:   s.calendar(now),
+		PowerHome:  s.power(tibber.Home, now),
+		PowerCabin: s.power(tibber.Cabin, now),
+		Trains:     s.trains(now),
 	}
-}
-
-func (s *Server) sky(now time.Time) view.Sky {
-	return view.BuildSky(s.src.Weather.HourlyForecasts(weather.Oslo, now), now)
-}
-
-func (s *Server) currentWeather(now time.Time) view.CurrentWeather {
-	return view.BuildCurrentWeather(s.readings(), now)
-}
-
-func (s *Server) hourlyForecast(now time.Time) view.HourlyForecast {
-	return view.BuildHourlyForecast(s.src.Weather.HourlyForecasts(weather.Oslo, now))
 }
 
 func (s *Server) trains(now time.Time) []view.Train {
@@ -257,7 +239,7 @@ func (s *Server) Publish(ctx context.Context) {
 	}
 
 	power := []string{"power-home", "power-cabin"}
-	data := []string{"sky", "current-weather", "hourly-forecast", "calendar"}
+	data := []string{"calendar"}
 	trains := []string{"entur"}
 
 	publish(append(append(append([]string{}, data...), power...), trains...)...)

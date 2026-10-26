@@ -17,22 +17,18 @@ import "github.com/kvasbo/tellulf-v9/internal/view"
 // Page is everything the full page renders. Each part is also sent on its
 // own over SSE when it changes.
 type Page struct {
-	Version        string // the server's start time; a change reloads open screens
-	Stamps         view.Stamps
-	Sky            view.Sky
-	CurrentWeather view.CurrentWeather
-	HourlyForecast view.HourlyForecast
-	Calendar       view.Calendar
-	PowerHome      view.Power
-	PowerCabin     view.Power
-	Trains         []view.Train
+	Version    string // the server's start time; a change reloads open screens
+	Stamps     view.Stamps
+	Calendar   view.Calendar
+	PowerHome  view.Power
+	PowerCabin view.Power
+	Trains     []view.Train
 }
 
 // Layout is the full page. The content of each element with data-sse is
 // replaced by the fragment of that name from the event stream (see
-// public/live.js); data-morph morphs it instead, so CSS transitions keep
-// running. data-version on <body> is the server's start time; client.js
-// reloads when the server reports a new one.
+// public/live.js). data-version on <body> is the server's start time;
+// client.js reloads when the server reports a new one.
 func Layout(p Page) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -61,37 +57,13 @@ func Layout(p Page) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(p.Version)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout.templ`, Line: 38, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout.templ`, Line: 34, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><canvas class=\"sky\" aria-hidden=\"true\"></canvas><div id=\"sky-driver\" data-sse=\"sky\" hidden>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = Sky(p.Sky).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><tl-topbar><tl-clock><div id=\"now_time\"></div><div id=\"date_week\"><div id=\"now_date\"></div><div id=\"now_week\"></div></div></tl-clock> <tl-currentweather><div id=\"current-weather-content\" data-sse=\"current-weather\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = CurrentWeather(p.CurrentWeather).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></tl-currentweather></tl-topbar> <tl-nowcast><svg width=\"0\" height=\"0\"><defs><filter id=\"shape-shadow\"><feDropShadow dx=\"0\" dy=\"0\" stdDeviation=\"4\" flood-color=\"#333333\" flood-opacity=\"0.2\"></feDropShadow></filter></defs></svg><div id=\"hourly-forecast-content\" data-sse=\"hourly-forecast\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = HourlyForecast(p.HourlyForecast).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></tl-nowcast> <tl-calendar id=\"calendar-content\" data-sse=\"calendar\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><tl-topbar><tl-clock><div id=\"now_time\"></div><div id=\"date_week\"><div id=\"now_date\"></div><div id=\"now_week\"></div></div></tl-clock></tl-topbar> <tl-calendar id=\"calendar-content\" data-sse=\"calendar\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -99,7 +71,7 @@ func Layout(p Page) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</tl-calendar><footer><div id=\"power-home-content\" class=\"footerBox\" data-sse=\"power-home\" data-morph>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</tl-calendar><footer><div id=\"power-home-content\" class=\"footerBox\" data-sse=\"power-home\" data-morph>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -107,7 +79,7 @@ func Layout(p Page) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div id=\"power-cabin-content\" class=\"footerBox\" data-sse=\"power-cabin\" data-morph>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div id=\"power-cabin-content\" class=\"footerBox\" data-sse=\"power-cabin\" data-morph>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -115,7 +87,7 @@ func Layout(p Page) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><div id=\"entur-content\" class=\"footerBox\" data-sse=\"entur\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div id=\"entur-content\" class=\"footerBox\" data-sse=\"entur\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -123,7 +95,7 @@ func Layout(p Page) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></footer><script type=\"module\" src=\"/client.js\"></script></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></footer><script type=\"module\" src=\"/client.js\"></script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -7,22 +7,18 @@ import "github.com/kvasbo/tellulf-v9/internal/view"
 // Page is everything the full page renders. Each part is also sent on its
 // own over SSE when it changes.
 type Page struct {
-	Version        string // the server's start time; a change reloads open screens
-	Stamps         view.Stamps
-	Sky            view.Sky
-	CurrentWeather view.CurrentWeather
-	HourlyForecast view.HourlyForecast
-	Calendar       view.Calendar
-	PowerHome      view.Power
-	PowerCabin     view.Power
-	Trains         []view.Train
+	Version    string // the server's start time; a change reloads open screens
+	Stamps     view.Stamps
+	Calendar   view.Calendar
+	PowerHome  view.Power
+	PowerCabin view.Power
+	Trains     []view.Train
 }
 
 // Layout is the full page. The content of each element with data-sse is
 // replaced by the fragment of that name from the event stream (see
-// public/live.js); data-morph morphs it instead, so CSS transitions keep
-// running. data-version on <body> is the server's start time; client.js
-// reloads when the server reports a new one.
+// public/live.js). data-version on <body> is the server's start time;
+// client.js reloads when the server reports a new one.
 templ Layout(p Page) {
 	<!DOCTYPE html>
 	<html lang="nb">
@@ -36,10 +32,6 @@ templ Layout(p Page) {
 			<link rel="stylesheet" href="/styles.css"/>
 		</head>
 		<body data-version={ p.Version }>
-			<canvas class="sky" aria-hidden="true"></canvas>
-			<div id="sky-driver" data-sse="sky" hidden>
-				@Sky(p.Sky)
-			</div>
 			<tl-topbar>
 				<tl-clock>
 					<div id="now_time"></div>
@@ -48,24 +40,7 @@ templ Layout(p Page) {
 						<div id="now_week"></div>
 					</div>
 				</tl-clock>
-				<tl-currentweather>
-					<div id="current-weather-content" data-sse="current-weather">
-						@CurrentWeather(p.CurrentWeather)
-					</div>
-				</tl-currentweather>
 			</tl-topbar>
-			<tl-nowcast>
-				<svg width="0" height="0">
-					<defs>
-						<filter id="shape-shadow">
-							<feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#333333" flood-opacity="0.2"></feDropShadow>
-						</filter>
-					</defs>
-				</svg>
-				<div id="hourly-forecast-content" data-sse="hourly-forecast">
-					@HourlyForecast(p.HourlyForecast)
-				</div>
-			</tl-nowcast>
 			<tl-calendar id="calendar-content" data-sse="calendar">
 				@Calendar(p.Calendar, p.Stamps)
 			</tl-calendar>
