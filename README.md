@@ -3,8 +3,9 @@
 Personal project. Nothing to see here, move along.
 
 A home status display (weather, calendars, metro departures, power usage) that runs as a
-1920x1080 kiosk. A Go server renders the HTML and keeps it live over server-sent events;
-a few lines of JavaScript (`public/live.js`) swap the fragments in on the client.
+1920x1080 kiosk: dark, still, one font. A Go server renders the HTML and keeps it live over
+server-sent events; a few lines of JavaScript (`public/live.js`) swap the fragments in on
+the client.
 
 ## Requirements
 
@@ -37,6 +38,15 @@ that panel stays empty and the log says why.
   `biome.json`; CI runs `biome ci`). Locally: `npx @biomejs/biome@2.5.15 check --write`.
 - `TELLULF_DEBUG=1` also logs the routine fetches (forecasts, departures, calendars).
 - `go vet ./...` and `gofmt -l .` for checks and formatting.
+- The layout is fixed at 1920x1080, so check it at that size. With the dev server running:
+
+  ```sh
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
+    --use-angle=swiftshader --enable-unsafe-swiftshader --hide-scrollbars \
+    --window-size=1920,1080 --timeout=12000 --screenshot=natt.png http://localhost:3000/
+  ```
+
+  The design notes and the mockup it follows are in `docs/superpowers/specs/`.
 
 To try power data without your own account, use Tibber's public demo token and home
 (the values in `stack.env`):
@@ -93,15 +103,15 @@ The calendar needs `GOOGLE_KEY_B64` plus at least one `CAL_ID_*`.
 
 ```
 main.go               wiring: reads config, starts data sources and the web server
-static/               icons, vendored idiomorph
-public/               CSS and the browser JavaScript (clock, WebGL sky, calendar overflow)
+static/               favicon
+public/               CSS and the browser JavaScript (clock, calendar overflow, reload)
 internal/
   weather/            MET Norway forecasts
   calendar/           Google Calendar, kids' schedule, fading rules
   entur/              metro departures
   smarthouse/         MQTT sensor readings
   tibber/             live power feed, prices, monthly totals, Norgespris
-  sky/, sun/          living-sky logic, sunrise/sunset
+  sun/                sunrise/sunset
   view/               turns data into what the templates print
   views/              templ components (*.templ) and their generated Go code
   web/                HTTP handlers, SSE hub, static files
@@ -116,6 +126,4 @@ Docker build image and GitHub Actions. To check or update by hand:
 - Security: `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`
 - Go modules: `go get -u ./... && go mod tidy`, then `go test ./...`
 - templ: `go get -u tool`, then `go generate ./...` to refresh the generated files
-- idiomorph is vendored as `static/vendor/idiomorph.esm.js` (currently 0.8.0, the
-  `dist/idiomorph.esm.js` file from the npm package). To update, replace that file.
 - Biome is pinned in `biome.json` (`$schema`) and `.github/workflows/check.yml`; bump both.
