@@ -1,0 +1,31 @@
+package views
+
+import (
+	"strconv"
+
+	"github.com/kvasbo/tellulf-v9/internal/view"
+)
+
+// Weather is the temperature now with its two sentences, and the row of six
+// three-hour columns. A column with precipitation gets a bar whose thickness
+// (px) and shade come from the view.
+templ Weather(w view.Weather) {
+	<div class="now">
+		<div class="temp">{ w.Temperature }</div>
+		<div class="lines">
+			<div class="line1">{ w.Line1 }</div>
+			<div class="line2">{ w.Line2 }</div>
+		</div>
+	</div>
+	<div class="hours">
+		for _, c := range w.Columns {
+			<div class={ "hour", templ.KV("rain", c.Rain) }>
+				<div class="h">{ c.Hour }</div>
+				<div class="t">{ c.Temperature }</div>
+				if c.Rain {
+					<div class={ "bar", "bar-" + strconv.Itoa(c.RainLevel) } style={ "height: " + c.RainPx + "px" }></div>
+				}
+			</div>
+		}
+	</div>
+}

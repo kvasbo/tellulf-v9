@@ -1,0 +1,12 @@
+package views
+
+import "github.com/kvasbo/tellulf-v9/internal/view"
+
+// Sun is the SOL cell in the bottom row: sunrise and sunset, or just the
+// label on a day the sun doesn't rise or set.
+templ Sun(s view.Sun) {
+	<span class="label">Sol</span>
+	if s.Rise != "" {
+		<div class="value">{ s.Rise } · { s.Set }</div>
+	}
+}

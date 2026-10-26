@@ -1,6 +1,5 @@
 import { connect } from './live.js';
 import { report } from './report.js';
-import { initSky } from './sky.js';
 
 report(
 	`page: loaded ${window.innerWidth}x${window.innerHeight} ${document.visibilityState} ${navigator.userAgent}`,
@@ -15,9 +14,6 @@ document.addEventListener('visibilitychange', () =>
 	report(`page: ${document.visibilityState}`),
 );
 
-// Living weather-reactive sky background
-initSky();
-
 // Pre-create Intl formatters (expensive to construct, cheap to call)
 const timeFmt = new Intl.DateTimeFormat('nb-NO', {
 	hour: 'numeric',
@@ -26,6 +22,7 @@ const timeFmt = new Intl.DateTimeFormat('nb-NO', {
 const dateFmt = new Intl.DateTimeFormat('nb-NO', {
 	weekday: 'long',
 	day: 'numeric',
+	month: 'long',
 });
 
 // Cache DOM refs
@@ -48,7 +45,9 @@ function updateClock() {
 	const day = now.getDate();
 	if (day !== lastDay) {
 		lastDay = day;
-		elDate.textContent = dateFmt.format(now);
+		// "mandag 26. oktober" → "Mandag 26. oktober"
+		const date = dateFmt.format(now);
+		elDate.textContent = date.charAt(0).toUpperCase() + date.slice(1);
 		elWeek.textContent = `uke ${Temporal.Now.plainDateISO().weekOfYear}`;
 	}
 
@@ -58,9 +57,6 @@ function updateClock() {
 	setTimeout(updateClock, msUntilNextMinute);
 }
 updateClock();
-
-// Reload page when clicking the clock
-elTime.addEventListener('click', () => window.location.reload());
 
 // Corner stamps: when this page loaded, and when data last arrived
 const stampFmt = new Intl.DateTimeFormat('nb-NO', {
@@ -78,28 +74,31 @@ function fillStamps() {
 }
 fillStamps();
 
-// Calendar visibility - hide days that overflow
+// Calendar overflow: hide the coming days that don't fit, from the bottom.
+// Today and the corner line have their own space and are never hidden.
 function checkCalendarVisibility() {
-	const calendarEl = document.querySelector('tl-calendar');
-	if (!calendarEl) return;
+	const days = document.querySelector('.calendar .days');
+	if (!days) return;
 
-	const containerHeight = calendarEl.clientHeight;
-	const dayElements = calendarEl.querySelectorAll('tl-day');
-
+	// clientHeight includes the padding; the days stack from the content edge.
+	const limit =
+		days.clientHeight - Number.parseFloat(getComputedStyle(days).paddingTop);
 	let cumulativeHeight = 0;
-
-	for (const el of dayElements) {
+	for (const el of days.querySelectorAll('.day')) {
 		cumulativeHeight += el.offsetHeight;
-		el.classList.toggle('day-hidden', cumulativeHeight > containerHeight);
+		el.classList.toggle('day-hidden', cumulativeHeight > limit);
 	}
 }
 
-// Every fragment counts as fresh data; a new calendar may overflow.
+// Every fragment counts as fresh data; a new calendar may overflow. The
+// check runs right away, not in requestAnimationFrame: a hidden page (the
+// display asleep over the midnight reload) never gets an animation frame,
+// and would show an overflowing calendar until the next calendar change.
 document.addEventListener('fragment', (e) => {
 	dataAt = stampFmt.format(new Date());
 	fillStamps();
 	if (e.detail === 'calendar') {
-		requestAnimationFrame(checkCalendarVisibility);
+		checkCalendarVisibility();
 	}
 });
 
@@ -111,8 +110,9 @@ connect('/sse', {
 	},
 });
 
-// Run visibility check on resize
-const calendarEl = document.querySelector('tl-calendar');
+// Run the visibility check on resize. The aside persists across calendar
+// swaps; its children don't.
+const calendarEl = document.querySelector('.calendar');
 if (calendarEl) {
 	new ResizeObserver(() =>
 		requestAnimationFrame(checkCalendarVisibility),
@@ -120,7 +120,7 @@ if (calendarEl) {
 }
 
 // Initial visibility check
-requestAnimationFrame(checkCalendarVisibility);
+checkCalendarVisibility();
 
 // Reload page once per day (midnight) - robust against NTP clock adjustments
 const lastDayForReload = new Date().getDate();

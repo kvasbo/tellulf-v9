@@ -66,7 +66,14 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /sse", s.handleSSE)
 	mux.HandleFunc("POST /log", handleLog)
 	mux.HandleFunc("GET /", s.handleStatic)
-	return mux
+	// Nothing here is worth caching: the page and the static files change
+	// with every deploy, and in dev mode under the browser's feet. no-cache
+	// makes browsers revalidate on every load instead of trusting the
+	// heuristic freshness they derive from Last-Modified.
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		mux.ServeHTTP(w, r)
+	})
 }
 
 // --- Rendering ---------------------------------------------------------------------
@@ -87,15 +94,14 @@ type fragment struct {
 
 func (s *Server) fragments() map[string]fragment {
 	list := []fragment{
-		{"sky", func(now time.Time) templ.Component { return views.Sky(s.sky(now)) }},
-		{"current-weather", func(now time.Time) templ.Component { return views.CurrentWeather(s.currentWeather(now)) }},
-		{"hourly-forecast", func(now time.Time) templ.Component { return views.HourlyForecast(s.hourlyForecast(now)) }},
+		{"weather", func(now time.Time) templ.Component { return views.Weather(s.weather(now)) }},
+		{"sun", func(now time.Time) templ.Component { return views.Sun(view.BuildSun(now)) }},
 		{"calendar", func(now time.Time) templ.Component {
 			return views.Calendar(s.calendar(now), view.BuildStamps(s.started))
 		}},
-		{"power-home", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Home, now)) }},
-		{"power-cabin", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Cabin, now)) }},
-		{"entur", func(now time.Time) templ.Component { return views.Entur(s.trains(now)) }},
+		{"power-home", func(time.Time) templ.Component { return views.Power(s.power(tibber.Home)) }},
+		{"power-cabin", func(time.Time) templ.Component { return views.Power(s.power(tibber.Cabin)) }},
+		{"trains", func(now time.Time) templ.Component { return views.Entur(s.trains(now)) }},
 	}
 	m := make(map[string]fragment, len(list))
 	for _, f := range list {
@@ -106,37 +112,28 @@ func (s *Server) fragments() map[string]fragment {
 
 func (s *Server) page(now time.Time) views.Page {
 	return views.Page{
-		Version:        s.version,
-		Stamps:         view.BuildStamps(s.started),
-		Sky:            s.sky(now),
-		CurrentWeather: s.currentWeather(now),
-		HourlyForecast: s.hourlyForecast(now),
-		Calendar:       s.calendar(now),
-		PowerHome:      s.power(tibber.Home, now),
-		PowerCabin:     s.power(tibber.Cabin, now),
-		Trains:         s.trains(now),
+		Version:    s.version,
+		Stamps:     view.BuildStamps(s.started),
+		Weather:    s.weather(now),
+		Sun:        view.BuildSun(now),
+		Calendar:   s.calendar(now),
+		PowerHome:  s.power(tibber.Home),
+		PowerCabin: s.power(tibber.Cabin),
+		Trains:     s.trains(now),
 	}
 }
 
-func (s *Server) sky(now time.Time) view.Sky {
-	return view.BuildSky(s.src.Weather.HourlyForecasts(weather.Oslo, now), now)
+func (s *Server) weather(now time.Time) view.Weather {
+	return view.BuildWeather(s.readings(), s.src.Weather.HourlyForecasts(weather.Oslo, now), now)
 }
 
-func (s *Server) currentWeather(now time.Time) view.CurrentWeather {
-	return view.BuildCurrentWeather(s.readings(), now)
-}
-
-func (s *Server) hourlyForecast(now time.Time) view.HourlyForecast {
-	return view.BuildHourlyForecast(s.src.Weather.HourlyForecasts(weather.Oslo, now))
-}
-
-func (s *Server) trains(now time.Time) []view.Train {
+func (s *Server) trains(now time.Time) view.Trains {
 	return view.BuildTrains(s.src.Entur.Trains(), now)
 }
 
 func (s *Server) readings() smarthouse.Readings {
 	if s.src.Smarthouse == nil {
-		return smarthouse.Readings{} // all nil: shown as dashes
+		return smarthouse.Readings{} // all nil: the forecast stands in
 	}
 	return s.src.Smarthouse.Readings()
 }
@@ -152,12 +149,12 @@ func (s *Server) calendar(now time.Time) view.Calendar {
 		now, calendarDays)
 }
 
-func (s *Server) power(p tibber.Place, now time.Time) view.Power {
+func (s *Server) power(p tibber.Place) view.Power {
 	var d tibber.PowerData
 	if s.src.Tibber != nil {
 		d = s.src.Tibber.PowerData(p)
 	}
-	return view.BuildPower(d, p, now)
+	return view.BuildPower(d, p)
 }
 
 // --- Handlers ----------------------------------------------------------------------
@@ -257,8 +254,8 @@ func (s *Server) Publish(ctx context.Context) {
 	}
 
 	power := []string{"power-home", "power-cabin"}
-	data := []string{"sky", "current-weather", "hourly-forecast", "calendar"}
-	trains := []string{"entur"}
+	data := []string{"weather", "sun", "calendar"}
+	trains := []string{"trains"}
 
 	publish(append(append(append([]string{}, data...), power...), trains...)...)
 
