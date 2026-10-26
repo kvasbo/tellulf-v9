@@ -9,13 +9,16 @@ import "github.com/kvasbo/tellulf-v9/internal/view"
 type Page struct {
 	Version    string // the server's start time; a change reloads open screens
 	Stamps     view.Stamps
+	Weather    view.Weather
+	Sun        view.Sun
 	Calendar   view.Calendar
 	PowerHome  view.Power
 	PowerCabin view.Power
 	Trains     view.Trains
 }
 
-// Layout is the full page. The content of each element with data-sse is
+// Layout is the full page: the clock, weather and bottom row on the left,
+// the calendar on the right. The content of each element with data-sse is
 // replaced by the fragment of that name from the event stream (see
 // public/live.js). data-version on <body> is the server's start time;
 // client.js reloads when the server reports a new one.
@@ -28,33 +31,36 @@ templ Layout(p Page) {
 			<title>Tellulf</title>
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap"/>
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400&display=swap"/>
 			<link rel="stylesheet" href="/styles.css"/>
 		</head>
 		<body data-version={ p.Version }>
-			<tl-topbar>
-				<tl-clock>
+			<main>
+				<section class="clock">
 					<div id="now_time"></div>
-					<div id="date_week">
-						<div id="now_date"></div>
-						<div id="now_week"></div>
+					<div class="date"><span id="now_date"></span> <span id="now_week"></span></div>
+				</section>
+				<section class="weather" data-sse="weather">
+					@Weather(p.Weather)
+				</section>
+				<section class="bottom">
+					<div class="cell" data-sse="trains">
+						@Entur(p.Trains)
 					</div>
-				</tl-clock>
-			</tl-topbar>
-			<tl-calendar id="calendar-content" data-sse="calendar">
+					<div class="cell" data-sse="power-home">
+						@Power(p.PowerHome)
+					</div>
+					<div class="cell" data-sse="power-cabin">
+						@Power(p.PowerCabin)
+					</div>
+					<div class="cell" data-sse="sun">
+						@Sun(p.Sun)
+					</div>
+				</section>
+			</main>
+			<aside class="calendar" data-sse="calendar">
 				@Calendar(p.Calendar, p.Stamps)
-			</tl-calendar>
-			<footer>
-				<div id="power-home-content" class="footerBox" data-sse="power-home" data-morph>
-					@Power(p.PowerHome)
-				</div>
-				<div id="power-cabin-content" class="footerBox" data-sse="power-cabin" data-morph>
-					@Power(p.PowerCabin)
-				</div>
-				<div id="entur-content" class="footerBox" data-sse="entur">
-					@Entur(p.Trains)
-				</div>
-			</footer>
+			</aside>
 			<script type="module" src="/client.js"></script>
 		</body>
 	</html>

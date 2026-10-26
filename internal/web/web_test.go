@@ -81,6 +81,9 @@ func TestPageAndStaticFiles(t *testing.T) {
 		status         int
 	}{
 		{"/", `data-sse="calendar"`, 200},
+		{"/", `data-sse="weather"`, 200},
+		{"/", "Inter+Tight", 200},
+		{"/favicon.ico", "", 200},
 		{"/styles.css", "", 200},
 		{"/vendor/idiomorph.esm.js", "export {Idiomorph}", 200},
 		{"/live.js", "EventSource", 200},
@@ -126,7 +129,7 @@ func TestSSEStartsWithSnapshot(t *testing.T) {
 	// Give the publisher a moment to render the first round.
 	deadline := time.Now().Add(2 * time.Second)
 	for {
-		if snap, _, c := s.hub.Subscribe(); len(snap) == 4 {
+		if snap, _, c := s.hub.Subscribe(); len(snap) == 6 {
 			c()
 			break
 		} else {
@@ -152,7 +155,7 @@ func TestSSEStartsWithSnapshot(t *testing.T) {
 	sc := bufio.NewScanner(res.Body)
 	sc.Buffer(make([]byte, 1<<20), 1<<20)
 	var name string
-	for len(names) < 5 && sc.Scan() {
+	for len(names) < 7 && sc.Scan() {
 		line := sc.Text()
 		switch {
 		case strings.HasPrefix(line, "event: "):
@@ -166,7 +169,7 @@ func TestSSEStartsWithSnapshot(t *testing.T) {
 	}
 	// The version follows the snapshot, so a browser reconnecting after a
 	// restart can reload at once.
-	want := "calendar power-home power-cabin entur version"
+	want := "weather sun calendar power-home power-cabin trains version"
 	if got := strings.Join(names, " "); got != want {
 		t.Errorf("events = %q, want %q", got, want)
 	}

@@ -87,12 +87,14 @@ type fragment struct {
 
 func (s *Server) fragments() map[string]fragment {
 	list := []fragment{
+		{"weather", func(now time.Time) templ.Component { return views.Weather(s.weather(now)) }},
+		{"sun", func(now time.Time) templ.Component { return views.Sun(view.BuildSun(now)) }},
 		{"calendar", func(now time.Time) templ.Component {
 			return views.Calendar(s.calendar(now), view.BuildStamps(s.started))
 		}},
 		{"power-home", func(time.Time) templ.Component { return views.Power(s.power(tibber.Home)) }},
 		{"power-cabin", func(time.Time) templ.Component { return views.Power(s.power(tibber.Cabin)) }},
-		{"entur", func(now time.Time) templ.Component { return views.Entur(s.trains(now)) }},
+		{"trains", func(now time.Time) templ.Component { return views.Entur(s.trains(now)) }},
 	}
 	m := make(map[string]fragment, len(list))
 	for _, f := range list {
@@ -105,11 +107,17 @@ func (s *Server) page(now time.Time) views.Page {
 	return views.Page{
 		Version:    s.version,
 		Stamps:     view.BuildStamps(s.started),
+		Weather:    s.weather(now),
+		Sun:        view.BuildSun(now),
 		Calendar:   s.calendar(now),
 		PowerHome:  s.power(tibber.Home),
 		PowerCabin: s.power(tibber.Cabin),
 		Trains:     s.trains(now),
 	}
+}
+
+func (s *Server) weather(now time.Time) view.Weather {
+	return view.BuildWeather(s.readings(), s.src.Weather.HourlyForecasts(weather.Oslo, now), now)
 }
 
 func (s *Server) trains(now time.Time) view.Trains {
@@ -118,7 +126,7 @@ func (s *Server) trains(now time.Time) view.Trains {
 
 func (s *Server) readings() smarthouse.Readings {
 	if s.src.Smarthouse == nil {
-		return smarthouse.Readings{} // all nil: shown as dashes
+		return smarthouse.Readings{} // all nil: the forecast stands in
 	}
 	return s.src.Smarthouse.Readings()
 }
@@ -239,8 +247,8 @@ func (s *Server) Publish(ctx context.Context) {
 	}
 
 	power := []string{"power-home", "power-cabin"}
-	data := []string{"calendar"}
-	trains := []string{"entur"}
+	data := []string{"weather", "sun", "calendar"}
+	trains := []string{"trains"}
 
 	publish(append(append(append([]string{}, data...), power...), trains...)...)
 
