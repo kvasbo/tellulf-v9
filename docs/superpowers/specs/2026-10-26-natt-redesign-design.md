@@ -74,7 +74,8 @@ bredden, høyre omtrent 37 %, med luft mellom. Målene i mockupen ganget med
    regnstrek under
    temperaturen når kolonnen har nedbør. Temperaturen blir blå i kolonner
    med nedbør. Regler under «Tretimerskolonnene».
-4. **Bunnrad** under en hårlinje, fire celler med liten etikett i versaler
+4. **Bunnrad** under en hårlinje, tre celler (like brede som to
+   timekolonner, så de flukter med dem) med liten etikett i versaler
    og hovedverdi under:
    - **T-BANE**: neste avgang som hovedverdi i rav, avgangen etter på
      linja under i grått, som detaljlinjen i de andre cellene. Ingen
@@ -82,10 +83,11 @@ bredden, høyre omtrent 37 %, med luft mellom. Målene i mockupen ganget med
      minutter unna vises ikke. Sanntidsprikken beholdes: en liten prikk
      etter klokkeslettet, rød ved forsinkelse, grå uten sanntidsdata,
      ellers ingen.
-   - **STRØM HJEMME**: effekt nå i kW med én desimal («0,0 kW»). Under, i
-     grått: forbruket siden midnatt, «14,3 kWh i dag» (på egen linje, siden
-     cellen er for smal til å ha det ved siden av effekten). Så
-     pris per kWh nå med to desimaler og hvordan måneden ligger an
+   - **STRØM HJEMME**: effekt nå i kW med én desimal («0,0 kW»), og rett
+     etter, mindre og i grått, forbruket siden midnatt: «48 kWh i dag»
+     (hele kWh fra 10 og opp, én desimal under: «3,1 kWh i dag»). Begge
+     står fast; ingen veksling mellom dem. Under, i
+     grått: pris per kWh nå med to desimaler og hvordan måneden ligger an
      mot Norgespris-kvoten på 5000 kWh, «0,50 kr · −67 %». Prosenten
      sammenligner forbruket så langt med et rettlinjet forbruk av kvoten
      (andelen av måneden som er gått × kvoten): «+20 %» betyr på vei mot
@@ -95,14 +97,13 @@ bredden, høyre omtrent 37 %, med luft mellom. Målene i mockupen ganget med
    - **HYTTA**: samme som hjemme, med hyttas Norgespris-kvote på
      1000 kWh: «0,50 kr · +64 %». Begge steder er prisen `EffectivePrice`,
      som blir spot når kvoten er brukt opp.
-   - **SOL**: «07:23 · 16:37», soloppgang og solnedgang (min avgjørelse:
-     det er et stille tall, så det hører hjemme i bunnraden).
    Mangler data for en celle, vises etiketten og ingenting under.
 
 ### Høyre kolonne, ovenfra
 
-1. **I DAG**: liten etikett i rav. Helt til høyre på samme linje: dagens
-   barneprikk. Så dagens middag stort (omtrent 48 px). Så merknader i
+1. **I DAG**: liten etikett i rav. Helt til høyre på samme linje:
+   soloppgang og solnedgang i grått, «SOL 07:23 · 16:37» (utelatt de dagene
+   sola ikke står opp eller går ned), og dagens barneprikk. Så dagens middag stort (omtrent 48 px). Så merknader i
    grått, én per linje: bursdager som «Kai Lützenkirchen fyller 45», og
    heldagshendelser som ikke er middag eller bursdag. Så avtaler med
    klokkeslett: starttid i grått med lik bredde, tittel i primærfarge.
@@ -296,8 +297,7 @@ gjelder fortsatt (ukenummer).
 | Fragment | Innhold | Takt |
 |---|---|---|
 | `weather` | temperatur nå, to setninger, seks kolonner | 15 s |
-| `sun` | SOL-cellen alene, siden bunnraden fletter t-bane-, strøm- og solceller og et `data-sse`-element må være sammenhengende | 15 s |
-| `calendar` | hele høyre kolonne inkludert hjørnelinja | 15 s |
+| `calendar` | hele høyre kolonne inkludert sola i «I DAG» og hjørnelinja | 15 s |
 | `trains` | t-banecellen | 30 s |
 | `power-home`, `power-cabin` | hver sin celle | 1 s |
 | `version` | som i dag | etter snapshot og hvert minutt |

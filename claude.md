@@ -11,7 +11,7 @@ notes and mockup are in `docs/superpowers/specs/2026-10-26-natt-redesign-design.
 Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 - **net/http** server with SSE (`internal/web`). A single publisher goroutine renders each
-  fragment on a schedule (`power-home`/`power-cabin` 1s, `weather`/`sun`/`calendar` 15s,
+  fragment on a schedule (`power-home`/`power-cabin` 1s, `weather`/`calendar` 15s,
   `trains` 30s, version 60s) and a `Hub` fans out only fragments that changed. New
   connections get a snapshot first.
 - **templ** components (`internal/views/*.templ`, generated `*_templ.go` committed), one
@@ -59,7 +59,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - `internal/smarthouse` — MQTT sensor readings (paho)
 - `internal/tibber` — live feed (own graphql-transport-ws client on coder/websocket),
   daily price list, monthly consumption, Norgespris maths
-- `internal/sun` — NOAA sunrise/sunset for the SOL cell
+- `internal/sun` — NOAA sunrise/sunset, shown in the I DAG header
 - `internal/buildinfo` — build time, set by the Dockerfile via `-ldflags -X` (shown as "dev" otherwise)
 - `internal/view` — builds template data; `internal/views` — templ components;
   `internal/web` — HTTP, SSE hub, static files

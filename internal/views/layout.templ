@@ -53,13 +53,10 @@ templ Layout(p Page) {
 					<div class="cell" data-sse="power-cabin">
 						@Power(p.PowerCabin)
 					</div>
-					<div class="cell" data-sse="sun">
-						@Sun(p.Sun)
-					</div>
 				</section>
 			</main>
 			<aside class="calendar" data-sse="calendar">
-				@Calendar(p.Calendar, p.Stamps)
+				@Calendar(p.Calendar, p.Sun, p.Stamps)
 			</aside>
 			<script type="module" src="/client.js"></script>
 		</body>

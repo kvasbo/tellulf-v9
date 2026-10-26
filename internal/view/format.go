@@ -44,8 +44,14 @@ func DegRange(lo, hi float64) string { return nb(Num(tz.Round(lo))) + "–" + De
 // KW formats watts as kilowatts with one decimal: "0,0 kW", "−0,4 kW".
 func KW(watts float64) string { return nb(Fixed(watts/1000, 1)) + nbsp + "kW" }
 
-// KWh formats energy with one decimal: "14,3 kWh".
-func KWh(v float64) string { return nb(Fixed(v, 1)) + nbsp + "kWh" }
+// KWh formats energy with one decimal below 10 kWh and whole kWh from
+// there: "3,1 kWh", "48 kWh".
+func KWh(v float64) string {
+	if math.Abs(v) >= 9.95 {
+		return nb(Num(tz.Round(v))) + nbsp + "kWh"
+	}
+	return nb(Fixed(v, 1)) + nbsp + "kWh"
+}
 
 // Kr formats a price with two decimals: "0,50 kr".
 func Kr(v float64) string { return nb(Fixed(v, 2)) + nbsp + "kr" }

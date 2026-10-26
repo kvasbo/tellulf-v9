@@ -37,14 +37,14 @@ func BuildStamps(started time.Time) Stamps {
 
 // --- Power -----------------------------------------------------------------------
 
-// Power is one bottom-row cell: the power drawn right now, and under it the
-// day's consumption, the price per kWh and how the month is pacing against
-// the Norgespris quota.
+// Power is one bottom-row cell: the power drawn right now with the day's
+// consumption beside it, and under it the price per kWh and how the month is
+// pacing against the Norgespris quota.
 type Power struct {
 	Label   string // "Strøm hjemme", "Hytta"
 	HasData bool   // false until the live feed has delivered
 	Power   string // "0,0 kW"
-	Today   string // "14,3 kWh", consumed since midnight
+	Today   string // "48 kWh", "3,1 kWh"; consumed since midnight
 	Detail  string // "0,50 kr · −67 %"; just the price without a cap
 }
 

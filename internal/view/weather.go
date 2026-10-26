@@ -222,7 +222,7 @@ func columns(hours []weather.Hourly) []Column {
 	return out
 }
 
-// Sun is the SOL cell: sunrise and sunset in Oslo.
+// Sun is sunrise and sunset in Oslo, shown in the I DAG header.
 type Sun struct{ Rise, Set string }
 
 func BuildSun(now time.Time) Sun {

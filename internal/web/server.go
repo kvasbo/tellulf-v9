@@ -95,9 +95,8 @@ type fragment struct {
 func (s *Server) fragments() map[string]fragment {
 	list := []fragment{
 		{"weather", func(now time.Time) templ.Component { return views.Weather(s.weather(now)) }},
-		{"sun", func(now time.Time) templ.Component { return views.Sun(view.BuildSun(now)) }},
 		{"calendar", func(now time.Time) templ.Component {
-			return views.Calendar(s.calendar(now), view.BuildStamps(s.started))
+			return views.Calendar(s.calendar(now), view.BuildSun(now), view.BuildStamps(s.started))
 		}},
 		{"power-home", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Home, now)) }},
 		{"power-cabin", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Cabin, now)) }},
@@ -254,7 +253,7 @@ func (s *Server) Publish(ctx context.Context) {
 	}
 
 	power := []string{"power-home", "power-cabin"}
-	data := []string{"weather", "sun", "calendar"}
+	data := []string{"weather", "calendar"}
 	trains := []string{"trains"}
 
 	publish(append(append(append([]string{}, data...), power...), trains...)...)
