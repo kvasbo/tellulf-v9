@@ -5,16 +5,21 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/view"
 )
 
-// Calendar is the right column: today in full, the coming days on two lines
-// each, and the faint corner line (bhg counter; b = built, s = started,
+// Calendar is the right column: today in full (sunrise and sunset in its
+// header), the coming days on two lines each, and the faint corner line (bhg counter; b = built, s = started,
 // l = page loaded, d = last data). client.js hides whole .day elements from
 // the bottom when .days overflows, and fills the two stamp spans after each
 // swap.
-templ Calendar(c view.Calendar, st view.Stamps) {
+templ Calendar(c view.Calendar, sun view.Sun, st view.Stamps) {
 	<div class="today">
 		<div class="today-head">
 			<span class="label">I dag</span>
-			@kidsDot(c.Today.Kids)
+			<span class="today-side">
+				if sun.Rise != "" {
+					<span class="label sun">Sol { sun.Rise } · { sun.Set }</span>
+				}
+				@kidsDot(c.Today.Kids)
+			</span>
 		</div>
 		if c.Today.Dinner != "" {
 			<div class="dinner">{ c.Today.Dinner }</div>

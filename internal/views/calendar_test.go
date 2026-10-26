@@ -23,7 +23,7 @@ func TestKidsDotPerStatus(t *testing.T) {
 		},
 	}
 	var b strings.Builder
-	if err := Calendar(c, view.Stamps{}).Render(context.Background(), &b); err != nil {
+	if err := Calendar(c, view.Sun{}, view.Stamps{}).Render(context.Background(), &b); err != nil {
 		t.Fatal(err)
 	}
 	var got []string
@@ -33,5 +33,23 @@ func TestKidsDotPerStatus(t *testing.T) {
 	want := []string{"dot-full", "dot-away", "dot-arriving", "dot-leaving"}
 	if !slices.Equal(got, want) {
 		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+// Sunrise and sunset sit in the I DAG header, and are left out on a day the
+// sun doesn't rise or set.
+func TestSunInTodayHeader(t *testing.T) {
+	render := func(s view.Sun) string {
+		var b strings.Builder
+		if err := Calendar(view.Calendar{}, s, view.Stamps{}).Render(context.Background(), &b); err != nil {
+			t.Fatal(err)
+		}
+		return b.String()
+	}
+	if got := render(view.Sun{Rise: "07:23", Set: "16:37"}); !strings.Contains(got, `<span class="label sun">Sol 07:23 · 16:37</span>`) {
+		t.Errorf("sun missing from header: %s", got)
+	}
+	if got := render(view.Sun{}); strings.Contains(got, "Sol") {
+		t.Errorf("sun shown without times: %s", got)
 	}
 }

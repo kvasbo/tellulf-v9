@@ -55,8 +55,8 @@ var midNov = time.Date(2026, 11, 16, 0, 0, 0, 0, tz.Oslo)
 // The percentage is how far ahead (+) or behind (−) a straight-line use of
 // the Norgespris quota the month is, so heading for spot prices shows early.
 func TestBuildPowerBehindPace(t *testing.T) {
-	d := tibber.PowerData{Timestamp: ten, EffectivePrice: 0.5, MonthlyConsumption: 2000, Cap: 5000}
-	want := Power{Label: "Strøm hjemme", HasData: true, Power: "0,0 kW", Detail: "0,50 kr · −20 %"}
+	d := tibber.PowerData{Timestamp: ten, AccumulatedConsumption: 14.25, EffectivePrice: 0.5, MonthlyConsumption: 2000, Cap: 5000}
+	want := Power{Label: "Strøm hjemme", HasData: true, Power: "0,0 kW", Today: "14 kWh", Detail: "0,50 kr · −20 %"}
 	if got := BuildPower(d, tibber.Home, midNov); got != want {
 		t.Errorf("got %+v, want %+v", got, want)
 	}

@@ -37,12 +37,14 @@ func BuildStamps(started time.Time) Stamps {
 
 // --- Power -----------------------------------------------------------------------
 
-// Power is one bottom-row cell: the power drawn right now, and under it the
-// price per kWh and how the month is pacing against the Norgespris quota.
+// Power is one bottom-row cell: the power drawn right now with the day's
+// consumption beside it, and under it the price per kWh and how the month is
+// pacing against the Norgespris quota.
 type Power struct {
 	Label   string // "Strøm hjemme", "Hytta"
 	HasData bool   // false until the live feed has delivered
 	Power   string // "0,0 kW"
+	Today   string // "48 kWh", "3,1 kWh"; consumed since midnight
 	Detail  string // "0,50 kr · −67 %"; just the price without a cap
 }
 
@@ -60,6 +62,7 @@ func BuildPower(d tibber.PowerData, place tibber.Place, now time.Time) Power {
 	// Tenths of a kW, so per-second watt jitter doesn't produce new HTML
 	// every tick (which would defeat the SSE dedup).
 	p.Power = KW(d.CurrentPower)
+	p.Today = KWh(d.AccumulatedConsumption)
 	price := d.EffectivePrice
 	if price == 0 {
 		price = d.CurrentPrice
