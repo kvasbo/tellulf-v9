@@ -119,8 +119,11 @@ if (calendarEl) {
 	).observe(calendarEl);
 }
 
-// Initial visibility check
+// Initial visibility check, and again once the web font has replaced the
+// fallback: the appointment lines wrap, so the font changes how tall each
+// day is, and an uncached font arrives after this script has run.
 checkCalendarVisibility();
+document.fonts.ready.then(checkCalendarVisibility);
 
 // Reload page once per day (midnight) - robust against NTP clock adjustments
 const lastDayForReload = new Date().getDate();

@@ -2,23 +2,26 @@ package views
 
 import "github.com/kvasbo/tellulf-v9/internal/view"
 
-// Entur is the T-BANE cell: the next departure in the accent colour, the one
-// after it, and the direction. A dot after a time marks a delay (red) or
-// missing realtime data (grey).
+// Entur is the T-BANE cell: the next departure as the big value in the
+// accent colour, and the one after it on the detail line. A dot after a time
+// marks a delay (red) or missing realtime data (grey).
 templ Entur(t view.Trains) {
 	<span class="label">T-bane</span>
 	if len(t.Departures) > 0 {
-		<div class="value">
-			for i, d := range t.Departures {
-				if i > 0 {
-					<span class="sep">·</span>
-				}
-				<span class={ "dep", templ.KV("next", i == 0) }>{ d.Time }</span>
-				if d.Dot != "" {
-					<span class={ "train-dot", "train-dot-" + d.Dot }></span>
-				}
-			}
+		<div class="value next">
+			@departure(t.Departures[0])
 		</div>
-		<div class="detail">{ t.Direction }</div>
+	}
+	if len(t.Departures) > 1 {
+		<div class="detail">
+			@departure(t.Departures[1])
+		</div>
+	}
+}
+
+templ departure(d view.Train) {
+	{ d.Time }
+	if d.Dot != "" {
+		<span class={ "train-dot", "train-dot-" + d.Dot }></span>
 	}
 }

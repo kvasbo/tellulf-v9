@@ -24,8 +24,8 @@ func departures(now time.Time, minutes ...int) []entur.Train {
 func TestBuildTrainsSkipsDepartedAndImminent(t *testing.T) {
 	got := BuildTrains(departures(ten, -3, 1, 2, 5, 9), ten)
 	want := []Train{{Time: "10:02"}, {Time: "10:05"}}
-	if !slices.Equal(got.Departures, want) || got.Direction != "mot Bergkrystallen" {
-		t.Errorf("got %+v, want %+v mot Bergkrystallen", got, want)
+	if !slices.Equal(got.Departures, want) {
+		t.Errorf("got %+v, want %+v", got, want)
 	}
 }
 
@@ -42,7 +42,7 @@ func TestBuildTrainsDots(t *testing.T) {
 func TestBuildTrainsNoneReachable(t *testing.T) {
 	for _, trains := range [][]entur.Train{nil, departures(ten, -1, 0, 1)} {
 		got := BuildTrains(trains, ten)
-		if len(got.Departures) != 0 || got.Direction != "" {
+		if len(got.Departures) != 0 {
 			t.Errorf("got %+v, want nothing", got)
 		}
 	}
