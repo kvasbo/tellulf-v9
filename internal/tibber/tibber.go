@@ -26,6 +26,7 @@ const (
 type PowerData struct {
 	Timestamp              time.Time // last live measurement; zero until the feed delivers
 	AccumulatedConsumption float64   // kWh since midnight, net of production
+	AccumulatedProduction  float64   // kWh produced since midnight
 	AccumulatedCost        float64   // kr since midnight
 	CurrentPower           float64   // W, negative when producing
 	MinPower               float64   // W since midnight
@@ -52,11 +53,16 @@ type Tibber struct {
 
 	mu     sync.RWMutex
 	data   map[Place]*PowerData
-	prices map[Place][]pricePoint
+	prices map[Place][]PricePoint
 	// Monthly totals up to (not including) today, from the consumption API.
 	monthBeforeToday     map[Place]float64
 	monthCostBeforeToday map[Place]float64
 	lastCabinProduction  float64
+	// For the power page: this month's days before today and today's hours
+	// from the consumption API, and today's hours from the live feed.
+	days         map[Place][]Usage
+	historyToday map[Place][]Usage
+	live         map[Place]*liveHours
 }
 
 func New(cfg Config) *Tibber {
@@ -69,12 +75,16 @@ func New(cfg Config) *Tibber {
 		homeIDs:              map[Place]string{Home: cfg.HomeID, Cabin: cfg.CabinID},
 		norgespris:           defaultNorgespris,
 		data:                 map[Place]*PowerData{},
-		prices:               map[Place][]pricePoint{},
+		prices:               map[Place][]PricePoint{},
 		monthBeforeToday:     map[Place]float64{},
 		monthCostBeforeToday: map[Place]float64{},
+		days:                 map[Place][]Usage{},
+		historyToday:         map[Place][]Usage{},
+		live:                 map[Place]*liveHours{},
 	}
 	for _, p := range []Place{Home, Cabin} {
 		t.data[p] = &PowerData{Cap: t.norgespris.Cap(p)}
+		t.live[p] = &liveHours{}
 	}
 	return t
 }
@@ -112,11 +122,14 @@ func (t *Tibber) onMeasurement(p Place, m liveMeasurement) {
 		return *f
 	}
 
+	now := time.Now()
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	t.live[p].add(now, m.AccumulatedConsumption)
 	d := t.data[p]
-	d.Timestamp = time.Now()
+	d.Timestamp = now
 	d.AccumulatedConsumption = m.AccumulatedConsumption - m.AccumulatedProduction
+	d.AccumulatedProduction = m.AccumulatedProduction
 	d.CurrentPower = m.Power
 	d.MaxPower = m.MaxPower
 	d.MinPower = m.MinPower
@@ -130,7 +143,6 @@ func (t *Tibber) onMeasurement(p Place, m liveMeasurement) {
 
 	// Split today's consumption into the part still under the monthly cap
 	// (Norgespris) and the part above it (spot price).
-	now := time.Now()
 	today := d.AccumulatedConsumption
 	beforeToday := max(0, d.MonthlyConsumption-today)
 	subsidized := max(0, min(today, d.Cap-beforeToday))
@@ -158,15 +170,25 @@ func (t *Tibber) onMeasurement(p Place, m liveMeasurement) {
 
 const priceSlot = time.Hour // matches priceInfo(resolution: HOURLY)
 
+// Tibber publishes tomorrow's prices around 13:00. From then on, a list
+// without tomorrow is fetched again, at most every tomorrowRecheck.
+const (
+	tomorrowFrom    = 13
+	tomorrowRecheck = 15 * time.Minute
+)
+
 // runPrices re-derives the current price every minute from the cached price
-// list, fetching a new list only when the cache doesn't cover the current
-// hour (normally once a day, since each fetch includes tomorrow).
+// list. It fetches a new list when the cache doesn't cover the current hour
+// (at midnight, since each fetch includes tomorrow), and in the afternoon
+// until the list has tomorrow, for the power page.
 func (t *Tibber) runPrices(ctx context.Context, p Place) {
 	failures := 0
 	var nextAttempt time.Time
 	schedule.Every(ctx, time.Minute, func(ctx context.Context) {
 		now := time.Now()
-		if _, ok := t.priceAt(p, now); !ok && !now.Before(nextAttempt) {
+		_, haveNow := t.priceAt(p, now)
+		wantTomorrow := t.missingTomorrow(p, now)
+		if (!haveNow || wantTomorrow) && !now.Before(nextAttempt) {
 			prices, err := t.gql.prices(ctx, t.homeIDs[p])
 			if err != nil {
 				failures++
@@ -178,10 +200,23 @@ func (t *Tibber) runPrices(ctx context.Context, p Place) {
 				t.prices[p] = prices
 				t.mu.Unlock()
 				slog.Info("prices fetched", "place", p, "slots", len(prices))
+				if t.missingTomorrow(p, now) {
+					nextAttempt = now.Add(tomorrowRecheck) // not published yet
+				}
 			}
 		}
 		t.updatePrice(p, now)
 	})
+}
+
+// missingTomorrow: it is past the time tomorrow's prices are published, and
+// the cache doesn't have them.
+func (t *Tibber) missingTomorrow(p Place, now time.Time) bool {
+	if now.In(tz.Oslo).Hour() < tomorrowFrom {
+		return false
+	}
+	_, ok := t.priceAt(p, tz.StartOfDay(now).AddDate(0, 0, 1))
+	return !ok
 }
 
 func (t *Tibber) priceAt(p Place, at time.Time) (float64, bool) {
@@ -243,6 +278,8 @@ func (t *Tibber) updateMonthly(ctx context.Context, p Place) {
 	defer t.mu.Unlock()
 	t.monthBeforeToday[p] = total
 	t.monthCostBeforeToday[p] = cost
+	t.days[p] = dayTotals(usage)
+	t.historyToday[p] = historyToday(nodes, now)
 	d := t.data[p]
 	d.MonthlyConsumption = total + d.AccumulatedConsumption
 	d.MonthlyCost = cost + d.AccumulatedCost
