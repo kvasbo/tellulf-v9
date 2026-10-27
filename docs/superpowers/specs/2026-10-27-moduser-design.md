@@ -56,24 +56,30 @@ står her: farger, skrift, typografisk skala, rutenett og tallformat.
 - Ukjent payload logges som advarsel og endrer ingenting.
 - **Alltid tilbake til oversikten etter to minutter.** En annen side enn
   oversikten står i to minutter fra siste melding (`mode.Timeout`); en ny
-  melding, også om samme side, gir to nye minutter. Deretter går alle
-  skjermer tilbake til oversikten, med samme sideskift.
+  melding, også om samme side, gir to nye minutter. Deretter går skjermene
+  som følger modusen, tilbake til oversikten, med samme sideskift.
 - Send uten retain (`mosquitto_pub -t tellulf/mode -m strom`). En retained
   melding ignoreres: brokeren spiller den av på nytt ved hver
   gjentilkobling, og da ville en gammel side kommet tilbake i to nye
   minutter.
 - **Serveren eier tilstanden.** Med MQTT konfigurert starter den på
-  oversikten, og alle skjermer følger modusen: en forespørsel etter en annen
-  side får 302 til modusens URL (så en skjerm som laster, aldri viser feil
-  side først, og en skjerm som står på `/strom` etter en omstart går hjem),
-  og åpne sider får modusen over SSE (se under). Klienten bestemmer
-  ingenting selv. Uten MQTT (utvikling) finnes ingen modus, og hver URL
-  åpnes som den blir bedt om.
+  oversikten og sender modusen til åpne sider over SSE (se under). Den
+  redirecter aldri: hver URL åpnes som den blir bedt om, også fra en annen
+  maskin. Uten MQTT (utvikling) finnes ingen modus.
+- **Siste manuelt åpnede side i fanen bestemmer om den følger modusen.**
+  Åpnes `/`, er fanen kiosken og følger modusen. Åpnes `/strom`,
+  `/kalender` eller `/vaer`, blir fanen stående der, også om den har vist
+  `/` før. Navigasjonene modusen selv gjør og reload (ny versjon, midnatt)
+  endrer ingenting, så kiosken følger modusen videre og kommer hjem fra en
+  detaljside også etter en omstart. Tilbake-knappen og en URL skrevet inn
+  teller som manuelt. Klienten husker dette i `sessionStorage` og merker
+  sine egne modusnavigasjoner der.
 
 ## Sideskift
 
 - Klienten får modusen som SSE-hendelsen `mode`, med URL-en som data. Er
-  den en annen enn sidens egen, navigerer klienten dit (`location.assign`).
+  den en annen enn sidens egen og fanen følger modusen, navigerer klienten
+  dit (`location.assign`).
 - Sidene bruker cross-document view transitions
   (`@view-transition { navigation: auto }`, Chrome 126+). Den gamle siden
   toner ut (0,25 s), og så toner den nye inn (0,3 s), gjennom den mørke
@@ -263,7 +269,7 @@ oversikten fått strømsidens fragmenter hvert sekund døgnet rundt.
   på tvers av tidssoner), dagssummene, prisgrafens akse og nå-time,
   månedsgrafens diagonal og skala, detaljlinjene i kalenderen (slutt over
   flere dager, sted, hytta), værradene (oppsummering, regnfarger, døgnskille,
-  kast), sola, rutene, redirecten, SSE-filteret og at modusen er med i
+  kast), sola, rutene (som aldri redirecter), SSE-filteret og at modusen er med i
   øyeblikksbildet.
 - Skjermbilder i ekte 1920x1080 av alle fire sider med testdata, og av
   strømsiden med Tibbers demohjem.

@@ -105,17 +105,41 @@ document.addEventListener('fragment', (e) => {
 	}
 });
 
+// The mode is the path of the page the kiosk should show, set over MQTT and
+// back to the overview after two minutes. The page last opened by hand in a
+// tab decides whether the tab follows it: the overview means this is the
+// kiosk, any other page means someone wants to look at that page. The
+// navigations the mode makes, and reloads (a new version, midnight), keep
+// what the tab had. sessionStorage carries it through the tab's navigations.
+const FOLLOW_KEY = 'tellulf-follows-mode';
+const MODE_NAV_KEY = 'tellulf-mode-navigation'; // the path the mode is going to
+
+function followsTheMode() {
+	const here = window.location.pathname;
+	const byMode = sessionStorage.getItem(MODE_NAV_KEY) === here;
+	sessionStorage.removeItem(MODE_NAV_KEY);
+	const reload =
+		performance.getEntriesByType('navigation')[0]?.type === 'reload';
+	if (byMode || reload) return sessionStorage.getItem(FOLLOW_KEY) === '1';
+	const follows = here === '/';
+	sessionStorage.setItem(FOLLOW_KEY, follows ? '1' : '0');
+	return follows;
+}
+const followsMode = followsTheMode();
+report(`page: ${followsMode ? 'follows the mode' : 'opened by hand, stays'}`);
+
 // The server sends its version after each snapshot and every minute; a new
-// one means it restarted, maybe with new code, so reload. The mode is the
-// path of the page every screen should show, set over MQTT; going there is
-// a same-origin navigation, which styles.css turns into a page transition.
+// one means it restarted, maybe with new code, so reload. Going to the
+// mode's page is a same-origin navigation, which styles.css turns into a
+// page transition.
 connect('/sse', {
 	version: (v) => {
 		if (v !== document.body.dataset.version) window.location.reload();
 	},
 	mode: (path) => {
-		if (path === window.location.pathname) return;
+		if (!followsMode || path === window.location.pathname) return;
 		report(`mode: ${window.location.pathname} → ${path}`);
+		sessionStorage.setItem(MODE_NAV_KEY, path);
 		window.location.assign(path);
 	},
 });

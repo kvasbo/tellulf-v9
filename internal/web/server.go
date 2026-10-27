@@ -44,9 +44,9 @@ type Server struct {
 	started time.Time
 	version string
 	hub     *Hub
-	// mode is the page every screen should show, or "" without MQTT. The
-	// server owns it: it redirects requests for other pages there, and
-	// pushes it to open pages over SSE.
+	// mode is the page the kiosk should show, or "" without MQTT. The
+	// server owns it and pushes it to open pages over SSE; the pages that
+	// follow it are the ones that have shown the overview (see client.js).
 	mode func() mode.Mode
 }
 
@@ -74,16 +74,16 @@ func New(src Sources, assets fs.FS) *Server {
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /{$}", s.handlePage(mode.Oversikt, func(now time.Time) templ.Component {
+	mux.HandleFunc("GET /{$}", s.handlePage(func(now time.Time) templ.Component {
 		return views.Layout(s.page(now))
 	}))
-	mux.HandleFunc("GET "+mode.Strom.Path(), s.handlePage(mode.Strom, func(now time.Time) templ.Component {
+	mux.HandleFunc("GET "+mode.Strom.Path(), s.handlePage(func(now time.Time) templ.Component {
 		return views.StromLayout(s.stromPage(now))
 	}))
-	mux.HandleFunc("GET "+mode.Kalender.Path(), s.handlePage(mode.Kalender, func(now time.Time) templ.Component {
+	mux.HandleFunc("GET "+mode.Kalender.Path(), s.handlePage(func(now time.Time) templ.Component {
 		return views.KalenderLayout(s.kalenderPage(now))
 	}))
-	mux.HandleFunc("GET "+mode.Vaer.Path(), s.handlePage(mode.Vaer, func(now time.Time) templ.Component {
+	mux.HandleFunc("GET "+mode.Vaer.Path(), s.handlePage(func(now time.Time) templ.Component {
 		return views.VaerLayout(s.vaerPage(now))
 	}))
 	mux.HandleFunc("GET /sse", s.handleSSE)
@@ -237,15 +237,10 @@ func (s *Server) power(p tibber.Place) view.Power {
 
 // --- Handlers ----------------------------------------------------------------------
 
-// handlePage serves the page for m, rendered with the latest data. When
-// there is a mode (with MQTT), a request for another page is redirected to
-// it, so a screen that loads never shows the wrong page first.
-func (s *Server) handlePage(m mode.Mode, page func(now time.Time) templ.Component) http.HandlerFunc {
+// handlePage serves a page, rendered with the latest data. Every page opens
+// where it is asked for; it is the client that follows the mode.
+func (s *Server) handlePage(page func(now time.Time) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if want := s.mode(); want != "" && want != m {
-			http.Redirect(w, r, want.Path(), http.StatusFound)
-			return
-		}
 		html, err := render(page(tz.Now()))
 		if err != nil {
 			slog.Error("render page", "path", r.URL.Path, "err", err)

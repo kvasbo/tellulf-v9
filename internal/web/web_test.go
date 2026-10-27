@@ -233,10 +233,10 @@ func readEvents(t *testing.T, url string, n int) (names []string, data map[strin
 	return names, data
 }
 
-// The server owns the mode: once MQTT has picked a page, a request for
-// another is redirected there, and open pages get it over SSE, also in the
-// snapshot a reconnecting page starts from.
-func TestModeRedirectsAndIsInTheSnapshot(t *testing.T) {
+// The server owns the mode and gives it to open pages over SSE, also in the
+// snapshot a reconnecting page starts from. It never redirects: any page
+// can be opened directly, whatever the kiosk shows.
+func TestModeIsInTheSnapshotAndNeverRedirects(t *testing.T) {
 	s := newTestServer(t)
 	var current atomic.Value // mode.Mode; the publisher reads it too
 	current.Store(mode.Mode(""))
@@ -256,22 +256,14 @@ func TestModeRedirectsAndIsInTheSnapshot(t *testing.T) {
 		return res.StatusCode, res.Header.Get("Location")
 	}
 
-	// No mode yet: every page opens where it is asked for.
-	for _, p := range []string{"/", "/strom", "/kalender", "/vaer"} {
-		if code, _ := get(p); code != http.StatusOK {
-			t.Errorf("GET %s without a mode: %d", p, code)
+	pages := []string{"/", "/strom", "/kalender", "/vaer"}
+	for _, m := range []mode.Mode{"", mode.Oversikt, mode.Strom} {
+		current.Store(m)
+		for _, p := range pages {
+			if code, loc := get(p); code != http.StatusOK {
+				t.Errorf("GET %s in mode %q: %d to %q, want 200", p, m, code, loc)
+			}
 		}
-	}
-
-	current.Store(mode.Strom)
-	if code, loc := get("/"); code != http.StatusFound || loc != "/strom" {
-		t.Errorf("GET / in strom mode: %d to %q, want 302 to /strom", code, loc)
-	}
-	if code, loc := get("/kalender"); code != http.StatusFound || loc != "/strom" {
-		t.Errorf("GET /kalender in strom mode: %d to %q, want 302 to /strom", code, loc)
-	}
-	if code, _ := get("/strom"); code != http.StatusOK {
-		t.Errorf("GET /strom in strom mode: %d", code)
 	}
 
 	// The publisher picks the mode up within a tick.

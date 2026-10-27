@@ -18,10 +18,12 @@ mosquitto_pub -h broker -t tellulf/mode -m strom   # or kalender, vaer, oversikt
 ```
 
 The payload is a mode's name or its path (`strøm` and `vær` work too). Two minutes after the
-last message every screen goes back to the overview. Don't publish with `-r`: retained mode
-messages are ignored, since the broker would replay them on every reconnect. With MQTT the
-server sends every screen to the mode's page; without it (development) every page can be
-opened directly.
+last message the screen goes back to the overview. Don't publish with `-r`: retained mode
+messages are ignored, since the broker would replay them on every reconnect.
+
+The page last opened by hand in a browser tab decides whether it follows the mode: open `/`
+(as the kiosk does) and it follows; open `/strom`, `/kalender` or `/vaer` and it stays on
+that page, so any page can be looked at directly.
 
 ## Requirements
 
