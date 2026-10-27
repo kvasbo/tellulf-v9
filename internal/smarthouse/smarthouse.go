@@ -1,4 +1,5 @@
-// Package smarthouse listens for outdoor sensor readings on MQTT.
+// Package smarthouse listens on MQTT for outdoor sensor readings and for the
+// mode that picks which page the screen shows.
 package smarthouse
 
 import (
@@ -14,6 +15,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
+	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
@@ -37,7 +39,13 @@ type Smarthouse struct {
 
 	mu   sync.RWMutex
 	data Readings
+	mode mode.Mode // "" until a message on modeTopic
 }
+
+// modeTopic carries the page every screen should show: a mode's name or
+// its URL path (see mode.Parse). Publish it retained, so a restarted server
+// gets it back.
+const modeTopic = "tellulf/mode"
 
 func New() *Smarthouse {
 	return &Smarthouse{}
@@ -64,6 +72,7 @@ func (s *Smarthouse) Connect(cfg Config) error {
 			slog.Info("MQTT connected", "broker", broker, "client_id", clientID)
 			// Subscribe again on every (re)connect; the session is not persistent.
 			c.Subscribe("tellulf/weather/#", 0, s.onMessage)
+			c.Subscribe(modeTopic, 0, s.onMessage)
 			c.Publish("tellulf/poll", 0, false, "Tellulf is online and polling")
 		}).
 		SetConnectionLostHandler(func(_ mqtt.Client, err error) {
@@ -114,6 +123,13 @@ func (s *Smarthouse) Readings() Readings {
 	return s.data
 }
 
+// Mode returns the page MQTT last asked for, or "" when it hasn't asked.
+func (s *Smarthouse) Mode() mode.Mode {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.mode
+}
+
 func (s *Smarthouse) onMessage(_ mqtt.Client, msg mqtt.Message) {
 	s.handle(msg.Topic(), string(msg.Payload()))
 }
@@ -122,6 +138,19 @@ func (s *Smarthouse) handle(topic, payload string) {
 	payload = strings.TrimSpace(payload)
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if topic == modeTopic {
+		m, ok := mode.Parse(payload)
+		if !ok {
+			slog.Warn("MQTT: unknown mode", "payload", payload)
+			return
+		}
+		if m != s.mode {
+			slog.Info("mode set", "mode", m)
+		}
+		s.mode = m
+		return
+	}
 
 	if topic == "tellulf/weather/tempOutTime" {
 		t, err := time.ParseInLocation("02-01-2006 15:04", payload, tz.Oslo)

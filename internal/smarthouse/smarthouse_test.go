@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
@@ -40,6 +41,28 @@ func TestBrokerURL(t *testing.T) {
 	for in, want := range cases {
 		if got, err := brokerURL(in); err != nil || got != want {
 			t.Errorf("%q: got %q (%v), want %q", in, got, err, want)
+		}
+	}
+}
+
+func TestHandleMode(t *testing.T) {
+	s := New()
+	if m := s.Mode(); m != "" {
+		t.Errorf("mode before any message = %q, want none", m)
+	}
+	steps := []struct {
+		payload string
+		want    mode.Mode
+	}{
+		{"strom", mode.Strom},
+		{"natt", mode.Strom}, // unknown: ignored
+		{" /kalender\n", mode.Kalender},
+		{"", mode.Oversikt},
+	}
+	for _, st := range steps {
+		s.handle("tellulf/mode", st.payload)
+		if got := s.Mode(); got != st.want {
+			t.Errorf("after %q: mode = %q, want %q", st.payload, got, st.want)
 		}
 	}
 }
