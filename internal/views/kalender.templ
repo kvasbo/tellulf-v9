@@ -1,0 +1,36 @@
+package views
+
+import "github.com/kvasbo/tellulf-v9/internal/view"
+
+// Agenda is the calendar page's days, each built like the overview's I DAG
+// block: a label line with the weather and the kids dot, the dinner, notes,
+// and the appointments with a detail line under each title. The CSS flows
+// them down three columns and leaves out whole days that don't fit.
+templ Agenda(a view.Agenda) {
+	for _, d := range a.Days {
+		<div class={ "aday", templ.KV("is-today", d.Today) }>
+			<div class="today-head">
+				<span class="label day-label">{ d.Label }</span>
+				<span class="today-side">
+					if d.Weather != "" {
+						<span class="label">{ d.Weather }</span>
+					}
+					@kidsDot(d.Kids)
+				</span>
+			</div>
+			if d.Dinner != "" {
+				<div class="dinner">{ d.Dinner }</div>
+			}
+			for _, n := range d.Notes {
+				<div class={ "note", templ.KV("faded", n.Faded) }>{ n.Text }</div>
+			}
+			for _, e := range d.Events {
+				<div class={ "ev", templ.KV("faded", e.Faded) }>
+					<span class="time">{ e.Time }</span>
+					<span class="title">{ e.Title }</span>
+					<span class="ev-detail">{ e.Detail }</span>
+				</div>
+			}
+		</div>
+	}
+}

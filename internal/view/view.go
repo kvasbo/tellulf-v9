@@ -3,6 +3,8 @@
 package view
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/buildinfo"
@@ -15,6 +17,27 @@ const (
 	osloLat = 59.9508
 	osloLon = 10.6847
 )
+
+// --- Clock -----------------------------------------------------------------------
+
+// Clock is the time, date and week as client.js prints them. The server puts
+// them in the page so its first frame is complete, which also gives a page
+// transition a clock to move; client.js keeps them current from there.
+type Clock struct {
+	Time string // "9:05"
+	Date string // "Tirsdag 27. oktober"
+	Week string // "uke 44"
+}
+
+func BuildClock(now time.Time) Clock {
+	now = now.In(tz.Oslo)
+	_, week := now.ISOWeek()
+	return Clock{
+		Time: fmt.Sprintf("%d:%02d", now.Hour(), now.Minute()),
+		Date: longDate(now),
+		Week: "uke " + strconv.Itoa(week),
+	}
+}
 
 // --- Corner stamps ---------------------------------------------------------------
 

@@ -32,7 +32,8 @@ var places = map[Location]coords{
 
 // Hourly is one hour of the short-term forecast.
 type Hourly struct {
-	Hour                       int // hour of day in Oslo, 0-23
+	Time                       time.Time // the start of the hour
+	Hour                       int       // hour of day in Oslo, 0-23
 	Symbol                     string
 	PrecipitationAmount        float64
 	ProbabilityOfPrecipitation float64
@@ -215,6 +216,7 @@ func (w *Weather) HourlyForecasts(loc Location, now time.Time) []Hourly {
 		}
 		in := s.Data.Instant.Details
 		out = append(out, Hourly{
+			Time:                       s.Time.In(tz.Oslo),
 			Hour:                       s.Time.In(tz.Oslo).Hour(),
 			Symbol:                     next.Summary.SymbolCode,
 			PrecipitationAmount:        next.Details.PrecipitationAmount,

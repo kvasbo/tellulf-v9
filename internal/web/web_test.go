@@ -7,11 +7,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/entur"
+	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/weather"
 )
 
@@ -83,6 +86,14 @@ func TestPageAndStaticFiles(t *testing.T) {
 		{"/", `data-sse="calendar"`, 200},
 		{"/", `data-sse="weather"`, 200},
 		{"/", "Inter+Tight", 200},
+		{"/", `class="page-oversikt"`, 200},
+		{"/strom", `data-sse="strom-home"`, 200},
+		{"/strom", `data-sse="strom-cabin"`, 200},
+		{"/strom", `id="now_time"`, 200},
+		{"/kalender", `data-sse="kalender"`, 200},
+		{"/kalender", `class="page-kalender"`, 200},
+		{"/vaer", `data-sse="vaer"`, 200},
+		{"/strom/", "", 404},
 		{"/favicon.ico", "", 200},
 		{"/styles.css", "", 200},
 		{"/vendor/idiomorph.esm.js", "", 404},
@@ -144,22 +155,58 @@ func TestSSEStartsWithSnapshot(t *testing.T) {
 	srv := httptest.NewServer(s.Handler())
 	defer srv.Close()
 
-	// Give the publisher a moment to render the first round.
+	waitForFragments(t, s, 9)
+
+	names, data := readEvents(t, srv.URL+"/sse", 10)
+	// The version follows the snapshot, so a browser reconnecting after a
+	// restart can reload at once.
+	want := "weather calendar kalender vaer power-home power-cabin strom-home strom-cabin trains version"
+	if got := strings.Join(names, " "); got != want {
+		t.Errorf("events = %q, want %q", got, want)
+	}
+	if data["version"] != s.version {
+		t.Errorf("version = %q, want %q", data["version"], s.version)
+	}
+}
+
+// A page asks for the events it shows, and gets only those: the overview
+// doesn't need the power page's fragments every second.
+func TestSSESendsOnlyTheEventsAskedFor(t *testing.T) {
+	s := newTestServer(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go s.Publish(ctx)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+	waitForFragments(t, s, 9)
+
+	names, _ := readEvents(t, srv.URL+"/sse?events=strom-cabin,kalender,version,mode", 3)
+	if got, want := strings.Join(names, " "), "kalender strom-cabin version"; got != want {
+		t.Errorf("events = %q, want %q", got, want)
+	}
+}
+
+// waitForFragments gives the publisher a moment to render its first round.
+func waitForFragments(t *testing.T, s *Server, n int) {
+	t.Helper()
 	deadline := time.Now().Add(2 * time.Second)
 	for {
-		if snap, _, c := s.hub.Subscribe(); len(snap) == 5 {
-			c()
-			break
-		} else {
-			c()
+		snap, _, c := s.hub.Subscribe()
+		c()
+		if len(snap) == n {
+			return
 		}
 		if time.Now().After(deadline) {
-			t.Fatal("publisher never rendered all fragments")
+			t.Fatalf("publisher rendered %d fragments, want %d", len(snap), n)
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
 
-	res, err := http.Get(srv.URL + "/sse")
+// readEvents reads n whole events (name and data) from an event stream.
+func readEvents(t *testing.T, url string, n int) (names []string, data map[string]string) {
+	t.Helper()
+	res, err := http.Get(url)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,13 +214,11 @@ func TestSSEStartsWithSnapshot(t *testing.T) {
 	if ct := res.Header.Get("Content-Type"); ct != "text/event-stream" {
 		t.Errorf("content type %q", ct)
 	}
-	// Read whole events (name + data) until the snapshot and version are in.
-	var names []string
-	data := map[string]string{}
+	data = map[string]string{}
 	sc := bufio.NewScanner(res.Body)
 	sc.Buffer(make([]byte, 1<<20), 1<<20)
 	var name string
-	for len(names) < 6 && sc.Scan() {
+	for len(names) < n && sc.Scan() {
 		line := sc.Text()
 		switch {
 		case strings.HasPrefix(line, "event: "):
@@ -185,13 +230,65 @@ func TestSSEStartsWithSnapshot(t *testing.T) {
 			name = ""
 		}
 	}
-	// The version follows the snapshot, so a browser reconnecting after a
-	// restart can reload at once.
-	want := "weather calendar power-home power-cabin trains version"
-	if got := strings.Join(names, " "); got != want {
-		t.Errorf("events = %q, want %q", got, want)
+	return names, data
+}
+
+// The server owns the mode: once MQTT has picked a page, a request for
+// another is redirected there, and open pages get it over SSE, also in the
+// snapshot a reconnecting page starts from.
+func TestModeRedirectsAndIsInTheSnapshot(t *testing.T) {
+	s := newTestServer(t)
+	var current atomic.Value // mode.Mode; the publisher reads it too
+	current.Store(mode.Mode(""))
+	s.mode = func() mode.Mode { return current.Load().(mode.Mode) }
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go s.Publish(ctx)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	get := func(path string) (int, string) {
+		res, err := client.Get(srv.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		return res.StatusCode, res.Header.Get("Location")
 	}
-	if data["version"] != s.version {
-		t.Errorf("version = %q, want %q", data["version"], s.version)
+
+	// No mode yet: every page opens where it is asked for.
+	for _, p := range []string{"/", "/strom", "/kalender", "/vaer"} {
+		if code, _ := get(p); code != http.StatusOK {
+			t.Errorf("GET %s without a mode: %d", p, code)
+		}
+	}
+
+	current.Store(mode.Strom)
+	if code, loc := get("/"); code != http.StatusFound || loc != "/strom" {
+		t.Errorf("GET / in strom mode: %d to %q, want 302 to /strom", code, loc)
+	}
+	if code, loc := get("/kalender"); code != http.StatusFound || loc != "/strom" {
+		t.Errorf("GET /kalender in strom mode: %d to %q, want 302 to /strom", code, loc)
+	}
+	if code, _ := get("/strom"); code != http.StatusOK {
+		t.Errorf("GET /strom in strom mode: %d", code)
+	}
+
+	// The publisher picks the mode up within a tick.
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		snap, _, c := s.hub.Subscribe()
+		c()
+		if slices.Contains(snap, Event{"mode", "/strom"}) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the mode never reached the hub")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	names, data := readEvents(t, srv.URL+"/sse?events=mode,version", 2)
+	if strings.Join(names, " ") != "mode version" || data["mode"] != "/strom" {
+		t.Errorf("events %q, mode %q", names, data["mode"])
 	}
 }

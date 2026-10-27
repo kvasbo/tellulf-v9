@@ -10,7 +10,8 @@ const RETRY_MS = 5000;
 
 // handlers maps the names of events that aren't page fragments to functions
 // that get the event's data. EventSource only delivers events it has a
-// listener for, so every name must be known up front.
+// listener for, so every name must be known up front. The names also go to
+// the server, which then sends only those: each page gets what it shows.
 export function connect(url, handlers = {}) {
 	const listeners = {};
 	for (const el of document.querySelectorAll('[data-sse]')) {
@@ -19,9 +20,10 @@ export function connect(url, handlers = {}) {
 		};
 	}
 	Object.assign(listeners, handlers);
+	const events = Object.keys(listeners).join(',');
 
 	function open() {
-		const source = new EventSource(url);
+		const source = new EventSource(`${url}?events=${events}`);
 		for (const [name, fn] of Object.entries(listeners)) {
 			source.addEventListener(name, (e) => {
 				fn(e.data);

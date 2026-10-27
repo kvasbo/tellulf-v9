@@ -11,7 +11,7 @@ import (
 // (px) and shade come from the view.
 templ Weather(w view.Weather) {
 	<div class="now">
-		<div class="temp">{ w.Temperature }</div>
+		<div class="temp temp-now">{ w.Temperature }</div>
 		<div class="lines">
 			<div class="line1">{ w.Line1 }</div>
 			<div class="line2">{ w.Line2 }</div>

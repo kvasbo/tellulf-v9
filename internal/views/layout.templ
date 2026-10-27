@@ -4,10 +4,11 @@ package views
 
 import "github.com/kvasbo/tellulf-v9/internal/view"
 
-// Page is everything the full page renders. Each part is also sent on its
+// Page is everything the overview renders. Each part is also sent on its
 // own over SSE when it changes.
 type Page struct {
 	Version    string // the server's start time; a change reloads open screens
+	Clock      view.Clock
 	Stamps     view.Stamps
 	Weather    view.Weather
 	Sun        view.Sun
@@ -17,12 +18,37 @@ type Page struct {
 	Trains     view.Trains
 }
 
-// Layout is the full page: the clock, weather and bottom row on the left,
-// the calendar on the right. The content of each element with data-sse is
-// replaced by the fragment of that name from the event stream (see
-// public/live.js). data-version on <body> is the server's start time;
-// client.js reloads when the server reports a new one.
-templ Layout(p Page) {
+// StromPage is the power page: one column per place.
+type StromPage struct {
+	Version     string
+	Clock       view.Clock
+	Stamps      view.Stamps
+	Home, Cabin view.Strom
+}
+
+// VaerPage is the weather page: the next two days by the hour, and the
+// coming days for Oslo and the cabin.
+type VaerPage struct {
+	Version string
+	Clock   view.Clock
+	Stamps  view.Stamps
+	Vaer    view.Vaer
+}
+
+// KalenderPage is the calendar page: the coming days in full.
+type KalenderPage struct {
+	Version string
+	Clock   view.Clock
+	Stamps  view.Stamps
+	Agenda  view.Agenda
+}
+
+// shell is what every page shares. The content of each element with
+// data-sse is replaced by the fragment of that name from the event stream
+// (see public/live.js). data-version on <body> is the server's start time;
+// client.js reloads when the server reports a new one, and goes to another
+// page when the server's mode says so.
+templ shell(version, page string) {
 	<!DOCTYPE html>
 	<html lang="nb">
 		<head>
@@ -34,31 +60,105 @@ templ Layout(p Page) {
 			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400&display=swap"/>
 			<link rel="stylesheet" href="/styles.css"/>
 		</head>
-		<body data-version={ p.Version }>
-			<main>
-				<section class="clock">
-					<div id="now_time"></div>
-					<div class="date"><span id="now_date"></span> <span id="now_week"></span></div>
-				</section>
-				<section class="weather" data-sse="weather">
-					@Weather(p.Weather)
-				</section>
-				<section class="bottom">
-					<div class="cell" data-sse="trains">
-						@Entur(p.Trains)
-					</div>
-					<div class="cell" data-sse="power-home">
-						@Power(p.PowerHome)
-					</div>
-					<div class="cell" data-sse="power-cabin">
-						@Power(p.PowerCabin)
-					</div>
-				</section>
-			</main>
-			<aside class="calendar" data-sse="calendar">
-				@Calendar(p.Calendar, p.Sun, p.Stamps)
-			</aside>
+		<body class={ "page-" + page } data-version={ version }>
+			{ children... }
 			<script type="module" src="/client.js"></script>
 		</body>
 	</html>
+}
+
+// Layout is the overview: the clock, weather and bottom row on the left,
+// the calendar on the right.
+templ Layout(p Page) {
+	@shell(p.Version, "oversikt") {
+		<main>
+			<section class="clock">
+				<div id="now_time">{ p.Clock.Time }</div>
+				<div class="date"><span id="now_date">{ p.Clock.Date }</span> <span id="now_week">{ p.Clock.Week }</span></div>
+			</section>
+			<section class="weather" data-sse="weather">
+				@Weather(p.Weather)
+			</section>
+			<section class="bottom">
+				<div class="cell" data-sse="trains">
+					@Entur(p.Trains)
+				</div>
+				<div class="cell" data-sse="power-home">
+					@Power(p.PowerHome)
+				</div>
+				<div class="cell" data-sse="power-cabin">
+					@Power(p.PowerCabin)
+				</div>
+			</section>
+		</main>
+		<aside class="calendar" data-sse="calendar">
+			@Calendar(p.Calendar, p.Sun, p.Stamps)
+		</aside>
+	}
+}
+
+// StromLayout is the power page: home on the left, the cabin on the right.
+templ StromLayout(p StromPage) {
+	@shell(p.Version, "strom") {
+		@head("Strøm", p.Clock)
+		<div class="places">
+			<section class="place" data-sse="strom-home">
+				@Strom(p.Home)
+			</section>
+			<section class="place" data-sse="strom-cabin">
+				@Strom(p.Cabin)
+			</section>
+		</div>
+		<div class="corner">
+			@stampSpans(p.Stamps)
+		</div>
+	}
+}
+
+// KalenderLayout is the calendar page: the days flow down three columns.
+templ KalenderLayout(p KalenderPage) {
+	@shell(p.Version, "kalender") {
+		@head("Kalender", p.Clock)
+		<div class="agenda" data-sse="kalender">
+			@Agenda(p.Agenda)
+		</div>
+		<div class="corner">
+			@stampSpans(p.Stamps)
+		</div>
+	}
+}
+
+// VaerLayout is the weather page.
+templ VaerLayout(p VaerPage) {
+	@shell(p.Version, "vaer") {
+		@head("Vær", p.Clock)
+		<div class="vaer" data-sse="vaer">
+			@Vaer(p.Vaer)
+		</div>
+		<div class="corner">
+			@stampSpans(p.Stamps)
+		</div>
+	}
+}
+
+// head is the detail pages' top line: the page's name, and the date and
+// time where the overview has its big clock. The ids are the ones client.js
+// keeps current, and the ones a page transition moves the clock between.
+templ head(title string, c view.Clock) {
+	<header class="head">
+		<span class="head-title">{ title }</span>
+		<span class="head-clock">
+			<span id="now_date">{ c.Date }</span>
+			<span id="now_time">{ c.Time }</span>
+		</span>
+	</header>
+}
+
+// stampSpans are the corner line's stamps: b = built, s = started,
+// l = page loaded, d = last data. client.js fills the last two.
+templ stampSpans(st view.Stamps) {
+	<span>b { st.Built }</span>
+	<span>s { st.Started }</span>
+	<span>l <span id="stamp-loaded"></span></span>
+	<span>d <span id="stamp-data"></span></span>
 }

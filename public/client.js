@@ -25,7 +25,8 @@ const dateFmt = new Intl.DateTimeFormat('nb-NO', {
 	month: 'long',
 });
 
-// Cache DOM refs
+// Cache DOM refs. Every page has the time and date; only the overview has
+// the week. The server renders all three, so they are right before this runs.
 function mustGet(id) {
 	const el = document.getElementById(id);
 	if (!el) throw new Error(`Missing element #${id}`);
@@ -33,7 +34,7 @@ function mustGet(id) {
 }
 const elTime = mustGet('now_time');
 const elDate = mustGet('now_date');
-const elWeek = mustGet('now_week');
+const elWeek = document.getElementById('now_week');
 
 // Clock - update on the minute, then schedule next update
 let lastDay = -1;
@@ -48,7 +49,9 @@ function updateClock() {
 		// "mandag 26. oktober" → "Mandag 26. oktober"
 		const date = dateFmt.format(now);
 		elDate.textContent = date.charAt(0).toUpperCase() + date.slice(1);
-		elWeek.textContent = `uke ${Temporal.Now.plainDateISO().weekOfYear}`;
+		if (elWeek) {
+			elWeek.textContent = `uke ${Temporal.Now.plainDateISO().weekOfYear}`;
+		}
 	}
 
 	// Schedule next update at the start of the next minute
@@ -103,10 +106,17 @@ document.addEventListener('fragment', (e) => {
 });
 
 // The server sends its version after each snapshot and every minute; a new
-// one means it restarted, maybe with new code, so reload.
+// one means it restarted, maybe with new code, so reload. The mode is the
+// path of the page every screen should show, set over MQTT; going there is
+// a same-origin navigation, which styles.css turns into a page transition.
 connect('/sse', {
 	version: (v) => {
 		if (v !== document.body.dataset.version) window.location.reload();
+	},
+	mode: (path) => {
+		if (path === window.location.pathname) return;
+		report(`mode: ${window.location.pathname} → ${path}`);
+		window.location.assign(path);
 	},
 });
 
