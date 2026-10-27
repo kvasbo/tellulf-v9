@@ -120,7 +120,10 @@ function followsTheMode() {
 	sessionStorage.removeItem(MODE_NAV_KEY);
 	const reload =
 		performance.getEntriesByType('navigation')[0]?.type === 'reload';
-	if (byMode || reload) return sessionStorage.getItem(FOLLOW_KEY) === '1';
+	const kept = sessionStorage.getItem(FOLLOW_KEY);
+	// A tab with nothing kept decides by its page, also on a reload: a
+	// kiosk on / reloaded into a version that keeps the choice has none yet.
+	if ((byMode || reload) && kept !== null) return kept === '1';
 	const follows = here === '/';
 	sessionStorage.setItem(FOLLOW_KEY, follows ? '1' : '0');
 	return follows;
