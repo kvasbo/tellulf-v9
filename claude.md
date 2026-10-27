@@ -14,13 +14,15 @@ detail) or `vaer` (`/vaer`, the weather in detail); names or paths, `str√∏m`/`v√
 Design notes: `docs/superpowers/specs/2026-10-27-moduser-design.md`.
 
 - The server owns the mode (`internal/mode`, read by `internal/smarthouse`). With MQTT it starts
-  on the overview, and any other page goes back to it two minutes after the last mode message
-  (`mode.Timeout`). Open pages get it as the SSE event `mode`; `client.js` then does
-  `location.assign`, which the browser turns into a view transition. The server never
-  redirects: every URL opens as asked. Without MQTT there is no mode.
-- Whether a tab follows the mode is decided by the page last opened by hand in it: `/` means
-  it is the kiosk and follows; any other page stays put. Navigations the mode makes and
-  reloads keep the tab's choice (`sessionStorage` in `client.js`).
+  on the overview, and any other page goes back to it after `TELLULF_MODE_TIMEOUT` (default
+  two minutes, `0` = never) from the last mode message. Open pages get it as the SSE event
+  `mode`; `client.js` then does `location.assign`, which the browser turns into a view
+  transition. The server never redirects: every URL opens as asked. Without MQTT there is no
+  mode.
+- Every page follows changes of the mode; nothing is kept in the browser. The first value a
+  page gets is the mode as it stands: `/` goes there, the mode's own page stays, and any other
+  page (opened directly) stays and goes home after the same timeout (`data-mode-timeout` on
+  `<body>`) unless the mode changes first.
 - Retained mode messages are ignored: the broker replays them on every reconnect.
 - The detail pages share `shell` and `head` in `layout.templ`; the power and weather pages
   build their rows as `view.Row` (text block plus a `view.Chart`, SVG geometry computed in
@@ -134,7 +136,8 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 CAL_ID_AUDUN, CAL_ID_BARNEUKER, CAL_ID_BURSDAG, CAL_ID_FELLES, CAL_ID_KINDERGARDEN,
 CAL_ID_MIDDAG, EXPOSE_PORT, GOOGLE_KEY_B64, MQTT_HOST, MQTT_PASS, MQTT_USER,
-TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV and TELLULF_DEBUG (optional)
+TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV, TELLULF_DEBUG and
+TELLULF_MODE_TIMEOUT (optional)
 
 Loaded from the environment, plus `.env` in the working directory if present (godotenv;
 existing environment variables win).

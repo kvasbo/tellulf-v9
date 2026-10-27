@@ -18,6 +18,7 @@ services:
       - TIBBER_KEY=${TIBBER_KEY}
       - TIBBER_ID_HOME=${TIBBER_ID_HOME}
       - TIBBER_ID_CABIN=${TIBBER_ID_CABIN}
+      - TELLULF_MODE_TIMEOUT=${TELLULF_MODE_TIMEOUT:-}
 networks:
   default:
     name: ${NETWORK_NAME}

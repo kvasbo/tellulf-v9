@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
+	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/smarthouse"
 	"github.com/kvasbo/tellulf-v9/internal/tibber"
 	"github.com/kvasbo/tellulf-v9/internal/weather"
@@ -89,7 +91,7 @@ func run() error {
 		assets = os.DirFS(".")
 		slog.Info("dev mode: serving static files from disk")
 	}
-	server := web.New(src, assets)
+	server := web.New(src, assets, modeTimeout())
 	wg.Go(func() { server.Publish(ctx) })
 
 	port := os.Getenv("EXPOSE_PORT")
@@ -130,6 +132,32 @@ func loadDotEnv() {
 	case !errors.Is(err, fs.ErrNotExist):
 		slog.Warn("could not read .env", "err", err)
 	}
+}
+
+// modeTimeout reads TELLULF_MODE_TIMEOUT: how long a page other than the
+// overview stays up before the screen goes back to it, as a Go duration
+// ("90s", "5m") or plain seconds; 0 keeps it for good. Two minutes when
+// unset or unreadable.
+func modeTimeout() time.Duration {
+	v := os.Getenv("TELLULF_MODE_TIMEOUT")
+	if v == "" {
+		return mode.DefaultTimeout
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		secs, serr := strconv.Atoi(v)
+		if serr != nil {
+			slog.Warn("TELLULF_MODE_TIMEOUT is not a duration; using the default", "value", v, "default", mode.DefaultTimeout)
+			return mode.DefaultTimeout
+		}
+		d = time.Duration(secs) * time.Second
+	}
+	if d <= 0 {
+		slog.Info("mode timeout: none, pages stay until the mode changes")
+		return 0
+	}
+	slog.Info("mode timeout", "after", d)
+	return d
 }
 
 func newCalendar(ctx context.Context) (*calendar.Calendar, error) {

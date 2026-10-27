@@ -17,13 +17,14 @@ every open screen goes there, with a short page transition:
 mosquitto_pub -h broker -t tellulf/mode -m strom   # or kalender, vaer, oversikt
 ```
 
-The payload is a mode's name or its path (`strøm` and `vær` work too). Two minutes after the
-last message the screen goes back to the overview. Don't publish with `-r`: retained mode
-messages are ignored, since the broker would replay them on every reconnect.
+The payload is a mode's name or its path (`strøm` and `vær` work too). After
+`TELLULF_MODE_TIMEOUT` (two minutes by default) from the last message the screen goes back to
+the overview. Don't publish with `-r`: retained mode messages are ignored, since the broker
+would replay them on every reconnect.
 
-The page last opened by hand in a browser tab decides whether it follows the mode: open `/`
-(as the kiosk does) and it follows; open `/strom`, `/kalender` or `/vaer` and it stays on
-that page, so any page can be looked at directly.
+Every page can be opened directly: it stays until the mode changes, or goes back to the
+overview after the same timeout. For development, `TELLULF_MODE_TIMEOUT=0` keeps a page up
+for good.
 
 ## Requirements
 
@@ -106,6 +107,7 @@ Three ways to set them:
 | `EXPOSE_PORT` | Port to listen on (default 3000) |
 | `TELLULF_DEV` | Set to anything to serve static files from disk |
 | `TELLULF_DEBUG` | Set to anything to log routine fetches too |
+| `TELLULF_MODE_TIMEOUT` | How long a page other than the overview stays up: `90s`, `5m`, or seconds; `0` for good (default `2m`) |
 | `MQTT_HOST`, `MQTT_USER`, `MQTT_PASS` | Outdoor sensors and the mode, e.g. `mqtt://broker:1883` (port defaults to 1883) |
 | `TIBBER_KEY`, `TIBBER_ID_HOME`, `TIBBER_ID_CABIN` | Power usage and price; all three are required |
 | `GOOGLE_KEY_B64` | Base64-encoded Google service account key (JSON) |

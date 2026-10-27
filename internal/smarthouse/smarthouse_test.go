@@ -49,8 +49,8 @@ func TestBrokerURL(t *testing.T) {
 
 func TestHandleMode(t *testing.T) {
 	s := New()
-	if m := s.Mode(); m != mode.Oversikt {
-		t.Errorf("mode before any message = %q, want the overview", m)
+	if m, since := s.Mode(); m != mode.Oversikt || !since.IsZero() {
+		t.Errorf("mode before any message = %q at %v, want the overview", m, since)
 	}
 	steps := []struct {
 		payload string
@@ -63,28 +63,22 @@ func TestHandleMode(t *testing.T) {
 	}
 	for _, st := range steps {
 		s.handle("tellulf/mode", st.payload)
-		if got := s.Mode(); got != st.want {
+		if got, _ := s.Mode(); got != st.want {
 			t.Errorf("after %q: mode = %q, want %q", st.payload, got, st.want)
 		}
 	}
 }
 
-// A page holds for two minutes from the last message, also when the same
-// page is asked for again; then it is back to the overview.
-func TestModeTimesOut(t *testing.T) {
+// Every message, also for the page already shown, restarts the clock.
+func TestModeRecordsWhen(t *testing.T) {
 	s := New()
 	at := time.Date(2026, 10, 27, 12, 0, 0, 0, tz.Oslo)
 	s.now = func() time.Time { return at }
 	s.handle("tellulf/mode", "strom")
 	at = at.Add(90 * time.Second)
-	s.handle("tellulf/mode", "strom") // again: two more minutes
-	at = at.Add(90 * time.Second)
-	if got := s.Mode(); got != mode.Strom {
-		t.Errorf("90 s after the second message: %q, want strom", got)
-	}
-	at = at.Add(30 * time.Second)
-	if got := s.Mode(); got != mode.Oversikt {
-		t.Errorf("two minutes after it: %q, want the overview", got)
+	s.handle("tellulf/mode", "strom")
+	if m, since := s.Mode(); m != mode.Strom || !since.Equal(at) {
+		t.Errorf("got %q at %v, want strom at %v", m, since, at)
 	}
 }
 
@@ -104,11 +98,11 @@ func (m fakeMessage) Retained() bool  { return m.retained }
 func TestRetainedModeIsIgnored(t *testing.T) {
 	s := New()
 	s.onMessage(nil, fakeMessage{topic: "tellulf/mode", payload: "kalender", retained: true})
-	if got := s.Mode(); got != mode.Oversikt {
+	if got, _ := s.Mode(); got != mode.Oversikt {
 		t.Errorf("after a retained message: %q, want the overview", got)
 	}
 	s.onMessage(nil, fakeMessage{topic: "tellulf/mode", payload: "kalender"})
-	if got := s.Mode(); got != mode.Kalender {
+	if got, _ := s.Mode(); got != mode.Kalender {
 		t.Errorf("after a live message: %q, want kalender", got)
 	}
 	// Retained sensor readings still count.

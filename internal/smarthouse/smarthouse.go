@@ -40,14 +40,14 @@ type Smarthouse struct {
 	mu        sync.RWMutex
 	data      Readings
 	mode      mode.Mode // the overview until a message on modeTopic
-	modeSince time.Time // when it was picked
+	modeSince time.Time // when it came
 	now       func() time.Time
 }
 
-// modeTopic carries the page every screen should show: a mode's name or
-// its URL path (see mode.Parse). It holds for mode.Timeout. A retained
-// message is ignored: the broker replays it on every reconnect, which would
-// bring an old page back.
+// modeTopic carries the page the screens should show: a mode's name or its
+// URL path (see mode.Parse). How long it holds is the web server's call. A
+// retained message is ignored: the broker replays it on every reconnect,
+// which would bring an old page back.
 const modeTopic = "tellulf/mode"
 
 func New() *Smarthouse {
@@ -126,12 +126,12 @@ func (s *Smarthouse) Readings() Readings {
 	return s.data
 }
 
-// Mode returns the page every screen should show: the one MQTT last asked
-// for, back to the overview once it has been up for mode.Timeout.
-func (s *Smarthouse) Mode() mode.Mode {
+// Mode returns the page MQTT last asked for and when; the overview and the
+// zero time before any message.
+func (s *Smarthouse) Mode() (mode.Mode, time.Time) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return mode.Current(s.mode, s.modeSince, s.now())
+	return s.mode, s.modeSince
 }
 
 func (s *Smarthouse) onMessage(_ mqtt.Client, msg mqtt.Message) {

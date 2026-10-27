@@ -33,23 +33,28 @@ func TestParse(t *testing.T) {
 	}
 }
 
-// Any page but the overview goes back to it after two minutes.
+// Any page but the overview goes back to it after the timeout; a timeout of
+// 0 keeps it.
 func TestCurrentReturnsToTheOverview(t *testing.T) {
 	since := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	const two = DefaultTimeout
 	cases := []struct {
-		m     Mode
-		after time.Duration
-		want  Mode
+		m       Mode
+		after   time.Duration
+		timeout time.Duration
+		want    Mode
 	}{
-		{Strom, 0, Strom},
-		{Strom, Timeout - time.Second, Strom},
-		{Strom, Timeout, Oversikt},
-		{Vaer, time.Hour, Oversikt},
-		{Oversikt, time.Hour, Oversikt},
+		{Strom, 0, two, Strom},
+		{Strom, two - time.Second, two, Strom},
+		{Strom, two, two, Oversikt},
+		{Vaer, time.Hour, two, Oversikt},
+		{Oversikt, time.Hour, two, Oversikt},
+		{Kalender, 9 * time.Minute, 10 * time.Minute, Kalender},
+		{Kalender, 24 * time.Hour, 0, Kalender},
 	}
 	for _, c := range cases {
-		if got := Current(c.m, since, since.Add(c.after)); got != c.want {
-			t.Errorf("%s after %v: got %s, want %s", c.m, c.after, got, c.want)
+		if got := Current(c.m, since, since.Add(c.after), c.timeout); got != c.want {
+			t.Errorf("%s after %v with timeout %v: got %s, want %s", c.m, c.after, c.timeout, got, c.want)
 		}
 	}
 }

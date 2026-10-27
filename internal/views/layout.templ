@@ -4,12 +4,18 @@ package views
 
 import "github.com/kvasbo/tellulf-v9/internal/view"
 
+// Frame is what every page has besides its content.
+type Frame struct {
+	Version     string // the server's start time; a change reloads open screens
+	ModeTimeout string // seconds a page other than the overview stays up; "0" for good
+	Clock       view.Clock
+	Stamps      view.Stamps
+}
+
 // Page is everything the overview renders. Each part is also sent on its
 // own over SSE when it changes.
 type Page struct {
-	Version    string // the server's start time; a change reloads open screens
-	Clock      view.Clock
-	Stamps     view.Stamps
+	Frame
 	Weather    view.Weather
 	Sun        view.Sun
 	Calendar   view.Calendar
@@ -20,35 +26,30 @@ type Page struct {
 
 // StromPage is the power page: one column per place.
 type StromPage struct {
-	Version     string
-	Clock       view.Clock
-	Stamps      view.Stamps
+	Frame
 	Home, Cabin view.Strom
 }
 
 // VaerPage is the weather page: the next two days by the hour, and the
 // coming days for Oslo and the cabin.
 type VaerPage struct {
-	Version string
-	Clock   view.Clock
-	Stamps  view.Stamps
-	Vaer    view.Vaer
+	Frame
+	Vaer view.Vaer
 }
 
 // KalenderPage is the calendar page: the coming days in full.
 type KalenderPage struct {
-	Version string
-	Clock   view.Clock
-	Stamps  view.Stamps
-	Agenda  view.Agenda
+	Frame
+	Agenda view.Agenda
 }
 
 // shell is what every page shares. The content of each element with
 // data-sse is replaced by the fragment of that name from the event stream
 // (see public/live.js). data-version on <body> is the server's start time;
-// client.js reloads when the server reports a new one, and goes to another
-// page when the server's mode says so.
-templ shell(version, page string) {
+// client.js reloads when the server reports a new one. It goes to another
+// page when the server's mode changes, and home from a page opened directly
+// after data-mode-timeout seconds.
+templ shell(f Frame, page string) {
 	<!DOCTYPE html>
 	<html lang="nb">
 		<head>
@@ -60,7 +61,7 @@ templ shell(version, page string) {
 			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400&display=swap"/>
 			<link rel="stylesheet" href="/styles.css"/>
 		</head>
-		<body class={ "page-" + page } data-version={ version }>
+		<body class={ "page-" + page } data-version={ f.Version } data-mode-timeout={ f.ModeTimeout }>
 			{ children... }
 			<script type="module" src="/client.js"></script>
 		</body>
@@ -70,7 +71,7 @@ templ shell(version, page string) {
 // Layout is the overview: the clock, weather and bottom row on the left,
 // the calendar on the right.
 templ Layout(p Page) {
-	@shell(p.Version, "oversikt") {
+	@shell(p.Frame, "oversikt") {
 		<main>
 			<section class="clock">
 				<div id="now_time">{ p.Clock.Time }</div>
@@ -99,7 +100,7 @@ templ Layout(p Page) {
 
 // StromLayout is the power page: home on the left, the cabin on the right.
 templ StromLayout(p StromPage) {
-	@shell(p.Version, "strom") {
+	@shell(p.Frame, "strom") {
 		@head("Strøm", p.Clock)
 		<div class="places">
 			<section class="place" data-sse="strom-home">
@@ -117,7 +118,7 @@ templ StromLayout(p StromPage) {
 
 // KalenderLayout is the calendar page: the days flow down three columns.
 templ KalenderLayout(p KalenderPage) {
-	@shell(p.Version, "kalender") {
+	@shell(p.Frame, "kalender") {
 		@head("Kalender", p.Clock)
 		<div class="agenda" data-sse="kalender">
 			@Agenda(p.Agenda)
@@ -130,7 +131,7 @@ templ KalenderLayout(p KalenderPage) {
 
 // VaerLayout is the weather page.
 templ VaerLayout(p VaerPage) {
-	@shell(p.Version, "vaer") {
+	@shell(p.Frame, "vaer") {
 		@head("Vær", p.Clock)
 		<div class="vaer" data-sse="vaer">
 			@Vaer(p.Vaer)

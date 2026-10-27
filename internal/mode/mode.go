@@ -1,6 +1,6 @@
 // Package mode names the pages the screen can show. A message on MQTT picks
-// one, and every open screen navigates to its URL; after Timeout they all go
-// back to the overview.
+// one, and open screens navigate to its URL; after a timeout they go back to
+// the overview.
 package mode
 
 import (
@@ -22,16 +22,17 @@ var paths = map[Mode]string{Oversikt: "/", Strom: "/strom", Kalender: "/kalender
 // ascii spells the Norwegian letters the way the paths do.
 var ascii = strings.NewReplacer("ø", "o", "æ", "ae", "å", "a")
 
-// Timeout is how long a page other than the overview stays up.
-const Timeout = 2 * time.Minute
+// DefaultTimeout is how long a page other than the overview stays up when
+// TELLULF_MODE_TIMEOUT doesn't say.
+const DefaultTimeout = 2 * time.Minute
 
 // Path is the page's URL path: "/", "/strom", "/kalender", "/vaer".
 func (m Mode) Path() string { return paths[m] }
 
 // Current is the page to show at now when m was picked at since: m until it
-// has been up for Timeout, then the overview.
-func Current(m Mode, since, now time.Time) Mode {
-	if m != Oversikt && now.Sub(since) >= Timeout {
+// has been up for timeout, then the overview. A timeout of 0 keeps m.
+func Current(m Mode, since, now time.Time, timeout time.Duration) Mode {
+	if m != Oversikt && timeout > 0 && now.Sub(since) >= timeout {
 		return Oversikt
 	}
 	return m

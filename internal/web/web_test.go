@@ -72,7 +72,7 @@ func TestFormatSSEPrefixesEveryLine(t *testing.T) {
 // with data sources that have no data yet.
 func newTestServer(t *testing.T) *Server {
 	t.Helper()
-	return New(Sources{Weather: weather.New(), Entur: entur.New()}, os.DirFS("../.."))
+	return New(Sources{Weather: weather.New(), Entur: entur.New()}, os.DirFS("../.."), mode.DefaultTimeout)
 }
 
 func TestPageAndStaticFiles(t *testing.T) {
@@ -87,6 +87,7 @@ func TestPageAndStaticFiles(t *testing.T) {
 		{"/", `data-sse="weather"`, 200},
 		{"/", "Inter+Tight", 200},
 		{"/", `class="page-oversikt"`, 200},
+		{"/strom", `data-mode-timeout="120"`, 200},
 		{"/strom", `data-sse="strom-home"`, 200},
 		{"/strom", `data-sse="strom-cabin"`, 200},
 		{"/strom", `id="now_time"`, 200},

@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,17 +45,21 @@ type Server struct {
 	started time.Time
 	version string
 	hub     *Hub
-	// mode is the page the kiosk should show, or "" without MQTT. The
-	// server owns it and pushes it to open pages over SSE; the pages that
-	// follow it are the ones that have shown the overview (see client.js).
-	mode func() mode.Mode
+	// mode is the page the screens should show, or "" without MQTT: the
+	// one MQTT last asked for, until it has been up for modeTimeout (0: for
+	// good). The server owns it and pushes it to open pages over SSE.
+	mode        func() mode.Mode
+	modeTimeout time.Duration
 }
 
 // calendarDays is how many days the calendar column and the calendar page
 // lay out; the ones that don't fit are hidden.
 const calendarDays = 14
 
-func New(src Sources, assets fs.FS) *Server {
+// New makes a server for src. modeTimeout is how long a page other than
+// the overview stays up, both one MQTT picked and one opened directly; 0
+// keeps it for good.
+func New(src Sources, assets fs.FS, modeTimeout time.Duration) *Server {
 	started := time.Now()
 	return &Server{
 		src:     src,
@@ -67,8 +72,10 @@ func New(src Sources, assets fs.FS) *Server {
 			if src.Smarthouse == nil {
 				return ""
 			}
-			return src.Smarthouse.Mode()
+			m, since := src.Smarthouse.Mode()
+			return mode.Current(m, since, time.Now(), modeTimeout)
 		},
+		modeTimeout: modeTimeout,
 	}
 }
 
@@ -136,11 +143,19 @@ func (s *Server) fragments() map[string]fragment {
 	return m
 }
 
+// frame is what every page has besides its content.
+func (s *Server) frame(now time.Time) views.Frame {
+	return views.Frame{
+		Version:     s.version,
+		ModeTimeout: strconv.Itoa(int(s.modeTimeout.Seconds())),
+		Clock:       view.BuildClock(now),
+		Stamps:      view.BuildStamps(s.started),
+	}
+}
+
 func (s *Server) page(now time.Time) views.Page {
 	return views.Page{
-		Version:    s.version,
-		Clock:      view.BuildClock(now),
-		Stamps:     view.BuildStamps(s.started),
+		Frame:      s.frame(now),
 		Weather:    s.weather(now),
 		Sun:        view.BuildSun(now),
 		Calendar:   s.calendar(now),
@@ -152,29 +167,23 @@ func (s *Server) page(now time.Time) views.Page {
 
 func (s *Server) stromPage(now time.Time) views.StromPage {
 	return views.StromPage{
-		Version: s.version,
-		Clock:   view.BuildClock(now),
-		Stamps:  view.BuildStamps(s.started),
-		Home:    s.strom(tibber.Home, now),
-		Cabin:   s.strom(tibber.Cabin, now),
+		Frame: s.frame(now),
+		Home:  s.strom(tibber.Home, now),
+		Cabin: s.strom(tibber.Cabin, now),
 	}
 }
 
 func (s *Server) kalenderPage(now time.Time) views.KalenderPage {
 	return views.KalenderPage{
-		Version: s.version,
-		Clock:   view.BuildClock(now),
-		Stamps:  view.BuildStamps(s.started),
-		Agenda:  s.agenda(now),
+		Frame:  s.frame(now),
+		Agenda: s.agenda(now),
 	}
 }
 
 func (s *Server) vaerPage(now time.Time) views.VaerPage {
 	return views.VaerPage{
-		Version: s.version,
-		Clock:   view.BuildClock(now),
-		Stamps:  view.BuildStamps(s.started),
-		Vaer:    s.vaer(now),
+		Frame: s.frame(now),
+		Vaer:  s.vaer(now),
 	}
 }
 
@@ -238,7 +247,7 @@ func (s *Server) power(p tibber.Place) view.Power {
 // --- Handlers ----------------------------------------------------------------------
 
 // handlePage serves a page, rendered with the latest data. Every page opens
-// where it is asked for; it is the client that follows the mode.
+// where it is asked for; client.js follows the mode from there.
 func (s *Server) handlePage(page func(now time.Time) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		html, err := render(page(tz.Now()))

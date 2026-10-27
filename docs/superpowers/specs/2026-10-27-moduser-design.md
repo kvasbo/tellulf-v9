@@ -54,32 +54,35 @@ står her: farger, skrift, typografisk skala, rutenett og tallformat.
   Store og små bokstaver og mellomrom rundt spiller ingen rolle. Tom payload
   betyr oversikten.
 - Ukjent payload logges som advarsel og endrer ingenting.
-- **Alltid tilbake til oversikten etter to minutter.** En annen side enn
-  oversikten står i to minutter fra siste melding (`mode.Timeout`); en ny
-  melding, også om samme side, gir to nye minutter. Deretter går skjermene
-  som følger modusen, tilbake til oversikten, med samme sideskift.
+- **Tilbake til oversikten etter en fast tid.** Tiden settes med
+  `TELLULF_MODE_TIMEOUT` (Go-varighet som `90s` eller `5m`, eller sekunder;
+  `0` betyr aldri) og er to minutter når den ikke er satt
+  (`mode.DefaultTimeout`). En annen side enn oversikten står så lenge fra
+  siste melding; en ny melding, også om samme side, starter tiden på nytt.
+  Deretter går skjermene tilbake til oversikten, med samme sideskift.
 - Send uten retain (`mosquitto_pub -t tellulf/mode -m strom`). En retained
   melding ignoreres: brokeren spiller den av på nytt ved hver
-  gjentilkobling, og da ville en gammel side kommet tilbake i to nye
-  minutter.
+  gjentilkobling, og da ville en gammel side kommet tilbake for en ny
+  periode.
 - **Serveren eier tilstanden.** Med MQTT konfigurert starter den på
   oversikten og sender modusen til åpne sider over SSE (se under). Den
   redirecter aldri: hver URL åpnes som den blir bedt om, også fra en annen
   maskin. Uten MQTT (utvikling) finnes ingen modus.
-- **Siste manuelt åpnede side i fanen bestemmer om den følger modusen.**
-  Åpnes `/`, er fanen kiosken og følger modusen. Åpnes `/strom`,
-  `/kalender` eller `/vaer`, blir fanen stående der, også om den har vist
-  `/` før. Navigasjonene modusen selv gjør og reload (ny versjon, midnatt)
-  endrer ingenting, så kiosken følger modusen videre og kommer hjem fra en
-  detaljside også etter en omstart. Tilbake-knappen og en URL skrevet inn
-  teller som manuelt. Klienten husker dette i `sessionStorage` og merker
-  sine egne modusnavigasjoner der.
+- **Alle sider følger endringer i modusen; ingen ting huskes i
+  nettleseren.** Den første verdien en side får (øyeblikksbildet), er
+  modusen slik den står: oversikten går dit med en gang, og en side som
+  allerede er modusens, blir der til serveren sier noe annet. Enhver annen
+  side er åpnet direkte (eller ble stående etter en omstart): den blir
+  stående og går til oversikten etter samme tid (aldri med `0`), med mindre
+  modusen endres før det. Slik kan hver side åpnes direkte, kiosken følger
+  MQTT, og i utvikling holder `TELLULF_MODE_TIMEOUT=0` en side oppe så
+  lenge man vil. Tiden følger med til klienten som `data-mode-timeout` på
+  `<body>`.
 
 ## Sideskift
 
-- Klienten får modusen som SSE-hendelsen `mode`, med URL-en som data. Er
-  den en annen enn sidens egen og fanen følger modusen, navigerer klienten
-  dit (`location.assign`).
+- Klienten får modusen som SSE-hendelsen `mode`, med URL-en som data, og
+  navigerer etter reglene over (`location.assign`).
 - Sidene bruker cross-document view transitions
   (`@view-transition { navigation: auto }`, Chrome 126+). Den gamle siden
   toner ut (0,25 s), og så toner den nye inn (0,3 s), gjennom den mørke
