@@ -54,14 +54,21 @@ står her: farger, skrift, typografisk skala, rutenett og tallformat.
   Store og små bokstaver og mellomrom rundt spiller ingen rolle. Tom payload
   betyr oversikten.
 - Ukjent payload logges som advarsel og endrer ingenting.
-- Send gjerne med retain (`mosquitto_pub -r -t tellulf/mode -m strom`), så
-  en server som starter på nytt får modusen tilbake.
-- **Serveren eier tilstanden.** Den husker siste modus. Før første melding
-  har den ingen, og skjermene blir der de er, så hver URL kan åpnes
-  direkte. Etter det følger alle skjermer modusen: en forespørsel etter en
-  annen side får 302 til modusens URL (så en skjerm som laster, aldri viser
-  feil side først), og åpne sider får modusen over SSE (se under). Klienten
-  bestemmer ingenting selv.
+- **Alltid tilbake til oversikten etter to minutter.** En annen side enn
+  oversikten står i to minutter fra siste melding (`mode.Timeout`); en ny
+  melding, også om samme side, gir to nye minutter. Deretter går alle
+  skjermer tilbake til oversikten, med samme sideskift.
+- Send uten retain (`mosquitto_pub -t tellulf/mode -m strom`). En retained
+  melding ignoreres: brokeren spiller den av på nytt ved hver
+  gjentilkobling, og da ville en gammel side kommet tilbake i to nye
+  minutter.
+- **Serveren eier tilstanden.** Med MQTT konfigurert starter den på
+  oversikten, og alle skjermer følger modusen: en forespørsel etter en annen
+  side får 302 til modusens URL (så en skjerm som laster, aldri viser feil
+  side først, og en skjerm som står på `/strom` etter en omstart går hjem),
+  og åpne sider får modusen over SSE (se under). Klienten bestemmer
+  ingenting selv. Uten MQTT (utvikling) finnes ingen modus, og hver URL
+  åpnes som den blir bedt om.
 
 ## Sideskift
 

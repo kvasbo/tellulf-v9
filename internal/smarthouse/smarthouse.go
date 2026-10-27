@@ -37,18 +37,21 @@ type Config struct {
 type Smarthouse struct {
 	client mqtt.Client
 
-	mu   sync.RWMutex
-	data Readings
-	mode mode.Mode // "" until a message on modeTopic
+	mu        sync.RWMutex
+	data      Readings
+	mode      mode.Mode // the overview until a message on modeTopic
+	modeSince time.Time // when it was picked
+	now       func() time.Time
 }
 
 // modeTopic carries the page every screen should show: a mode's name or
-// its URL path (see mode.Parse). Publish it retained, so a restarted server
-// gets it back.
+// its URL path (see mode.Parse). It holds for mode.Timeout. A retained
+// message is ignored: the broker replays it on every reconnect, which would
+// bring an old page back.
 const modeTopic = "tellulf/mode"
 
 func New() *Smarthouse {
-	return &Smarthouse{}
+	return &Smarthouse{mode: mode.Oversikt, now: time.Now}
 }
 
 // Connect starts the MQTT client. Paho reconnects on its own, both for the
@@ -123,14 +126,19 @@ func (s *Smarthouse) Readings() Readings {
 	return s.data
 }
 
-// Mode returns the page MQTT last asked for, or "" when it hasn't asked.
+// Mode returns the page every screen should show: the one MQTT last asked
+// for, back to the overview once it has been up for mode.Timeout.
 func (s *Smarthouse) Mode() mode.Mode {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.mode
+	return mode.Current(s.mode, s.modeSince, s.now())
 }
 
 func (s *Smarthouse) onMessage(_ mqtt.Client, msg mqtt.Message) {
+	if msg.Topic() == modeTopic && msg.Retained() {
+		slog.Info("MQTT: ignoring a retained mode; publish modes without retain", "payload", string(msg.Payload()))
+		return
+	}
 	s.handle(msg.Topic(), string(msg.Payload()))
 }
 
@@ -145,10 +153,8 @@ func (s *Smarthouse) handle(topic, payload string) {
 			slog.Warn("MQTT: unknown mode", "payload", payload)
 			return
 		}
-		if m != s.mode {
-			slog.Info("mode set", "mode", m)
-		}
-		s.mode = m
+		slog.Info("mode set", "mode", m)
+		s.mode, s.modeSince = m, s.now()
 		return
 	}
 

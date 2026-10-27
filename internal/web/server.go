@@ -44,9 +44,9 @@ type Server struct {
 	started time.Time
 	version string
 	hub     *Hub
-	// mode is the page MQTT asked every screen to show, or "" when it
-	// hasn't asked. The server owns it: it redirects requests for other
-	// pages there, and pushes it to open pages over SSE.
+	// mode is the page every screen should show, or "" without MQTT. The
+	// server owns it: it redirects requests for other pages there, and
+	// pushes it to open pages over SSE.
 	mode func() mode.Mode
 }
 
@@ -237,9 +237,9 @@ func (s *Server) power(p tibber.Place) view.Power {
 
 // --- Handlers ----------------------------------------------------------------------
 
-// handlePage serves the page for m, rendered with the latest data. Once
-// MQTT has picked a mode, a request for another page is redirected to it,
-// so a screen that loads never shows the wrong page first.
+// handlePage serves the page for m, rendered with the latest data. When
+// there is a mode (with MQTT), a request for another page is redirected to
+// it, so a screen that loads never shows the wrong page first.
 func (s *Server) handlePage(m mode.Mode, page func(now time.Time) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if want := s.mode(); want != "" && want != m {
@@ -355,8 +355,9 @@ func (s *Server) Publish(ctx context.Context) {
 	}
 
 	// The mode is published like a fragment, so the hub only sends it when
-	// it changes and new connections get it in their snapshot. Until MQTT
-	// names one there is none, and screens stay on the page they opened.
+	// it changes (also when a page times out back to the overview) and new
+	// connections get it in their snapshot. Without MQTT there is none, and
+	// screens stay on the page they opened.
 	publishMode := func() {
 		if m := s.mode(); m != "" {
 			s.hub.Publish("mode", m.Path())

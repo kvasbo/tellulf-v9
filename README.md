@@ -14,12 +14,14 @@ Besides the overview (`/`), the screen has a page for power (`/strom`), the cale
 every open screen goes there, with a short page transition:
 
 ```sh
-mosquitto_pub -h broker -r -t tellulf/mode -m strom   # or kalender, vaer, oversikt
+mosquitto_pub -h broker -t tellulf/mode -m strom   # or kalender, vaer, oversikt
 ```
 
-The payload is a mode's name or its path (`strøm` and `vær` work too). With `-r` (retained)
-a restarted server gets the mode back. Until the first message every page can be opened
-directly; after that the server sends every screen to the mode's page.
+The payload is a mode's name or its path (`strøm` and `vær` work too). Two minutes after the
+last message every screen goes back to the overview. Don't publish with `-r`: retained mode
+messages are ignored, since the broker would replay them on every reconnect. With MQTT the
+server sends every screen to the mode's page; without it (development) every page can be
+opened directly.
 
 ## Requirements
 

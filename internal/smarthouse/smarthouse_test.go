@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+
 	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
@@ -47,8 +49,8 @@ func TestBrokerURL(t *testing.T) {
 
 func TestHandleMode(t *testing.T) {
 	s := New()
-	if m := s.Mode(); m != "" {
-		t.Errorf("mode before any message = %q, want none", m)
+	if m := s.Mode(); m != mode.Oversikt {
+		t.Errorf("mode before any message = %q, want the overview", m)
 	}
 	steps := []struct {
 		payload string
@@ -64,5 +66,54 @@ func TestHandleMode(t *testing.T) {
 		if got := s.Mode(); got != st.want {
 			t.Errorf("after %q: mode = %q, want %q", st.payload, got, st.want)
 		}
+	}
+}
+
+// A page holds for two minutes from the last message, also when the same
+// page is asked for again; then it is back to the overview.
+func TestModeTimesOut(t *testing.T) {
+	s := New()
+	at := time.Date(2026, 10, 27, 12, 0, 0, 0, tz.Oslo)
+	s.now = func() time.Time { return at }
+	s.handle("tellulf/mode", "strom")
+	at = at.Add(90 * time.Second)
+	s.handle("tellulf/mode", "strom") // again: two more minutes
+	at = at.Add(90 * time.Second)
+	if got := s.Mode(); got != mode.Strom {
+		t.Errorf("90 s after the second message: %q, want strom", got)
+	}
+	at = at.Add(30 * time.Second)
+	if got := s.Mode(); got != mode.Oversikt {
+		t.Errorf("two minutes after it: %q, want the overview", got)
+	}
+}
+
+// fakeMessage is the part of an MQTT message onMessage reads.
+type fakeMessage struct {
+	mqtt.Message
+	topic, payload string
+	retained       bool
+}
+
+func (m fakeMessage) Topic() string   { return m.topic }
+func (m fakeMessage) Payload() []byte { return []byte(m.payload) }
+func (m fakeMessage) Retained() bool  { return m.retained }
+
+// The broker replays a retained mode on every reconnect; it must not bring
+// an old page back.
+func TestRetainedModeIsIgnored(t *testing.T) {
+	s := New()
+	s.onMessage(nil, fakeMessage{topic: "tellulf/mode", payload: "kalender", retained: true})
+	if got := s.Mode(); got != mode.Oversikt {
+		t.Errorf("after a retained message: %q, want the overview", got)
+	}
+	s.onMessage(nil, fakeMessage{topic: "tellulf/mode", payload: "kalender"})
+	if got := s.Mode(); got != mode.Kalender {
+		t.Errorf("after a live message: %q, want kalender", got)
+	}
+	// Retained sensor readings still count.
+	s.onMessage(nil, fakeMessage{topic: "tellulf/weather/tempOut", payload: "4", retained: true})
+	if r := s.Readings(); r.TempOut == nil || *r.TempOut != 4 {
+		t.Errorf("retained temperature ignored: %+v", r)
 	}
 }

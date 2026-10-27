@@ -13,10 +13,12 @@ overview), `strom` (`/strom`, Tibber in detail), `kalender` (`/kalender`, two we
 detail) or `vaer` (`/vaer`, the weather in detail); names or paths, `strøm`/`vær` work too.
 Design notes: `docs/superpowers/specs/2026-10-27-moduser-design.md`.
 
-- The server owns the mode (`internal/mode`, read by `internal/smarthouse`). Until MQTT names
-  one, every URL opens as asked. After that a request for another page gets a 302 to the
-  mode's path, and open pages get it as the SSE event `mode`; `client.js` then does
-  `location.assign`, which the browser turns into a view transition.
+- The server owns the mode (`internal/mode`, read by `internal/smarthouse`). With MQTT it starts
+  on the overview, and any other page goes back to it two minutes after the last mode message
+  (`mode.Timeout`). A request for another page gets a 302 to the mode's path, and open pages
+  get it as the SSE event `mode`; `client.js` then does `location.assign`, which the browser
+  turns into a view transition. Without MQTT there is no mode and every URL opens as asked.
+- Retained mode messages are ignored: the broker replays them on every reconnect.
 - The detail pages share `shell` and `head` in `layout.templ`; the power and weather pages
   build their rows as `view.Row` (text block plus a `view.Chart`, SVG geometry computed in
   `internal/view/chart.go`).
