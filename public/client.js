@@ -36,6 +36,16 @@ const elTime = mustGet('now_time');
 const elDate = mustGet('now_date');
 const elWeek = document.getElementById('now_week');
 
+// ISO 8601 week number, as the server prints it (Go's ISOWeek): week 1 is
+// the week with the year's first Thursday. Plain Date arithmetic, since
+// Safari has no Temporal.
+function isoWeek(d) {
+	const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+	t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7)); // that week's Thursday
+	const jan1 = Date.UTC(t.getUTCFullYear(), 0, 1);
+	return Math.ceil(((t - jan1) / 86400000 + 1) / 7);
+}
+
 // Clock - update on the minute, then schedule next update
 let lastDay = -1;
 
@@ -50,7 +60,7 @@ function updateClock() {
 		const date = dateFmt.format(now);
 		elDate.textContent = date.charAt(0).toUpperCase() + date.slice(1);
 		if (elWeek) {
-			elWeek.textContent = `uke ${Temporal.Now.plainDateISO().weekOfYear}`;
+			elWeek.textContent = `uke ${isoWeek(now)}`;
 		}
 	}
 

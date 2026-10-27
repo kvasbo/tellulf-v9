@@ -53,11 +53,10 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 ## Gotchas
 
-- The kiosk runs the latest **Chrome** on macOS (M3 MacBook). The client may use APIs current Chrome
-  has, e.g. `Temporal` (Chrome 144+). Playwright's bundled Chromium is older and lacks `Temporal`, so
-  client.js throws there and stops before registering its listeners; stub it
-  (`window.Temporal = { Now: { plainDateISO: () => ({ weekOfYear: 1 }) } }`) when
-  testing in headless Chromium.
+- The kiosk runs the latest **Chrome** on macOS (M3 MacBook), but the pages are also opened in
+  Safari, so stick to APIs both have: no `Temporal` (Safari 27 lacks it). An exception at the top
+  level of `client.js` stops the module before `connect`, leaving the page without live data or
+  mode changes; the server logs it as `msg=client msg="error: ..."`.
 - `EventSource` only delivers named events that have a listener. `live.js` listens for
   every `data-sse` name plus the handlers passed to `connect` (just `version`); a new
   event that is neither is silently dropped.
