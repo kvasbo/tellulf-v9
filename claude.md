@@ -6,14 +6,30 @@ A home status display showing weather, calendars, subway departures and power us
 kiosk display at 1920x1080. The layout ("Natt") is dark, still and fixed-size: its design
 notes and mockup are in `docs/superpowers/specs/2026-10-26-natt-redesign-design.md`.
 
+## Modes
+
+MQTT switches the screen between pages: `tellulf/mode` with `oversikt` (`/`, the Natt
+overview), `strom` (`/strom`, Tibber in detail), `kalender` (`/kalender`, two weeks in
+detail) or `vaer` (`/vaer`, the weather in detail); names or paths, `strøm`/`vær` work too.
+Design notes: `docs/superpowers/specs/2026-10-27-moduser-design.md`.
+
+- The server owns the mode (`internal/mode`, read by `internal/smarthouse`). Until MQTT names
+  one, every URL opens as asked. After that a request for another page gets a 302 to the
+  mode's path, and open pages get it as the SSE event `mode`; `client.js` then does
+  `location.assign`, which the browser turns into a view transition.
+- The detail pages share `shell` and `head` in `layout.templ`; the power and weather pages
+  build their rows as `view.Row` (text block plus a `view.Chart`, SVG geometry computed in
+  `internal/view/chart.go`).
+
 ## Architecture
 
 Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 - **net/http** server with SSE (`internal/web`). A single publisher goroutine renders each
-  fragment on a schedule (`power-home`/`power-cabin` 1s, `weather`/`calendar` 15s,
-  `trains` 30s, version 60s) and a `Hub` fans out only fragments that changed. New
-  connections get a snapshot first.
+  fragment on a schedule (`power-home`/`power-cabin`/`strom-home`/`strom-cabin` 1s,
+  `weather`/`calendar`/`kalender`/`vaer` 15s, `trains` 30s, `mode` 1s, version 60s) and a
+  `Hub` fans out only fragments that changed. New connections get a snapshot first.
+  `/sse?events=a,b` sends only those names; `live.js` asks for the ones its page shows.
 - **templ** components (`internal/views/*.templ`, generated `*_templ.go` committed), one
   component per partial, typed by the structs in `internal/view`. All formatting, rounding
   and wording happens in `internal/view` (the weather sentences and three-hour columns in
@@ -21,7 +37,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - **Client JS**: plain ES modules, no build step. `public/live.js` opens an `EventSource`
   and puts each fragment into the element whose `data-sse` names it (plain `innerHTML`),
   then dispatches a `fragment` event on `document`. `client.js` (clock and date, calendar
-  overflow, version check, corner times), `report.js` (logging to the server).
+  overflow, version check, mode changes, corner times), `report.js` (logging to the server).
 - **Biome** lints and formats `public/` (`biome.json`); CI runs `biome ci`.
 - Templates, `static/` and `public/` are embedded in the binary with `go:embed`.
 - Every data source is a struct with a `Run(ctx)` loop and state behind a mutex; getters
@@ -38,7 +54,9 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - `EventSource` only delivers named events that have a listener. `live.js` listens for
   every `data-sse` name plus the handlers passed to `connect` (just `version`); a new
   event that is neither is silently dropped.
-- Nothing on the page may animate: no `transition`, no `@keyframes`. Missing data is
+- Nothing on the page may animate: no `transition`, no `@keyframes`, with one exception: the
+  page transition between modes (the "Page transitions" section of `styles.css`), which only
+  runs on navigation. Fragment swaps and reloads stay instant. Missing data is
   shown as absence, never as `–`. Numbers are Norwegian (decimal comma, `−`, a narrow
   no-break space before units); the helpers are in `internal/view/format.go`.
 - `public/report.js` POSTs lines to `/log`, which the server writes to its log as
@@ -56,10 +74,11 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - `internal/weather` — MET Norway forecasts (hourly + subseasonal), Oslo and the cabin
 - `internal/calendar` — Google Calendar (official Go client), kids schedule, fading rules
 - `internal/entur` — metro departures
-- `internal/smarthouse` — MQTT sensor readings (paho)
+- `internal/smarthouse` — MQTT sensor readings and the mode (paho)
+- `internal/mode` — the pages and their paths, and parsing the MQTT payload
 - `internal/tibber` — live feed (own graphql-transport-ws client on coder/websocket),
   daily price list, monthly consumption, Norgespris maths
-- `internal/sun` — NOAA sunrise/sunset, shown in the I DAG header
+- `internal/sun` — NOAA sunrise/sunset, shown in the I DAG header and on the weather page
 - `internal/buildinfo` — build time, set by the Dockerfile via `-ldflags -X` (shown as "dev" otherwise)
 - `internal/view` — builds template data; `internal/views` — templ components;
   `internal/web` — HTTP, SSE hub, static files
@@ -85,13 +104,19 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   - Max two open websockets per token (one per home here). Feeds reconnect with jittered
     exponential backoff, wait 1–60s after "1001 Going away", stop on a rejected token, and
     check `realTimeConsumptionEnabled` before reconnecting.
-  - Prices: today+tomorrow fetched once and cached; current price is picked locally.
+  - Prices: today+tomorrow fetched once and cached; current price is picked locally. From
+    13:00 a list without tomorrow is fetched again, at most every 15 minutes.
+  - Today's hourly consumption: the consumption history lags an hour or two, so the live
+    feed marks the running total at each hour boundary to fill in (`history.go`). Match
+    hours by Unix time: Tibber's times carry their own zone, so equal `time.Time`s differ
+    as map keys.
 - **yr.no**: Weather forecasts (MET Norway API). Follows MET's terms: no request before
   `Expires`, and `If-Modified-Since` so an unchanged forecast is a 304. The stored forecast
   can lag, so `HourlyForecasts` drops hours that have passed.
 - **Google Calendar**: Events, birthdays, dinners, barneuker, kindergarten days
 - **Entur**: Train departures (RUT Line 1, Slemdal station)
-- **MQTT**: Sensor data (temperature, humidity, pressure)
+- **MQTT**: Sensor data (temperature, humidity, pressure) and the mode (`tellulf/mode`).
+  Don't develop against the real broker: a mode message there switches the real screen.
 
 ## Norgespris
 

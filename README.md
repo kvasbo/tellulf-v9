@@ -7,6 +7,20 @@ A home status display (weather, calendars, metro departures, power usage) that r
 server-sent events; a few lines of JavaScript (`public/live.js`) swap the fragments in on
 the client.
 
+## Modes
+
+Besides the overview (`/`), the screen has a page for power (`/strom`), the calendar
+(`/kalender`) and the weather (`/vaer`), each in full detail. Publish the mode on MQTT and
+every open screen goes there, with a short page transition:
+
+```sh
+mosquitto_pub -h broker -r -t tellulf/mode -m strom   # or kalender, vaer, oversikt
+```
+
+The payload is a mode's name or its path (`strøm` and `vær` work too). With `-r` (retained)
+a restarted server gets the mode back. Until the first message every page can be opened
+directly; after that the server sends every screen to the mode's page.
+
 ## Requirements
 
 - Go 1.27.2 or newer. That's all: the browser code is plain JavaScript served as is, so
@@ -88,7 +102,7 @@ Three ways to set them:
 | `EXPOSE_PORT` | Port to listen on (default 3000) |
 | `TELLULF_DEV` | Set to anything to serve static files from disk |
 | `TELLULF_DEBUG` | Set to anything to log routine fetches too |
-| `MQTT_HOST`, `MQTT_USER`, `MQTT_PASS` | Outdoor sensors, e.g. `mqtt://broker:1883` (port defaults to 1883) |
+| `MQTT_HOST`, `MQTT_USER`, `MQTT_PASS` | Outdoor sensors and the mode, e.g. `mqtt://broker:1883` (port defaults to 1883) |
 | `TIBBER_KEY`, `TIBBER_ID_HOME`, `TIBBER_ID_CABIN` | Power usage and price; all three are required |
 | `GOOGLE_KEY_B64` | Base64-encoded Google service account key (JSON) |
 | `CAL_ID_FELLES`, `CAL_ID_AUDUN` | Event calendars |
@@ -109,7 +123,8 @@ internal/
   weather/            MET Norway forecasts
   calendar/           Google Calendar, kids' schedule, fading rules
   entur/              metro departures
-  smarthouse/         MQTT sensor readings
+  smarthouse/         MQTT sensor readings and the mode
+  mode/               the pages (modes) and their paths
   tibber/             live power feed, prices, monthly totals, Norgespris
   sun/                sunrise/sunset
   view/               turns data into what the templates print
