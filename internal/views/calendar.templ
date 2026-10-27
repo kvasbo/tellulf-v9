@@ -67,10 +67,7 @@ templ Calendar(c view.Calendar, sun view.Sun, st view.Stamps) {
 		if c.Bhg != "" {
 			<span>{ c.Bhg }</span>
 		}
-		<span>b { st.Built }</span>
-		<span>s { st.Started }</span>
-		<span>l <span id="stamp-loaded"></span></span>
-		<span>d <span id="stamp-data"></span></span>
+		@stampSpans(st)
 	</div>
 }
 

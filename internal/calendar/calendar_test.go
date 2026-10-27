@@ -197,14 +197,16 @@ func TestParseFullDayEvent(t *testing.T) {
 
 func TestParseTimedEventInOslo(t *testing.T) {
 	e, err := parseGoogleEvent(&gcal.Event{
-		Summary: "PT",
-		Start:   &gcal.EventDateTime{DateTime: "2026-03-10T07:00:00Z"},
-		End:     &gcal.EventDateTime{DateTime: "2026-03-10T08:30:00+01:00"},
+		Summary:  "PT",
+		Location: "SATS Majorstuen, Kirkeveien 64, Oslo",
+		Start:    &gcal.EventDateTime{DateTime: "2026-03-10T07:00:00Z"},
+		End:      &gcal.EventDateTime{DateTime: "2026-03-10T08:30:00+01:00"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e.FullDay || e.Title != "PT" || !e.Start.Equal(at(8, 0)) || !e.End.Equal(at(8, 30)) {
+	if e.FullDay || e.Title != "PT" || e.Location != "SATS Majorstuen, Kirkeveien 64, Oslo" ||
+		!e.Start.Equal(at(8, 0)) || !e.End.Equal(at(8, 30)) {
 		t.Errorf("got %+v", e)
 	}
 	if e.Start.Location() != tz.Oslo {

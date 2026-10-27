@@ -73,7 +73,8 @@ func (g *graphQL) query(ctx context.Context, query string, vars map[string]any, 
 
 // --- Queries ------------------------------------------------------------------
 
-type pricePoint struct {
+// PricePoint is the spot price for one hour.
+type PricePoint struct {
 	Start time.Time
 	Total float64 // kr/kWh incl. VAT
 }
@@ -87,7 +88,7 @@ const pricesQuery = `query($homeId: ID!) {
   } } } }
 }`
 
-func (g *graphQL) prices(ctx context.Context, homeID string) ([]pricePoint, error) {
+func (g *graphQL) prices(ctx context.Context, homeID string) ([]PricePoint, error) {
 	type price struct {
 		Total    *float64  `json:"total"`
 		StartsAt time.Time `json:"startsAt"`
@@ -111,10 +112,10 @@ func (g *graphQL) prices(ctx context.Context, homeID string) ([]pricePoint, erro
 	if sub == nil || sub.PriceInfo == nil {
 		return nil, errors.New("tibber: home has no price info")
 	}
-	var out []pricePoint
+	var out []PricePoint
 	for _, p := range append(sub.PriceInfo.Today, sub.PriceInfo.Tomorrow...) {
 		if p.Total != nil {
-			out = append(out, pricePoint{Start: p.StartsAt, Total: *p.Total})
+			out = append(out, PricePoint{Start: p.StartsAt, Total: *p.Total})
 		}
 	}
 	return out, nil

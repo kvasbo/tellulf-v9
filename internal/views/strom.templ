@@ -1,0 +1,72 @@
+package views
+
+import (
+	"strconv"
+
+	"github.com/kvasbo/tellulf-v9/internal/view"
+)
+
+// Strom is one place's column on the power page: the power now, big, with
+// the day's average, peak and low beside it, then a row each for today, the
+// month and the spot price: a text block like a bottom-row cell, and a
+// chart.
+templ Strom(s view.Strom) {
+	<span class="label">{ s.Label }</span>
+	if s.HasData {
+		<div class="now">
+			<div class="kw">{ s.Now }<span class="unit">kW</span></div>
+			<div class="lines">
+				<div class="line1">{ s.Line1 }</div>
+				<div class="line2">{ s.Line2 }</div>
+			</div>
+		</div>
+		<div class="rows">
+			for _, r := range s.Rows {
+				@chartRow(r)
+			}
+		</div>
+	}
+}
+
+// chartRow is a text block like a bottom-row cell, with its chart beside it.
+templ chartRow(r view.Row) {
+	<div class="row">
+		@textBlock(r)
+		if r.Chart != nil {
+			@chart(*r.Chart)
+		}
+	</div>
+}
+
+// textBlock is a row's label, value and details, styled like a bottom-row
+// cell.
+templ textBlock(r view.Row) {
+	<div class="cell">
+		<span class="label">{ r.Label }</span>
+		if r.Value != "" {
+			<div class="value">{ r.Value }</div>
+		}
+		for _, d := range r.Details {
+			<div class="detail">{ d }</div>
+		}
+	</div>
+}
+
+// chart draws a view.Chart: bars, then the lines and curves over them, then
+// the axis labels. All positions come from the view.
+templ chart(c view.Chart) {
+	<svg class="chart" width={ strconv.Itoa(c.Width) } height={ strconv.Itoa(c.Height) } viewBox={ "0 0 " + strconv.Itoa(c.Width) + " " + strconv.Itoa(c.Height) } aria-hidden="true">
+		for _, b := range c.Bars {
+			<rect class={ b.Class } x={ b.X } y={ b.Y } width={ b.W } height={ b.H }></rect>
+		}
+		for _, l := range c.Lines {
+			<line class={ l.Kind } x1={ l.X1 } y1={ l.Y1 } x2={ l.X2 } y2={ l.Y2 }></line>
+		}
+		for _, cv := range c.Curves {
+			<polyline class={ cv.Kind } points={ cv.Points }></polyline>
+		}
+		for _, t := range c.Ticks {
+			<text x={ t.X } y={ t.Y }>{ t.Text }</text>
+		}
+	</svg>
+}

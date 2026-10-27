@@ -1,4 +1,5 @@
-// Package smarthouse listens for outdoor sensor readings on MQTT.
+// Package smarthouse listens on MQTT for outdoor sensor readings and for the
+// mode that picks which page the screen shows.
 package smarthouse
 
 import (
@@ -14,6 +15,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
+	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
@@ -35,12 +37,21 @@ type Config struct {
 type Smarthouse struct {
 	client mqtt.Client
 
-	mu   sync.RWMutex
-	data Readings
+	mu        sync.RWMutex
+	data      Readings
+	mode      mode.Mode // the overview until a message on modeTopic
+	modeSince time.Time // when it was picked
+	now       func() time.Time
 }
 
+// modeTopic carries the page every screen should show: a mode's name or
+// its URL path (see mode.Parse). It holds for mode.Timeout. A retained
+// message is ignored: the broker replays it on every reconnect, which would
+// bring an old page back.
+const modeTopic = "tellulf/mode"
+
 func New() *Smarthouse {
-	return &Smarthouse{}
+	return &Smarthouse{mode: mode.Oversikt, now: time.Now}
 }
 
 // Connect starts the MQTT client. Paho reconnects on its own, both for the
@@ -64,6 +75,7 @@ func (s *Smarthouse) Connect(cfg Config) error {
 			slog.Info("MQTT connected", "broker", broker, "client_id", clientID)
 			// Subscribe again on every (re)connect; the session is not persistent.
 			c.Subscribe("tellulf/weather/#", 0, s.onMessage)
+			c.Subscribe(modeTopic, 0, s.onMessage)
 			c.Publish("tellulf/poll", 0, false, "Tellulf is online and polling")
 		}).
 		SetConnectionLostHandler(func(_ mqtt.Client, err error) {
@@ -114,7 +126,19 @@ func (s *Smarthouse) Readings() Readings {
 	return s.data
 }
 
+// Mode returns the page every screen should show: the one MQTT last asked
+// for, back to the overview once it has been up for mode.Timeout.
+func (s *Smarthouse) Mode() mode.Mode {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return mode.Current(s.mode, s.modeSince, s.now())
+}
+
 func (s *Smarthouse) onMessage(_ mqtt.Client, msg mqtt.Message) {
+	if msg.Topic() == modeTopic && msg.Retained() {
+		slog.Info("MQTT: ignoring a retained mode; publish modes without retain", "payload", string(msg.Payload()))
+		return
+	}
 	s.handle(msg.Topic(), string(msg.Payload()))
 }
 
@@ -122,6 +146,17 @@ func (s *Smarthouse) handle(topic, payload string) {
 	payload = strings.TrimSpace(payload)
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if topic == modeTopic {
+		m, ok := mode.Parse(payload)
+		if !ok {
+			slog.Warn("MQTT: unknown mode", "payload", payload)
+			return
+		}
+		slog.Info("mode set", "mode", m)
+		s.mode, s.modeSince = m, s.now()
+		return
+	}
 
 	if topic == "tellulf/weather/tempOutTime" {
 		t, err := time.ParseInLocation("02-01-2006 15:04", payload, tz.Oslo)

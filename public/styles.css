@@ -1,8 +1,10 @@
 /* Natt: a dark, still layout for a 1920x1080 kiosk. One font, one accent,
-   nothing moves. Sizes follow the mockup in docs/superpowers/specs scaled
-   1.5x, on an 8 px grid. One type scale: 12 (corner), 18 (labels),
-   22 (secondary), 28 (primary), 35 (values), 40 (date), 48 (dinner),
-   then the two display sizes 120 and 280. Don't add steps. */
+   nothing moves except the page transition between modes. Sizes follow the
+   mockup in docs/superpowers/specs scaled 1.5x, on an 8 px grid. One type
+   scale: 12 (corner), 18 (labels), 22 (secondary), 28 (primary), 35 (values),
+   40 (date), 48 (dinner), then the two display sizes 120 and 280. Don't add
+   steps. Three pages share it: the overview (.page-oversikt), the power page
+   (.page-strom) and the calendar page (.page-kalender). */
 
 :root {
 	--bg: #121212;
@@ -31,9 +33,6 @@ body {
 	padding: 0 96px;
 	overflow: hidden;
 	cursor: none;
-	display: grid;
-	grid-template-columns: 912px 702px;
-	column-gap: 114px;
 	background: var(--bg);
 	color: var(--fg);
 	font-family: "Inter Tight", "Inter", system-ui, sans-serif;
@@ -41,6 +40,76 @@ body {
 	font-size: 28px;
 	line-height: 1.3;
 	font-variant-numeric: tabular-nums;
+}
+
+/* --- Page transitions ------------------------------------------------- */
+
+/* The one thing that moves, and the only keyframes. Going to another page
+   (the mode changed over MQTT) fades the old page out and then the new one
+   in, through the dark background, so two full pages never overlap. The
+   clock, the date and the temperature now stay up the whole time, gliding
+   and scaling from their place on one page to their place on the next.
+   Reloads don't animate, and fragment swaps never do. */
+@view-transition {
+	navigation: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	@view-transition {
+		navigation: none;
+	}
+}
+
+#now_time {
+	view-transition-name: clock;
+}
+
+#now_date {
+	display: inline-block;
+	view-transition-name: date;
+}
+
+/* On the overview and the weather page. */
+.temp-now {
+	width: fit-content;
+	view-transition-name: temp-now;
+}
+
+::view-transition-group(*) {
+	animation-duration: 0.6s;
+	animation-timing-function: ease-in-out;
+}
+
+/* The pages, and what only one of the two pages has (the temperature
+   now on its way to or from the calendar). */
+::view-transition-old(root),
+::view-transition-old(*):only-child {
+	animation: 0.25s ease-in both page-out;
+}
+
+::view-transition-new(root),
+::view-transition-new(*):only-child {
+	animation: 0.3s ease-out 0.3s both page-in;
+}
+
+@keyframes page-out {
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes page-in {
+	from {
+		opacity: 0;
+	}
+}
+
+/* --- Overview ---------------------------------------------------------- */
+
+.page-oversikt {
+	display: grid;
+	grid-template-columns: 912px 702px;
+	column-gap: 114px;
 }
 
 /* --- Left column ------------------------------------------------------- */
@@ -52,7 +121,10 @@ main {
 	padding: 80px 0;
 }
 
-#now_time {
+.clock #now_time {
+	/* Hug the digits, so the page transition scales the clock and not the
+	   empty column beside it. */
+	width: fit-content;
 	font-size: 280px;
 	font-weight: 200;
 	line-height: 1;
@@ -86,7 +158,8 @@ main {
 	gap: 40px;
 }
 
-.temp {
+.temp,
+.kw {
 	font-size: 120px;
 	font-weight: 200;
 	line-height: 1;
@@ -358,4 +431,245 @@ main {
 	gap: 12px;
 	font-size: 12px;
 	color: var(--faint);
+}
+
+/* --- Detail pages: shared --------------------------------------------- */
+
+.page-strom,
+.page-kalender,
+.page-vaer {
+	display: flex;
+	flex-direction: column;
+	padding: 80px 96px 40px;
+}
+
+/* The page's name, and the date and time where the overview has its big
+   clock. */
+.head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	margin-bottom: 56px;
+	font-size: 40px;
+	line-height: 1.2;
+}
+
+.head-clock {
+	display: flex;
+	align-items: baseline;
+	gap: 24px;
+}
+
+.head-clock #now_date {
+	color: var(--muted);
+}
+
+/* --- Power page -------------------------------------------------------- */
+
+.places {
+	display: grid;
+	grid-template-columns: repeat(2, 808px);
+	column-gap: 112px;
+}
+
+.place .now {
+	margin-top: 16px;
+}
+
+.unit {
+	margin-left: 12px;
+	font-size: 40px;
+	font-weight: 300;
+	letter-spacing: 0;
+	color: var(--muted);
+}
+
+.rows {
+	margin-top: 40px;
+	border-top: 1px solid var(--faint);
+}
+
+/* A text block like a bottom-row cell, and a chart beside it. Every row is
+   as tall as the tallest text block (label, value, three details), so the
+   rows line up across the two places. */
+.row {
+	display: grid;
+	grid-template-columns: 248px 520px;
+	column-gap: 40px;
+	height: 184px;
+	margin-top: 32px;
+}
+
+.row + .row {
+	margin-top: 24px;
+}
+
+/* Down a little, so the top of the plot meets the top of the label's
+   capitals. */
+.chart {
+	display: block;
+	margin-top: 6px;
+	overflow: visible;
+}
+
+.chart rect {
+	fill: var(--faint);
+	shape-rendering: crispEdges;
+}
+
+.chart rect.now {
+	fill: var(--accent);
+}
+
+.chart line {
+	stroke-width: 1px;
+}
+
+.chart line.base {
+	stroke: var(--faint);
+	shape-rendering: crispEdges;
+}
+
+.chart line.ref {
+	stroke: var(--muted);
+}
+
+.chart rect.rain-1 {
+	fill: var(--rain-1);
+}
+
+.chart rect.rain-2 {
+	fill: var(--rain-2);
+}
+
+.chart rect.rain-3 {
+	fill: var(--rain-3);
+}
+
+.chart polyline {
+	fill: none;
+	stroke-linejoin: round;
+}
+
+.chart polyline.temp {
+	stroke: var(--fg);
+	stroke-width: 2px;
+}
+
+.chart polyline.gust {
+	stroke: var(--muted);
+	stroke-width: 1px;
+}
+
+.chart text {
+	font-size: 18px;
+	fill: var(--muted);
+}
+
+/* --- Calendar page ----------------------------------------------------- */
+
+/* The days flow down three columns. A day never splits; the days that
+   don't fit end up in a fourth column, past the edge, and are clipped. */
+.agenda {
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+	column-count: 3;
+	column-gap: 72px;
+	column-fill: auto;
+}
+
+/* Padding, not margin, so the space stays with its day at a column break. */
+.aday {
+	break-inside: avoid;
+	padding-bottom: 40px;
+}
+
+.is-today .day-label {
+	color: var(--accent);
+}
+
+.aday .dinner {
+	margin-top: 8px;
+	font-size: 28px;
+	font-weight: 400;
+	line-height: 1.2;
+}
+
+.aday .ev {
+	grid-template-columns: 96px minmax(0, 1fr);
+	margin-top: 16px;
+}
+
+/* A title may wrap once; its detail line never does. */
+.aday .title {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow: hidden;
+}
+
+.ev-detail {
+	grid-column: 2;
+	margin-top: 2px;
+	overflow: hidden;
+	font-size: 22px;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	color: var(--muted);
+	font-variant-numeric: proportional-nums;
+}
+
+.aday .faded .time,
+.aday .faded .ev-detail {
+	color: var(--faint);
+}
+
+/* --- Weather page ------------------------------------------------------ */
+
+/* The overview's grid: the weather now and the next 48 hours on the left,
+   the sun and the coming days on the right. */
+.vaer {
+	display: grid;
+	grid-template-columns: 912px 702px;
+	column-gap: 114px;
+}
+
+.vaer-now .now {
+	margin-top: 16px;
+}
+
+.vaer .row {
+	grid-template-columns: 248px 624px;
+}
+
+/* The table's hairline lines up with the one under the weather now. */
+.dt {
+	margin-top: 56px;
+	padding-top: 32px;
+	border-top: 1px solid var(--faint);
+}
+
+.dt-row {
+	display: grid;
+	grid-template-columns: 1fr 104px 88px 104px 88px;
+	align-items: baseline;
+	column-gap: 16px;
+}
+
+.dt-row + .dt-row {
+	margin-top: 10px;
+}
+
+.dt-place {
+	grid-column: span 2;
+}
+
+.dt-rain {
+	font-size: 22px;
+	color: var(--muted);
+}
+
+.dt-rain.wet {
+	color: var(--rain-3);
 }

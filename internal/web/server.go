@@ -18,6 +18,7 @@ import (
 
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
+	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/smarthouse"
 	"github.com/kvasbo/tellulf-v9/internal/tibber"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
@@ -26,8 +27,9 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/weather"
 )
 
-// Sources are the data sources the page is built from. Calendar, Smarthouse
-// and Tibber are nil when not configured; their panels then render empty.
+// Sources are the data sources the pages are built from. Calendar,
+// Smarthouse and Tibber are nil when not configured; their panels then
+// render empty, and without Smarthouse there is no mode to follow.
 type Sources struct {
 	Weather    *weather.Weather
 	Entur      *entur.Entur
@@ -42,10 +44,14 @@ type Server struct {
 	started time.Time
 	version string
 	hub     *Hub
+	// mode is the page every screen should show, or "" without MQTT. The
+	// server owns it: it redirects requests for other pages there, and
+	// pushes it to open pages over SSE.
+	mode func() mode.Mode
 }
 
-// calendarDays is how many days the calendar column lays out; the client
-// hides the ones that don't fit.
+// calendarDays is how many days the calendar column and the calendar page
+// lay out; the ones that don't fit are hidden.
 const calendarDays = 14
 
 func New(src Sources, assets fs.FS) *Server {
@@ -57,12 +63,29 @@ func New(src Sources, assets fs.FS) *Server {
 		// A new version makes open browsers reload, so deploys show up.
 		version: started.UTC().Format("2006-01-02T15:04:05.000Z"),
 		hub:     NewHub(),
+		mode: func() mode.Mode {
+			if src.Smarthouse == nil {
+				return ""
+			}
+			return src.Smarthouse.Mode()
+		},
 	}
 }
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /{$}", s.handleIndex)
+	mux.HandleFunc("GET /{$}", s.handlePage(mode.Oversikt, func(now time.Time) templ.Component {
+		return views.Layout(s.page(now))
+	}))
+	mux.HandleFunc("GET "+mode.Strom.Path(), s.handlePage(mode.Strom, func(now time.Time) templ.Component {
+		return views.StromLayout(s.stromPage(now))
+	}))
+	mux.HandleFunc("GET "+mode.Kalender.Path(), s.handlePage(mode.Kalender, func(now time.Time) templ.Component {
+		return views.KalenderLayout(s.kalenderPage(now))
+	}))
+	mux.HandleFunc("GET "+mode.Vaer.Path(), s.handlePage(mode.Vaer, func(now time.Time) templ.Component {
+		return views.VaerLayout(s.vaerPage(now))
+	}))
 	mux.HandleFunc("GET /sse", s.handleSSE)
 	mux.HandleFunc("POST /log", handleLog)
 	mux.HandleFunc("GET /", s.handleStatic)
@@ -101,6 +124,10 @@ func (s *Server) fragments() map[string]fragment {
 		{"power-home", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Home)) }},
 		{"power-cabin", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Cabin)) }},
 		{"trains", func(now time.Time) templ.Component { return views.Entur(s.trains(now)) }},
+		{"strom-home", func(now time.Time) templ.Component { return views.Strom(s.strom(tibber.Home, now)) }},
+		{"strom-cabin", func(now time.Time) templ.Component { return views.Strom(s.strom(tibber.Cabin, now)) }},
+		{"kalender", func(now time.Time) templ.Component { return views.Agenda(s.agenda(now)) }},
+		{"vaer", func(now time.Time) templ.Component { return views.Vaer(s.vaer(now)) }},
 	}
 	m := make(map[string]fragment, len(list))
 	for _, f := range list {
@@ -112,6 +139,7 @@ func (s *Server) fragments() map[string]fragment {
 func (s *Server) page(now time.Time) views.Page {
 	return views.Page{
 		Version:    s.version,
+		Clock:      view.BuildClock(now),
 		Stamps:     view.BuildStamps(s.started),
 		Weather:    s.weather(now),
 		Sun:        view.BuildSun(now),
@@ -120,6 +148,39 @@ func (s *Server) page(now time.Time) views.Page {
 		PowerCabin: s.power(tibber.Cabin),
 		Trains:     s.trains(now),
 	}
+}
+
+func (s *Server) stromPage(now time.Time) views.StromPage {
+	return views.StromPage{
+		Version: s.version,
+		Clock:   view.BuildClock(now),
+		Stamps:  view.BuildStamps(s.started),
+		Home:    s.strom(tibber.Home, now),
+		Cabin:   s.strom(tibber.Cabin, now),
+	}
+}
+
+func (s *Server) kalenderPage(now time.Time) views.KalenderPage {
+	return views.KalenderPage{
+		Version: s.version,
+		Clock:   view.BuildClock(now),
+		Stamps:  view.BuildStamps(s.started),
+		Agenda:  s.agenda(now),
+	}
+}
+
+func (s *Server) vaerPage(now time.Time) views.VaerPage {
+	return views.VaerPage{
+		Version: s.version,
+		Clock:   view.BuildClock(now),
+		Stamps:  view.BuildStamps(s.started),
+		Vaer:    s.vaer(now),
+	}
+}
+
+func (s *Server) vaer(now time.Time) view.Vaer {
+	return view.BuildVaer(s.readings(), s.src.Weather.HourlyForecasts(weather.Oslo, now),
+		s.src.Weather.DailyForecasts(weather.Oslo), s.src.Weather.DailyForecasts(weather.Hytta), now)
 }
 
 func (s *Server) weather(now time.Time) view.Weather {
@@ -138,14 +199,32 @@ func (s *Server) readings() smarthouse.Readings {
 }
 
 func (s *Server) calendar(now time.Time) view.Calendar {
-	var snap calendar.Snapshot
-	if s.src.Calendar != nil {
-		snap = s.src.Calendar.Snapshot()
-	}
-	return view.BuildCalendar(snap,
+	return view.BuildCalendar(s.calendarSnapshot(),
 		s.src.Weather.DailyForecasts(weather.Oslo),
 		s.src.Weather.DailyForecasts(weather.Hytta),
 		now, calendarDays)
+}
+
+func (s *Server) calendarSnapshot() calendar.Snapshot {
+	if s.src.Calendar == nil {
+		return calendar.Snapshot{}
+	}
+	return s.src.Calendar.Snapshot()
+}
+
+func (s *Server) agenda(now time.Time) view.Agenda {
+	return view.BuildAgenda(s.calendarSnapshot(),
+		s.src.Weather.DailyForecasts(weather.Oslo),
+		s.src.Weather.DailyForecasts(weather.Hytta),
+		now, calendarDays)
+}
+
+func (s *Server) strom(p tibber.Place, now time.Time) view.Strom {
+	var d tibber.Details
+	if s.src.Tibber != nil {
+		d = s.src.Tibber.Details(p)
+	}
+	return view.BuildStrom(d, p, now)
 }
 
 func (s *Server) power(p tibber.Place) view.Power {
@@ -158,22 +237,42 @@ func (s *Server) power(p tibber.Place) view.Power {
 
 // --- Handlers ----------------------------------------------------------------------
 
-func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
-	html, err := render(views.Layout(s.page(tz.Now())))
-	if err != nil {
-		slog.Error("render page", "err", err)
-		http.Error(w, "render error", http.StatusInternalServerError)
-		return
+// handlePage serves the page for m, rendered with the latest data. When
+// there is a mode (with MQTT), a request for another page is redirected to
+// it, so a screen that loads never shows the wrong page first.
+func (s *Server) handlePage(m mode.Mode, page func(now time.Time) templ.Component) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if want := s.mode(); want != "" && want != m {
+			http.Redirect(w, r, want.Path(), http.StatusFound)
+			return
+		}
+		html, err := render(page(tz.Now()))
+		if err != nil {
+			slog.Error("render page", "path", r.URL.Path, "err", err)
+			http.Error(w, "render error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, html)
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, html)
 }
 
 func formatSSE(e Event) string {
 	return "event: " + e.Name + "\ndata: " + strings.ReplaceAll(e.Data, "\n", "\ndata: ") + "\n\n"
 }
 
+// handleSSE streams events: the latest of each fragment first, then every
+// change. ?events=a,b,c limits the stream to those names, so a page only
+// gets what it shows; without it, everything is sent.
 func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
+	var only map[string]bool
+	if list := r.URL.Query().Get("events"); list != "" {
+		only = map[string]bool{}
+		for name := range strings.SplitSeq(list, ",") {
+			only[name] = true
+		}
+	}
+
 	rc := http.NewResponseController(w)
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -186,6 +285,9 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	send := func(e Event) bool {
+		if only != nil && !only[e.Name] {
+			return true
+		}
 		if _, err := fmt.Fprint(w, formatSSE(e)); err != nil {
 			return false
 		}
@@ -252,11 +354,22 @@ func (s *Server) Publish(ctx context.Context) {
 		}
 	}
 
-	power := []string{"power-home", "power-cabin"}
-	data := []string{"weather", "calendar"}
+	// The mode is published like a fragment, so the hub only sends it when
+	// it changes (also when a page times out back to the overview) and new
+	// connections get it in their snapshot. Without MQTT there is none, and
+	// screens stay on the page they opened.
+	publishMode := func() {
+		if m := s.mode(); m != "" {
+			s.hub.Publish("mode", m.Path())
+		}
+	}
+
+	power := []string{"power-home", "power-cabin", "strom-home", "strom-cabin"}
+	data := []string{"weather", "calendar", "kalender", "vaer"}
 	trains := []string{"trains"}
 
 	publish(append(append(append([]string{}, data...), power...), trains...)...)
+	publishMode()
 
 	powerTick := time.NewTicker(time.Second)
 	dataTick := time.NewTicker(15 * time.Second)
@@ -272,6 +385,7 @@ func (s *Server) Publish(ctx context.Context) {
 			return
 		case <-powerTick.C:
 			publish(power...)
+			publishMode()
 		case <-dataTick.C:
 			publish(data...)
 		case <-trainTick.C:

@@ -4,6 +4,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -70,3 +71,36 @@ func Capitalize(s string) string {
 
 // weekdays is indexed by time.Weekday.
 var weekdays = [...]string{"søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"}
+
+// months is indexed by time.Month - 1.
+var months = [...]string{"januar", "februar", "mars", "april", "mai", "juni", "juli",
+	"august", "september", "oktober", "november", "desember"}
+
+// longDate is "Tirsdag 27. oktober".
+func longDate(t time.Time) string {
+	t = t.In(tz.Oslo)
+	return Capitalize(weekdays[t.Weekday()]) + " " + strconv.Itoa(t.Day()) + ". " + months[t.Month()-1]
+}
+
+// daysBetween counts calendar days in Oslo from a to b; DST days count as one.
+func daysBetween(a, b time.Time) int {
+	return int(tz.Round(tz.StartOfDay(b).Sub(tz.StartOfDay(a)).Hours() / 24))
+}
+
+// dayRef names t's date as seen from the day from: the weekday within six
+// days, and the weekday with the date from a week on, so a name never
+// means two days: "fredag", "mandag 9. november".
+func dayRef(t, from time.Time) string {
+	t = t.In(tz.Oslo)
+	ref := weekdays[t.Weekday()]
+	if daysBetween(from, t) >= 7 {
+		ref += " " + strconv.Itoa(t.Day()) + ". " + months[t.Month()-1]
+	}
+	return ref
+}
+
+// MM formats precipitation with one decimal: "3,2 mm".
+func MM(v float64) string { return nb(Fixed(v, 1)) + nbsp + "mm" }
+
+// MS formats wind in whole metres per second: "4 m/s".
+func MS(v float64) string { return nb(Num(tz.Round(v))) + nbsp + "m/s" }

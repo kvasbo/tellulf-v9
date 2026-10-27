@@ -264,7 +264,7 @@ func TestClassifyDuplicateConnection(t *testing.T) {
 func TestPriceAtPicksTheCurrentHour(t *testing.T) {
 	h := func(n int) time.Time { return time.Date(2026, 10, 26, n, 0, 0, 0, tz.Oslo) }
 	tb := New(Config{})
-	tb.prices[Home] = []pricePoint{{Start: h(13), Total: 1.1}, {Start: h(14), Total: 1.4}}
+	tb.prices[Home] = []PricePoint{{Start: h(13), Total: 1.1}, {Start: h(14), Total: 1.4}}
 	cases := []struct {
 		name  string
 		at    time.Time
@@ -293,7 +293,7 @@ func TestPriceAtPicksTheCurrentHour(t *testing.T) {
 func TestUpdatePriceKeepsTheLastKnownPrice(t *testing.T) {
 	h := func(n int) time.Time { return time.Date(2026, 10, 26, n, 0, 0, 0, tz.Oslo) }
 	tb := New(Config{})
-	tb.prices[Home] = []pricePoint{{Start: h(13), Total: 1.4}}
+	tb.prices[Home] = []PricePoint{{Start: h(13), Total: 1.4}}
 
 	tb.updatePrice(Home, h(13).Add(30*time.Minute))
 	d := tb.PowerData(Home)

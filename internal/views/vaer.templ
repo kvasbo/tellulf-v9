@@ -1,0 +1,52 @@
+package views
+
+import "github.com/kvasbo/tellulf-v9/internal/view"
+
+// Vaer is the weather page's content. On the left the weather now, built
+// like the overview's, and the next 48 hours as rows of a text block and a
+// chart; on the right the sun, and a table of the coming days for Oslo and
+// the cabin.
+templ Vaer(v view.Vaer) {
+	<div class="vaer-now">
+		<span class="label">Oslo</span>
+		<div class="now">
+			<div class="temp temp-now">{ v.Now.Temperature }</div>
+			<div class="lines">
+				<div class="line1">{ v.Now.Line1 }</div>
+				<div class="line2">{ v.Now.Line2 }</div>
+				if v.Sensor != "" {
+					<div class="line2">{ v.Sensor }</div>
+				}
+			</div>
+		</div>
+		<div class="rows">
+			for _, r := range v.Rows {
+				@chartRow(r)
+			}
+		</div>
+	</div>
+	<div class="vaer-days">
+		@textBlock(v.Sun)
+		<div class="dt">
+			<div class="dt-row">
+				<span class="label">Neste dager</span>
+				<span class="label dt-place">Oslo</span>
+				<span class="label dt-place">Hytta</span>
+			</div>
+			for _, d := range v.Days {
+				<div class="dt-row">
+					<span class="weekday">{ d.Label }</span>
+					@dayWeather(d.Oslo)
+					@dayWeather(d.Hytta)
+				</div>
+			}
+		</div>
+	</div>
+}
+
+// dayWeather is one place's columns in the table: the temperature range
+// and the chance of rain, in the rain colour when it is likely.
+templ dayWeather(w view.DayWeather) {
+	<span class="dt-temp">{ w.Temp }</span>
+	<span class={ "dt-rain", templ.KV("wet", w.Wet) }>{ w.Rain }</span>
+}
