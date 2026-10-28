@@ -15,9 +15,10 @@ const (
 	Strom    Mode = "strom"    // Tibber in detail
 	Kalender Mode = "kalender" // the next two weeks in detail
 	Vaer     Mode = "vaer"     // the weather in detail
+	Uke      Mode = "uke"      // the week ahead, in Claude's words
 )
 
-var paths = map[Mode]string{Oversikt: "/", Strom: "/strom", Kalender: "/kalender", Vaer: "/vaer"}
+var paths = map[Mode]string{Oversikt: "/", Strom: "/strom", Kalender: "/kalender", Vaer: "/vaer", Uke: "/uke"}
 
 // ascii spells the Norwegian letters the way the paths do.
 var ascii = strings.NewReplacer("ø", "o", "æ", "ae", "å", "a")
@@ -26,7 +27,7 @@ var ascii = strings.NewReplacer("ø", "o", "æ", "ae", "å", "a")
 // TELLULF_MODE_TIMEOUT doesn't say.
 const DefaultTimeout = 2 * time.Minute
 
-// Path is the page's URL path: "/", "/strom", "/kalender", "/vaer".
+// Path is the page's URL path: "/", "/strom", "/kalender", "/vaer", "/uke".
 func (m Mode) Path() string { return paths[m] }
 
 // Current is the page to show at now when m was picked at since: m until it

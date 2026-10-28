@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
+	"github.com/kvasbo/tellulf-v9/internal/claude"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 	"github.com/kvasbo/tellulf-v9/internal/weather"
 )
@@ -33,22 +34,24 @@ type Note struct {
 
 type AgendaEvent struct {
 	Time   string // "12:00"; "" for an event that started on an earlier day
-	Title  string // in full
+	Title  string // in full, or Claude's short title for one the overview cuts
 	Detail string // "til 13:30 · Storgata 1 · 5°, 20 % regn"
+	Note   string // Claude's note from the description, "Ta med gymtøy"; "" without one
 	Faded  bool
 }
 
-// BuildAgenda lays out today and the next days-1 days.
-func BuildAgenda(cal calendar.Snapshot, daily, dailyHytta map[string]weather.Daily, now time.Time, days int) Agenda {
+// BuildAgenda lays out today and the next days-1 days. Events get Claude's
+// note from their description where it has written one.
+func BuildAgenda(cal calendar.Snapshot, daily, dailyHytta map[string]weather.Daily, titles claude.Titles, now time.Time, days int) Agenda {
 	now = now.In(tz.Oslo)
 	var a Agenda
 	for i := range days {
-		a.Days = append(a.Days, buildAgendaDay(cal, daily, dailyHytta, now.AddDate(0, 0, i), i == 0))
+		a.Days = append(a.Days, buildAgendaDay(cal, daily, dailyHytta, titles, now.AddDate(0, 0, i), i == 0))
 	}
 	return a
 }
 
-func buildAgendaDay(cal calendar.Snapshot, daily, dailyHytta map[string]weather.Daily, date time.Time, today bool) AgendaDay {
+func buildAgendaDay(cal calendar.Snapshot, daily, dailyHytta map[string]weather.Daily, titles claude.Titles, date time.Time, today bool) AgendaDay {
 	d := AgendaDay{
 		Today:  today,
 		Label:  longDate(date),
@@ -85,12 +88,15 @@ func buildAgendaDay(cal calendar.Snapshot, daily, dailyHytta map[string]weather.
 		if !e.FullDay {
 			continue
 		}
-		text := fullTitle(e)
+		text := fullTitle(e, titles)
 		if !tz.SameDay(e.End, date) {
 			text += " · til og med " + dayRef(e.End, date)
 		}
 		if mentionsHytta(e) {
 			text += " (" + hytta + ")"
+		}
+		if note := titles.For(e.Event).Note; note != "" {
+			text += " · " + note
 		}
 		d.Notes = append(d.Notes, Note{Text: text, Faded: e.Faded})
 	}
@@ -112,8 +118,9 @@ func buildAgendaDay(cal calendar.Snapshot, daily, dailyHytta map[string]weather.
 		}
 		d.Events = append(d.Events, AgendaEvent{
 			Time:   e.DisplayTime.Start,
-			Title:  fullTitle(e),
+			Title:  fullTitle(e, titles),
 			Detail: strings.Join(detail, " · "),
+			Note:   titles.For(e.Event).Note,
 			Faded:  e.Faded,
 		})
 	}
@@ -121,9 +128,14 @@ func buildAgendaDay(cal calendar.Snapshot, daily, dailyHytta map[string]weather.
 }
 
 // fullTitle is the event's title without the overview's 50-character cut.
-func fullTitle(e calendar.EnrichedEvent) string {
-	if strings.TrimSpace(e.Title) == "" {
+// A title the overview cuts doesn't fit two lines here either, so Claude's
+// short title stands in for it where there is one.
+func fullTitle(e calendar.EnrichedEvent, titles claude.Titles) string {
+	switch short := titles.For(e.Event).Short; {
+	case strings.TrimSpace(e.Title) == "":
 		return e.DisplayTitle // "(uten tittel)"
+	case short != "" && e.DisplayTitle != e.Title:
+		return short
 	}
 	return e.Title
 }

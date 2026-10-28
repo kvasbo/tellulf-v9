@@ -21,6 +21,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
+	"github.com/kvasbo/tellulf-v9/internal/claude"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/smarthouse"
@@ -82,6 +83,23 @@ func run() error {
 		t := tibber.New(cfg)
 		src.Tibber = t
 		wg.Go(func() { t.Run(ctx) })
+	}
+
+	if key := os.Getenv("ANTHROPIC_API_KEY"); key == "" {
+		slog.Warn("Claude disabled", "reason", "ANTHROPIC_API_KEY is not set")
+	} else {
+		c := claude.New(claude.Config{APIKey: key, Model: os.Getenv("TELLULF_CLAUDE_MODEL")}, claude.Sources{
+			Calendar: func() calendar.Snapshot {
+				if src.Calendar == nil {
+					return calendar.Snapshot{}
+				}
+				return src.Calendar.Snapshot()
+			},
+			Hourly: func(now time.Time) []weather.Hourly { return src.Weather.HourlyForecasts(weather.Oslo, now) },
+			Daily:  src.Weather.DailyForecasts,
+		})
+		src.Claude = c
+		wg.Go(func() { c.Run(ctx) })
 	}
 
 	// TELLULF_DEV=1 serves static files straight from disk, so CSS and

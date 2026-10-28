@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
+	"github.com/kvasbo/tellulf-v9/internal/claude"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 	"github.com/kvasbo/tellulf-v9/internal/weather"
 )
@@ -20,10 +21,11 @@ type Calendar struct {
 }
 
 type Today struct {
-	Kids   calendar.KidsStatus
-	Dinner string       // several joined with " · "
-	Notes  []string     // birthdays ("Kai Lützenkirchen fyller 45"), then full-day events
-	Events []TodayEvent // timed events in start order
+	Kids     calendar.KidsStatus
+	Dinner   string       // several joined with " · "
+	Sentence string       // Claude's sentence for the day; "" without one
+	Notes    []string     // birthdays ("Kai Lützenkirchen fyller 45"), then full-day events
+	Events   []TodayEvent // timed events in start order
 }
 
 type TodayEvent struct {
@@ -50,21 +52,22 @@ type DayEvent struct {
 // coming day says "regn".
 const rainWordFrom = 50
 
-// BuildCalendar lays out today and the next days-1 days.
-func BuildCalendar(cal calendar.Snapshot, daily, dailyHytta map[string]weather.Daily, now time.Time, days int) Calendar {
+// BuildCalendar lays out today and the next days-1 days. Events show
+// Claude's short titles where it has written them.
+func BuildCalendar(cal calendar.Snapshot, daily, dailyHytta map[string]weather.Daily, texts claude.Texts, now time.Time, days int) Calendar {
 	now = now.In(tz.Oslo)
-	out := Calendar{Today: buildToday(cal, dailyHytta, now)}
+	out := Calendar{Today: buildToday(cal, dailyHytta, texts, now)}
 	if cal.BhgDaysLeft != nil {
 		out.Bhg = "bhg: " + strconv.Itoa(*cal.BhgDaysLeft)
 	}
 	for i := 1; i < days; i++ {
-		out.Days = append(out.Days, buildDay(cal, daily, now.AddDate(0, 0, i), i))
+		out.Days = append(out.Days, buildDay(cal, daily, texts.Titles, now.AddDate(0, 0, i), i))
 	}
 	return out
 }
 
-func buildToday(cal calendar.Snapshot, dailyHytta map[string]weather.Daily, date time.Time) Today {
-	t := Today{Kids: cal.KidsStatusForDate(date), Dinner: dinners(cal, date)}
+func buildToday(cal calendar.Snapshot, dailyHytta map[string]weather.Daily, texts claude.Texts, date time.Time) Today {
+	t := Today{Kids: cal.KidsStatusForDate(date), Dinner: dinners(cal, date), Sentence: texts.Today}
 	for _, b := range cal.BirthdaysForDate(date) {
 		text := b.DisplayTitle
 		if name, age, ok := b.Birthday(date.Year()); ok {
@@ -80,8 +83,9 @@ func buildToday(cal calendar.Snapshot, dailyHytta map[string]weather.Daily, date
 		return "(" + Deg(hytta.MaxTemp) + ", " + Pct(hytta.LightRainProbability) + " regn)"
 	}
 	for _, e := range eventsByStart(cal, date) {
+		title := shortTitle(e, texts.Titles)
 		if e.FullDay {
-			note := e.DisplayTitle
+			note := title
 			if s := suffix(e); s != "" {
 				note += " " + s
 			}
@@ -90,7 +94,7 @@ func buildToday(cal calendar.Snapshot, dailyHytta map[string]weather.Daily, date
 		}
 		t.Events = append(t.Events, TodayEvent{
 			Time:  e.DisplayTime.Start,
-			Title: e.DisplayTitle,
+			Title: title,
 			Hytta: suffix(e),
 			Faded: e.Faded,
 		})
@@ -98,7 +102,7 @@ func buildToday(cal calendar.Snapshot, dailyHytta map[string]weather.Daily, date
 	return t
 }
 
-func buildDay(cal calendar.Snapshot, daily map[string]weather.Daily, date time.Time, i int) Day {
+func buildDay(cal calendar.Snapshot, daily map[string]weather.Daily, titles claude.Titles, date time.Time, i int) Day {
 	d := Day{
 		Kids:   cal.KidsStatusForDate(date),
 		Label:  Capitalize(weekdays[date.Weekday()]),
@@ -124,14 +128,14 @@ func buildDay(cal calendar.Snapshot, daily map[string]weather.Daily, date time.T
 	events := eventsByStart(cal, date)
 	for _, e := range events {
 		if e.FullDay {
-			d.Events = append(d.Events, DayEvent{Text: e.DisplayTitle, Faded: e.Faded})
+			d.Events = append(d.Events, DayEvent{Text: shortTitle(e, titles), Faded: e.Faded})
 		}
 	}
 	for _, e := range events {
 		if e.FullDay {
 			continue
 		}
-		text := e.DisplayTitle
+		text := shortTitle(e, titles)
 		if e.DisplayTime.Start != "" {
 			// A no-break space: the line may wrap inside an appointment, but
 			// never between the time and the title.
@@ -140,6 +144,15 @@ func buildDay(cal calendar.Snapshot, daily map[string]weather.Daily, date time.T
 		d.Events = append(d.Events, DayEvent{Text: text, Faded: e.Faded})
 	}
 	return d
+}
+
+// shortTitle is Claude's short title for e, or its own (cut at 50
+// characters) when Claude hasn't written one.
+func shortTitle(e calendar.EnrichedEvent, titles claude.Titles) string {
+	if t := titles.For(e.Event).Short; t != "" {
+		return t
+	}
+	return e.DisplayTitle
 }
 
 func dinners(cal calendar.Snapshot, date time.Time) string {

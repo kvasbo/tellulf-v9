@@ -3,8 +3,9 @@
    mockup in docs/superpowers/specs scaled 1.5x, on an 8 px grid. One type
    scale: 12 (corner), 18 (labels), 22 (secondary), 28 (primary), 35 (values),
    40 (date), 48 (dinner), then the two display sizes 120 and 280. Don't add
-   steps. Three pages share it: the overview (.page-oversikt), the power page
-   (.page-strom) and the calendar page (.page-kalender). */
+   steps. Five pages share it: the overview (.page-oversikt), the power page
+   (.page-strom), the calendar page (.page-kalender), the weather page
+   (.page-vaer) and the week page (.page-uke). */
 
 :root {
 	--bg: #121212;
@@ -437,7 +438,8 @@ main {
 
 .page-strom,
 .page-kalender,
-.page-vaer {
+.page-vaer,
+.page-uke {
 	display: flex;
 	flex-direction: column;
 	padding: 80px 96px 40px;
@@ -672,4 +674,35 @@ main {
 
 .dt-rain.wet {
 	color: var(--rain-3);
+}
+
+/* --- Week page --------------------------------------------------------- */
+
+/* The overview's grid: Claude's lines on the left, the days on the right
+   as the overview's calendar lists them. The one row is as tall as the
+   page leaves, so client.js can hide the days that don't fit. */
+.uke {
+	flex: 1;
+	min-height: 0;
+	display: grid;
+	grid-template-columns: 912px 702px;
+	grid-template-rows: minmax(0, 1fr);
+	column-gap: 114px;
+}
+
+.uke-lines p {
+	margin: 0;
+	font-size: 35px;
+	line-height: 1.3;
+}
+
+.uke-lines p + p {
+	margin-top: 32px;
+}
+
+/* Level with the first line, without the overview's hairline. */
+.uke .days {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: 0;
 }

@@ -53,3 +53,37 @@ func TestSunInTodayHeader(t *testing.T) {
 		t.Errorf("sun shown without times: %s", got)
 	}
 }
+
+// Claude's sentence sits right under the dinner, and is left out without
+// one.
+func TestSentenceUnderDinner(t *testing.T) {
+	render := func(today view.Today) string {
+		var b strings.Builder
+		if err := Calendar(view.Calendar{Today: today}, view.Sun{}, view.Stamps{}).Render(context.Background(), &b); err != nil {
+			t.Fatal(err)
+		}
+		return b.String()
+	}
+	got := render(view.Today{Dinner: "Taco", Sentence: "Regn fra kl. 15", Notes: []string{"Turdag E"}})
+	if !strings.Contains(got, `<div class="dinner">Taco</div><div class="note">Regn fra kl. 15</div><div class="note">Turdag E</div>`) {
+		t.Errorf("sentence not under the dinner: %s", got)
+	}
+	if got := render(view.Today{Dinner: "Taco"}); strings.Contains(got, `class="note"`) {
+		t.Errorf("an empty sentence is shown: %s", got)
+	}
+}
+
+// The week page has Claude's lines and the days, which reuse the overview's
+// day rows.
+func TestUke(t *testing.T) {
+	var b strings.Builder
+	u := view.Uke{Lines: []string{"Barna kommer fredag kl. 16"}, Days: []view.Day{{Label: "I dag", Dinner: "Taco"}}}
+	if err := Uke(u).Render(context.Background(), &b); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`<p>Barna kommer fredag kl. 16</p>`, `<span class="weekday">I dag</span> <span class="dinner">Taco</span>`} {
+		if !strings.Contains(b.String(), want) {
+			t.Errorf("missing %s in %s", want, b.String())
+		}
+	}
+}

@@ -1,0 +1,17 @@
+package views
+
+import "github.com/kvasbo/tellulf-v9/internal/view"
+
+// Uke is the week page's content: Claude's lines on the left, and on the
+// right the days as the overview lists them. client.js hides whole days
+// from the bottom when they don't fit.
+templ Uke(u view.Uke) {
+	<div class="uke-lines">
+		for _, l := range u.Lines {
+			<p>{ l }</p>
+		}
+	</div>
+	<div class="days">
+		@dayRows(u.Days)
+	</div>
+}

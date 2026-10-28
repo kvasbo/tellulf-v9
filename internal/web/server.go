@@ -18,6 +18,7 @@ import (
 	"github.com/a-h/templ"
 
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
+	"github.com/kvasbo/tellulf-v9/internal/claude"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/smarthouse"
@@ -29,14 +30,16 @@ import (
 )
 
 // Sources are the data sources the pages are built from. Calendar,
-// Smarthouse and Tibber are nil when not configured; their panels then
-// render empty, and without Smarthouse there is no mode to follow.
+// Smarthouse, Tibber and Claude are nil when not configured; their panels
+// then render empty (without Claude: as they were before it), and without
+// Smarthouse there is no mode to follow.
 type Sources struct {
 	Weather    *weather.Weather
 	Entur      *entur.Entur
 	Calendar   *calendar.Calendar
 	Smarthouse *smarthouse.Smarthouse
 	Tibber     *tibber.Tibber
+	Claude     *claude.Claude
 }
 
 type Server struct {
@@ -93,6 +96,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET "+mode.Vaer.Path(), s.handlePage(func(now time.Time) templ.Component {
 		return views.VaerLayout(s.vaerPage(now))
 	}))
+	mux.HandleFunc("GET "+mode.Uke.Path(), s.handlePage(func(now time.Time) templ.Component {
+		return views.UkeLayout(s.ukePage(now))
+	}))
 	mux.HandleFunc("GET /sse", s.handleSSE)
 	mux.HandleFunc("POST /log", handleLog)
 	mux.HandleFunc("GET /", s.handleStatic)
@@ -135,6 +141,7 @@ func (s *Server) fragments() map[string]fragment {
 		{"strom-cabin", func(now time.Time) templ.Component { return views.Strom(s.strom(tibber.Cabin, now)) }},
 		{"kalender", func(now time.Time) templ.Component { return views.Agenda(s.agenda(now)) }},
 		{"vaer", func(now time.Time) templ.Component { return views.Vaer(s.vaer(now)) }},
+		{"uke", func(now time.Time) templ.Component { return views.Uke(s.uke(now)) }},
 	}
 	m := make(map[string]fragment, len(list))
 	for _, f := range list {
@@ -187,6 +194,17 @@ func (s *Server) vaerPage(now time.Time) views.VaerPage {
 	}
 }
 
+func (s *Server) ukePage(now time.Time) views.UkePage {
+	return views.UkePage{
+		Frame: s.frame(now),
+		Uke:   s.uke(now),
+	}
+}
+
+func (s *Server) uke(now time.Time) view.Uke {
+	return view.BuildUke(s.calendarSnapshot(), s.src.Weather.DailyForecasts(weather.Oslo), s.texts(now), now)
+}
+
 func (s *Server) vaer(now time.Time) view.Vaer {
 	return view.BuildVaer(s.readings(), s.src.Weather.HourlyForecasts(weather.Oslo, now),
 		s.src.Weather.DailyForecasts(weather.Oslo), s.src.Weather.DailyForecasts(weather.Hytta), now)
@@ -211,7 +229,7 @@ func (s *Server) calendar(now time.Time) view.Calendar {
 	return view.BuildCalendar(s.calendarSnapshot(),
 		s.src.Weather.DailyForecasts(weather.Oslo),
 		s.src.Weather.DailyForecasts(weather.Hytta),
-		now, calendarDays)
+		s.texts(now), now, calendarDays)
 }
 
 func (s *Server) calendarSnapshot() calendar.Snapshot {
@@ -225,7 +243,15 @@ func (s *Server) agenda(now time.Time) view.Agenda {
 	return view.BuildAgenda(s.calendarSnapshot(),
 		s.src.Weather.DailyForecasts(weather.Oslo),
 		s.src.Weather.DailyForecasts(weather.Hytta),
-		now, calendarDays)
+		s.texts(now).Titles, now, calendarDays)
+}
+
+// texts is what Claude has written; nothing without Claude.
+func (s *Server) texts(now time.Time) claude.Texts {
+	if s.src.Claude == nil {
+		return claude.Texts{}
+	}
+	return s.src.Claude.Texts(now)
 }
 
 func (s *Server) strom(p tibber.Place, now time.Time) view.Strom {
@@ -369,7 +395,7 @@ func (s *Server) Publish(ctx context.Context) {
 	}
 
 	power := []string{"power-home", "power-cabin", "strom-home", "strom-cabin"}
-	data := []string{"weather", "calendar", "kalender", "vaer"}
+	data := []string{"weather", "calendar", "kalender", "vaer", "uke"}
 	trains := []string{"trains"}
 
 	publish(append(append(append([]string{}, data...), power...), trains...)...)

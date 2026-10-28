@@ -10,7 +10,8 @@ notes and mockup are in `docs/superpowers/specs/2026-10-26-natt-redesign-design.
 
 MQTT switches the screen between pages: `tellulf/mode` with `oversikt` (`/`, the Natt
 overview), `strom` (`/strom`, Tibber in detail), `kalender` (`/kalender`, two weeks in
-detail) or `vaer` (`/vaer`, the weather in detail); names or paths, `strøm`/`vær` work too.
+detail), `vaer` (`/vaer`, the weather in detail) or `uke` (`/uke`, Claude's lines about the
+week beside its days); names or paths, `strøm`/`vær` work too.
 Design notes: `docs/superpowers/specs/2026-10-27-moduser-design.md`.
 
 - The server owns the mode (`internal/mode`, read by `internal/smarthouse`). With MQTT it starts
@@ -26,7 +27,24 @@ Design notes: `docs/superpowers/specs/2026-10-27-moduser-design.md`.
 - Retained mode messages are ignored: the broker replays them on every reconnect.
 - The detail pages share `shell` and `head` in `layout.templ`; the power and weather pages
   build their rows as `view.Row` (text block plus a `view.Chart`, SVG geometry computed in
-  `internal/view/chart.go`).
+  `internal/view/chart.go`). The week page reuses the overview's day rows (`dayRows`).
+
+## Claude
+
+`internal/claude` has Claude (Haiku by default, `TELLULF_CLAUDE_MODEL`) write today's
+sentence (I DAG, under the dinner), short titles and description notes for events, and the
+week's lines (`/uke`). Design notes: `docs/superpowers/specs/2026-10-28-claude-design.md`.
+
+- Written in `Claude.Run` (every minute, starting a minute after start) when a text's input
+  changes, paced per text (`job`); never in the render path. Pages read `Claude.Texts(now)`,
+  which leaves out a sentence or week that is for another day or whose input hasn't been
+  seen lately. The zero `Texts` (no Claude) renders the screen as before.
+- The input is plain Norwegian built from the calendar snapshot and the forecasts
+  (`input.go`). Every number in an answer must appear in the input (`grounded`), or the
+  text is thrown away and the job backs off.
+- Titles are keyed by title + description (`TitleKey`), asked for once each.
+- `go test -tags live -run Live -v ./internal/claude` runs the prompts against the real
+  API on a made-up week; use it when changing a prompt or comparing models.
 
 ## Architecture
 
@@ -34,7 +52,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 - **net/http** server with SSE (`internal/web`). A single publisher goroutine renders each
   fragment on a schedule (`power-home`/`power-cabin`/`strom-home`/`strom-cabin` 1s,
-  `weather`/`calendar`/`kalender`/`vaer` 15s, `trains` 30s, `mode` 1s, version 60s) and a
+  `weather`/`calendar`/`kalender`/`vaer`/`uke` 15s, `trains` 30s, `mode` 1s, version 60s) and a
   `Hub` fans out only fragments that changed. New connections get a snapshot first.
   `/sse?events=a,b` sends only those names; `live.js` asks for the ones its page shows.
 - **templ** components (`internal/views/*.templ`, generated `*_templ.go` committed), one
@@ -79,6 +97,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 - `internal/weather` — MET Norway forecasts (hourly + subseasonal), Oslo and the cabin
 - `internal/calendar` — Google Calendar (official Go client), kids schedule, fading rules
+- `internal/claude` — Claude's texts (official Anthropic Go SDK, structured output)
 - `internal/entur` — metro departures
 - `internal/smarthouse` — MQTT sensor readings and the mode (paho)
 - `internal/mode` — the pages and their paths, and parsing the MQTT payload
@@ -121,6 +140,8 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   can lag, so `HourlyForecasts` drops hours that have passed.
 - **Google Calendar**: Events, birthdays, dinners, barneuker, kindergarten days
 - **Entur**: Train departures (RUT Line 1, Slemdal station)
+- **Claude** (Anthropic API): today's sentence, short titles, the week. Calendar data is
+  sent to it. Without `ANTHROPIC_API_KEY` it is off.
 - **MQTT**: Sensor data (temperature, humidity, pressure) and the mode (`tellulf/mode`).
   Don't develop against the real broker: a mode message there switches the real screen.
 
@@ -135,8 +156,8 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 CAL_ID_AUDUN, CAL_ID_BARNEUKER, CAL_ID_BURSDAG, CAL_ID_FELLES, CAL_ID_KINDERGARDEN,
 CAL_ID_MIDDAG, EXPOSE_PORT, GOOGLE_KEY_B64, MQTT_HOST, MQTT_PASS, MQTT_USER,
-TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV, TELLULF_DEBUG and
-TELLULF_MODE_TIMEOUT (optional)
+TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV, TELLULF_DEBUG,
+TELLULF_MODE_TIMEOUT, ANTHROPIC_API_KEY and TELLULF_CLAUDE_MODEL (optional)
 
 Loaded from the environment, plus `.env` in the working directory if present (godotenv;
 existing environment variables win).

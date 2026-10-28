@@ -29,7 +29,9 @@ uendret. Dette er et nytt utseende på de samme dataene.
 ## Ikke-mål
 
 - Ingen nye datakilder (ikke nowcast, tømmekalender, luftkvalitet, nyheter).
-- Ingen AI-generert tekst. Værsetningene er regelstyrte.
+- Ingen AI-generert tekst. Værsetningene er regelstyrte. (Endret
+  2026-10-28: Claude skriver nå en setning i I DAG og korte titler, se
+  `2026-10-28-claude-design.md`. Værsetningene er fortsatt regelstyrte.)
 - Ingen lys variant. Skjermen er alltid mørk, døgnet rundt.
 - Ingen berøring eller input.
 

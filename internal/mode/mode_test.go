@@ -20,6 +20,8 @@ func TestParse(t *testing.T) {
 		"vær":         Vaer,
 		"/vaer":       Vaer,
 		"VÆR":         Vaer,
+		"uke":         Uke,
+		"/Uke":        Uke,
 	}
 	for in, want := range cases {
 		if got, ok := Parse(in); !ok || got != want {
@@ -60,7 +62,7 @@ func TestCurrentReturnsToTheOverview(t *testing.T) {
 }
 
 func TestPath(t *testing.T) {
-	for m, want := range map[Mode]string{Oversikt: "/", Strom: "/strom", Kalender: "/kalender", Vaer: "/vaer"} {
+	for m, want := range map[Mode]string{Oversikt: "/", Strom: "/strom", Kalender: "/kalender", Vaer: "/vaer", Uke: "/uke"} {
 		if got := m.Path(); got != want {
 			t.Errorf("%s.Path() = %q, want %q", m, got, want)
 		}

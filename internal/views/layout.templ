@@ -43,6 +43,12 @@ type KalenderPage struct {
 	Agenda view.Agenda
 }
 
+// UkePage is the week page: Claude's lines and the coming days.
+type UkePage struct {
+	Frame
+	Uke view.Uke
+}
+
 // shell is what every page shares. The content of each element with
 // data-sse is replaced by the fragment of that name from the event stream
 // (see public/live.js). data-version on <body> is the server's start time;
@@ -135,6 +141,19 @@ templ VaerLayout(p VaerPage) {
 		@head("Vær", p.Clock)
 		<div class="vaer" data-sse="vaer">
 			@Vaer(p.Vaer)
+		</div>
+		<div class="corner">
+			@stampSpans(p.Stamps)
+		</div>
+	}
+}
+
+// UkeLayout is the week page.
+templ UkeLayout(p UkePage) {
+	@shell(p.Frame, "uke") {
+		@head("Uka", p.Clock)
+		<div class="uke" data-sse="uke">
+			@Uke(p.Uke)
 		</div>
 		<div class="corner">
 			@stampSpans(p.Stamps)

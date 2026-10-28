@@ -25,12 +25,13 @@ const (
 )
 
 type Event struct {
-	Title    string
-	Location string // as typed in Google Calendar; often a full address
-	Start    time.Time
-	End      time.Time // for full-day events: midnight of the last day
-	FullDay  bool
-	Source   Source // only set for the two main event calendars
+	Title       string
+	Location    string // as typed in Google Calendar; often a full address
+	Description string // as typed; often HTML, or an invitation's meeting details
+	Start       time.Time
+	End         time.Time // for full-day events: midnight of the last day
+	FullDay     bool
+	Source      Source // only set for the two main event calendars
 }
 
 // IDs of the Google calendars to read. Empty IDs are skipped.
@@ -220,12 +221,12 @@ func parseGoogleEvent(e *gcal.Event) (Event, error) {
 		if err1 != nil || err2 != nil {
 			return Event{}, fmt.Errorf("event %q has invalid dates", e.Summary)
 		}
-		return Event{Title: e.Summary, Location: e.Location, Start: start, End: end.AddDate(0, 0, -1), FullDay: true}, nil
+		return Event{Title: e.Summary, Location: e.Location, Description: e.Description, Start: start, End: end.AddDate(0, 0, -1), FullDay: true}, nil
 	}
 	start, err1 := time.Parse(time.RFC3339, e.Start.DateTime)
 	end, err2 := time.Parse(time.RFC3339, e.End.DateTime)
 	if err1 != nil || err2 != nil {
 		return Event{}, fmt.Errorf("event %q has invalid times", e.Summary)
 	}
-	return Event{Title: e.Summary, Location: e.Location, Start: start.In(tz.Oslo), End: end.In(tz.Oslo)}, nil
+	return Event{Title: e.Summary, Location: e.Location, Description: e.Description, Start: start.In(tz.Oslo), End: end.In(tz.Oslo)}, nil
 }
