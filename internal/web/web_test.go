@@ -94,6 +94,8 @@ func TestPageAndStaticFiles(t *testing.T) {
 		{"/kalender", `data-sse="kalender"`, 200},
 		{"/kalender", `class="page-kalender"`, 200},
 		{"/vaer", `data-sse="vaer"`, 200},
+		{"/uke", `data-sse="uke"`, 200},
+		{"/uke", `class="page-uke"`, 200},
 		{"/strom/", "", 404},
 		{"/favicon.ico", "", 200},
 		{"/styles.css", "", 200},
@@ -156,12 +158,12 @@ func TestSSEStartsWithSnapshot(t *testing.T) {
 	srv := httptest.NewServer(s.Handler())
 	defer srv.Close()
 
-	waitForFragments(t, s, 9)
+	waitForFragments(t, s, 10)
 
-	names, data := readEvents(t, srv.URL+"/sse", 10)
+	names, data := readEvents(t, srv.URL+"/sse", 11)
 	// The version follows the snapshot, so a browser reconnecting after a
 	// restart can reload at once.
-	want := "weather calendar kalender vaer power-home power-cabin strom-home strom-cabin trains version"
+	want := "weather calendar kalender vaer uke power-home power-cabin strom-home strom-cabin trains version"
 	if got := strings.Join(names, " "); got != want {
 		t.Errorf("events = %q, want %q", got, want)
 	}
@@ -179,7 +181,7 @@ func TestSSESendsOnlyTheEventsAskedFor(t *testing.T) {
 	go s.Publish(ctx)
 	srv := httptest.NewServer(s.Handler())
 	defer srv.Close()
-	waitForFragments(t, s, 9)
+	waitForFragments(t, s, 10)
 
 	names, _ := readEvents(t, srv.URL+"/sse?events=strom-cabin,kalender,version,mode", 3)
 	if got, want := strings.Join(names, " "), "kalender strom-cabin version"; got != want {

@@ -45,6 +45,7 @@ står her: farger, skrift, typografisk skala, rutenett og tallformat.
 | `strom` | `/strom` | Tibber for hjemme og hytta |
 | `kalender` | `/kalender` | i dag og 13 dager fram, med alle detaljer |
 | `vaer` | `/vaer` | været nå, de neste 48 timene og de neste 12 dagene |
+| `uke` | `/uke` | Claudes linjer om uka og de sju dagene (se `2026-10-28-claude-design.md`) |
 
 ## MQTT
 

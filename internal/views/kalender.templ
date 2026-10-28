@@ -29,6 +29,9 @@ templ Agenda(a view.Agenda) {
 					<span class="time">{ e.Time }</span>
 					<span class="title">{ e.Title }</span>
 					<span class="ev-detail">{ e.Detail }</span>
+					if e.Note != "" {
+						<span class="ev-detail">{ e.Note }</span>
+					}
 				</div>
 			}
 		</div>

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
+	"github.com/kvasbo/tellulf-v9/internal/claude"
 	"github.com/kvasbo/tellulf-v9/internal/weather"
 )
 
@@ -26,7 +27,7 @@ func TestAgendaLabelsAndWeather(t *testing.T) {
 		"2026-10-26": {MinTemp: 3.4, MaxTemp: 8.2, LightRainProbability: 0},
 		"2026-10-27": {MinTemp: 4, MaxTemp: 9, LightRainProbability: 60},
 	}
-	a := BuildAgenda(calendar.Snapshot{}, daily, nil, calNow, 14)
+	a := BuildAgenda(calendar.Snapshot{}, daily, nil, nil, calNow, 14)
 	if len(a.Days) != 14 {
 		t.Fatalf("got %d days, want 14", len(a.Days))
 	}
@@ -56,7 +57,7 @@ func TestAgendaEventDetails(t *testing.T) {
 		// Monday 20:00 to the Tuesday a week later.
 		timed("Lang reise", mon.Add(20*time.Hour), 8*24*time.Hour),
 	}}
-	a := BuildAgenda(cal, nil, nil, calNow, 3)
+	a := BuildAgenda(cal, nil, nil, nil, calNow, 3)
 	want := []string{
 		"11:00|PT (Lena)|til 12:00 · SATS Majorstuen",
 		"14:00|" + long + "|til 16:00",
@@ -90,7 +91,7 @@ func TestAgendaNotesAndHytta(t *testing.T) {
 		},
 		Dinners: []calendar.Event{fullDay("Pannekaker", mon), fullDay("Is", mon)},
 	}
-	d := BuildAgenda(cal, nil, hytta, calNow, 1).Days[0]
+	d := BuildAgenda(cal, nil, hytta, nil, calNow, 1).Days[0]
 	var notes []string
 	for _, n := range d.Notes {
 		notes = append(notes, plain(n.Text))
@@ -112,7 +113,7 @@ func TestAgendaNotesAndHytta(t *testing.T) {
 func TestAgendaFadesWhenKidsAway(t *testing.T) {
 	e := timed("Fotball", mon.Add(17*time.Hour), time.Hour)
 	e.Source = calendar.Felles
-	d := BuildAgenda(calendar.Snapshot{Events: []calendar.Event{e}}, nil, nil, calNow, 1).Days[0]
+	d := BuildAgenda(calendar.Snapshot{Events: []calendar.Event{e}}, nil, nil, nil, calNow, 1).Days[0]
 	if len(d.Events) != 1 || !d.Events[0].Faded || d.Kids != calendar.KidsAway {
 		t.Errorf("got %+v", d)
 	}
@@ -130,5 +131,33 @@ func TestShortPlace(t *testing.T) {
 		if got := shortPlace(in); got != want {
 			t.Errorf("shortPlace(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+// Claude's note gets a line of its own under the detail line. A title the
+// overview would cut gets Claude's short title; others stay in full.
+func TestAgendaUsesClaudesTitles(t *testing.T) {
+	long := timed("Invitasjon: Kvartalsgjennomgang økonomi og drift Q4 – ledergruppen", mon.Add(12*time.Hour), time.Hour)
+	medium := timed("Foreldremøte 3. trinn Slemdal skole, aula", mon.Add(18*time.Hour), time.Hour)
+	fotball := timed("Fotball", mon.Add(17*time.Hour), time.Hour)
+	fotball.Description = "Oppmøte 16:45. Husk drikkeflaske!"
+	ferie := calendar.Event{Title: "Høstferie", Description: "Skolen er stengt", Start: mon, End: mon.AddDate(0, 0, 4), FullDay: true}
+	titles := claude.Titles{
+		claude.TitleKey(long):    {Short: "Kvartalsgjennomgang Q4", Note: "Les rapporten før møtet"},
+		claude.TitleKey(medium):  {Short: "Foreldremøte 3. trinn"},
+		claude.TitleKey(fotball): {Note: "Ta med drikkeflaske"},
+		claude.TitleKey(ferie):   {Note: "Skolen er stengt"},
+	}
+	d := BuildAgenda(calendar.Snapshot{Events: []calendar.Event{long, medium, fotball, ferie}}, nil, nil, titles, calNow, 1).Days[0]
+	var got []string
+	for _, e := range d.Events {
+		got = append(got, e.Title+"|"+e.Note)
+	}
+	want := []string{"Kvartalsgjennomgang Q4|Les rapporten før møtet", "Fotball|Ta med drikkeflaske", "Foreldremøte 3. trinn Slemdal skole, aula|"}
+	if !slices.Equal(got, want) {
+		t.Errorf("events:\n got %q\nwant %q", got, want)
+	}
+	if len(d.Notes) != 1 || plain(d.Notes[0].Text) != "Høstferie · til og med fredag · Skolen er stengt" {
+		t.Errorf("notes %+v", d.Notes)
 	}
 }

@@ -6,7 +6,7 @@ import (
 )
 
 // Calendar is the right column: today in full (sunrise and sunset in its
-// header), the coming days on two lines each, and the faint corner line (bhg counter; b = built, s = started,
+// header, Claude's sentence under the dinner), the coming days on two lines each, and the faint corner line (bhg counter; b = built, s = started,
 // l = page loaded, d = last data). client.js hides whole .day elements from
 // the bottom when .days overflows, and fills the two stamp spans after each
 // swap.
@@ -24,6 +24,9 @@ templ Calendar(c view.Calendar, sun view.Sun, st view.Stamps) {
 		if c.Today.Dinner != "" {
 			<div class="dinner">{ c.Today.Dinner }</div>
 		}
+		if c.Today.Sentence != "" {
+			<div class="note">{ c.Today.Sentence }</div>
+		}
 		for _, n := range c.Today.Notes {
 			<div class="note">{ n }</div>
 		}
@@ -40,28 +43,7 @@ templ Calendar(c view.Calendar, sun view.Sun, st view.Stamps) {
 		}
 	</div>
 	<div class="days">
-		for _, d := range c.Days {
-			<div class="day">
-				<div class="row1">
-					@kidsDot(d.Kids)
-					<span class="weekday">{ d.Label }</span>
-					<span class="dinner">{ d.Dinner }</span>
-					<span class="wx">{ d.Weather }</span>
-				</div>
-				if len(d.Events) > 0 {
-					<div class="row2">
-						for i, e := range d.Events {
-							if i > 0 {
-								// Each .item carries its own "·" (CSS); the zero-width space
-								// lets the line break after it.
-								{ "​" }
-							}
-							<span class={ "item", templ.KV("faded", e.Faded) }>{ e.Text }</span>
-						}
-					</div>
-				}
-			</div>
-		}
+		@dayRows(c.Days)
 	</div>
 	<div class="corner">
 		if c.Bhg != "" {
@@ -69,6 +51,33 @@ templ Calendar(c view.Calendar, sun view.Sun, st view.Stamps) {
 		}
 		@stampSpans(st)
 	</div>
+}
+
+// dayRows are days on two lines each: the kids dot, the day, the dinner
+// and the weather, then the appointments.
+templ dayRows(days []view.Day) {
+	for _, d := range days {
+		<div class="day">
+			<div class="row1">
+				@kidsDot(d.Kids)
+				<span class="weekday">{ d.Label }</span>
+				<span class="dinner">{ d.Dinner }</span>
+				<span class="wx">{ d.Weather }</span>
+			</div>
+			if len(d.Events) > 0 {
+				<div class="row2">
+					for i, e := range d.Events {
+						if i > 0 {
+							// Each .item carries its own "·" (CSS); the zero-width space
+							// lets the line break after it.
+							{ "​" }
+						}
+						<span class={ "item", templ.KV("faded", e.Faded) }>{ e.Text }</span>
+					}
+				</div>
+			}
+		</div>
+	}
 }
 
 // kidsDot shows where the kids are: filled when here, a ring when away,

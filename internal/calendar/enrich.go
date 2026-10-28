@@ -48,8 +48,8 @@ const (
 	kindDinner
 )
 
-// The kids are exchanged at 16:00 on the days we switch.
-const handoverHour = 16
+// HandoverHour is when the kids are exchanged on the days we switch: 16:00.
+const HandoverHour = 16
 
 func sortByStart(events []Event) {
 	slices.SortStableFunc(events, func(a, b Event) int { return a.Start.Compare(b.Start) })
@@ -202,7 +202,7 @@ func isFaded(e Event, d time.Time, kids KidsStatus) bool {
 	if e.FullDay || dayType == MiddleDay || dayType == LastDay {
 		return false
 	}
-	afterHandover := e.Start.In(tz.Oslo).Hour() >= handoverHour
+	afterHandover := e.Start.In(tz.Oslo).Hour() >= HandoverHour
 	if kids == KidsLeaving {
 		return afterHandover
 	}

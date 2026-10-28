@@ -88,9 +88,10 @@ function fillStamps() {
 fillStamps();
 
 // Calendar overflow: hide the coming days that don't fit, from the bottom.
-// Today and the corner line have their own space and are never hidden.
+// Today and the corner line have their own space and are never hidden. The
+// week page lists its days the same way.
 function checkCalendarVisibility() {
-	const days = document.querySelector('.calendar .days');
+	const days = document.querySelector('.days');
 	if (!days) return;
 
 	// clientHeight includes the padding; the days stack from the content edge.
@@ -110,7 +111,7 @@ function checkCalendarVisibility() {
 document.addEventListener('fragment', (e) => {
 	dataAt = stampFmt.format(new Date());
 	fillStamps();
-	if (e.detail === 'calendar') {
+	if (e.detail === 'calendar' || e.detail === 'uke') {
 		checkCalendarVisibility();
 	}
 });
@@ -159,9 +160,9 @@ connect('/sse', {
 	mode: onMode,
 });
 
-// Run the visibility check on resize. The aside persists across calendar
-// swaps; its children don't.
-const calendarEl = document.querySelector('.calendar');
+// Run the visibility check on resize. The aside (the week page's grid)
+// persists across swaps; its children don't.
+const calendarEl = document.querySelector('.calendar, .uke');
 if (calendarEl) {
 	new ResizeObserver(() =>
 		requestAnimationFrame(checkCalendarVisibility),

@@ -10,11 +10,12 @@ the client.
 ## Modes
 
 Besides the overview (`/`), the screen has a page for power (`/strom`), the calendar
-(`/kalender`) and the weather (`/vaer`), each in full detail. Publish the mode on MQTT and
-every open screen goes there, with a short page transition:
+(`/kalender`) and the weather (`/vaer`), each in full detail, and one for the week ahead
+(`/uke`). Publish the mode on MQTT and every open screen goes there, with a short page
+transition:
 
 ```sh
-mosquitto_pub -h broker -t tellulf/mode -m strom   # or kalender, vaer, oversikt
+mosquitto_pub -h broker -t tellulf/mode -m strom   # or kalender, vaer, uke, oversikt
 ```
 
 The payload is a mode's name or its path (`strøm` and `vær` work too). After
@@ -38,8 +39,26 @@ TELLULF_DEV=1 go run .     # http://localhost:3000
 ```
 
 Without any environment variables you get weather and metro departures. Calendar,
-sensors and power each need their own variables (see below); when they are missing,
-that panel stays empty and the log says why.
+sensors, power and Claude each need their own variables (see below); when they are
+missing, that panel stays empty (without Claude: as it is without it) and the log says why.
+
+## Claude
+
+With `ANTHROPIC_API_KEY` set, Claude writes three things from the calendar and the
+forecast: a sentence under the dinner in I DAG, short titles for long events (and a note
+from the description on the calendar page), and a few lines about the week on `/uke`.
+They are written in the background, a few times an hour at most; a text with a number
+that isn't in the data it was written from is thrown away. With `TELLULF_STATE_DIR` they
+are saved there (`claude.json`), so a restart shows them at once without asking again. The model is Haiku
+(`claude-haiku-5-5`) unless `TELLULF_CLAUDE_MODEL` says otherwise. Calendar titles,
+descriptions and places are sent to Anthropic's API. Design notes:
+`docs/superpowers/specs/2026-10-28-claude-design.md`.
+
+To try the prompts on a made-up week against the real API (a few øre):
+
+```sh
+ANTHROPIC_API_KEY=... go test -tags live -run Live -v ./internal/claude
+```
 
 ## Development
 
@@ -110,6 +129,9 @@ Three ways to set them:
 | `TELLULF_MODE_TIMEOUT` | How long a page other than the overview stays up: `90s`, `5m`, or seconds; `0` for good (default `2m`) |
 | `MQTT_HOST`, `MQTT_USER`, `MQTT_PASS` | Outdoor sensors and the mode, e.g. `mqtt://broker:1883` (port defaults to 1883) |
 | `TIBBER_KEY`, `TIBBER_ID_HOME`, `TIBBER_ID_CABIN` | Power usage and price; all three are required |
+| `ANTHROPIC_API_KEY` | Claude's texts (optional) |
+| `TELLULF_CLAUDE_MODEL` | The model for them (default `claude-haiku-5-5`) |
+| `TELLULF_STATE_DIR` | A writable directory where Claude's texts are kept between restarts (optional; memory only without it) |
 | `GOOGLE_KEY_B64` | Base64-encoded Google service account key (JSON) |
 | `CAL_ID_FELLES`, `CAL_ID_AUDUN` | Event calendars |
 | `CAL_ID_BURSDAG` | Birthdays |
@@ -128,6 +150,7 @@ public/               CSS and the browser JavaScript (clock, calendar overflow, 
 internal/
   weather/            MET Norway forecasts
   calendar/           Google Calendar, kids' schedule, fading rules
+  claude/             Claude's texts: today's sentence, short titles, the week
   entur/              metro departures
   smarthouse/         MQTT sensor readings and the mode
   mode/               the pages (modes) and their paths
