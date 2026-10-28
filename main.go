@@ -88,7 +88,12 @@ func run() error {
 	if key := os.Getenv("ANTHROPIC_API_KEY"); key == "" {
 		slog.Warn("Claude disabled", "reason", "ANTHROPIC_API_KEY is not set")
 	} else {
-		c := claude.New(claude.Config{APIKey: key, Model: os.Getenv("TELLULF_CLAUDE_MODEL")}, claude.Sources{
+		cfg := claude.Config{
+			APIKey:   key,
+			Model:    os.Getenv("TELLULF_CLAUDE_MODEL"),
+			StateDir: os.Getenv("TELLULF_STATE_DIR"),
+		}
+		c := claude.New(cfg, claude.Sources{
 			Calendar: func() calendar.Snapshot {
 				if src.Calendar == nil {
 					return calendar.Snapshot{}

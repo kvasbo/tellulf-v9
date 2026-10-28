@@ -48,7 +48,8 @@ With `ANTHROPIC_API_KEY` set, Claude writes three things from the calendar and t
 forecast: a sentence under the dinner in I DAG, short titles for long events (and a note
 from the description on the calendar page), and a few lines about the week on `/uke`.
 They are written in the background, a few times an hour at most; a text with a number
-that isn't in the data it was written from is thrown away. The model is Haiku
+that isn't in the data it was written from is thrown away. With `TELLULF_STATE_DIR` they
+are saved there (`claude.json`), so a restart shows them at once without asking again. The model is Haiku
 (`claude-haiku-5-5`) unless `TELLULF_CLAUDE_MODEL` says otherwise. Calendar titles,
 descriptions and places are sent to Anthropic's API. Design notes:
 `docs/superpowers/specs/2026-10-28-claude-design.md`.
@@ -130,6 +131,7 @@ Three ways to set them:
 | `TIBBER_KEY`, `TIBBER_ID_HOME`, `TIBBER_ID_CABIN` | Power usage and price; all three are required |
 | `ANTHROPIC_API_KEY` | Claude's texts (optional) |
 | `TELLULF_CLAUDE_MODEL` | The model for them (default `claude-haiku-5-5`) |
+| `TELLULF_STATE_DIR` | A writable directory where Claude's texts are kept between restarts (optional; memory only without it) |
 | `GOOGLE_KEY_B64` | Base64-encoded Google service account key (JSON) |
 | `CAL_ID_FELLES`, `CAL_ID_AUDUN` | Event calendars |
 | `CAL_ID_BURSDAG` | Birthdays |

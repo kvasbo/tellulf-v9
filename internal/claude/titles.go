@@ -40,8 +40,8 @@ const titlesSystem = `Du rydder kalenderhendelser for en hjemmeskjerm. Du får e
 // and a note from the description for the calendar page. Either may be "",
 // and the screen then shows what it would without Claude.
 type Title struct {
-	Short string
-	Note  string
+	Short string `json:"short,omitempty"`
+	Note  string `json:"note,omitempty"`
 }
 
 // Titles are keyed by what an event says (TitleKey), so the events of a
@@ -61,8 +61,13 @@ func needsTitle(e calendar.Event) bool {
 }
 
 // refreshTitles asks for the events it hasn't seen, a batch at a time, and
-// forgets the ones that have left the calendar.
+// forgets the ones that have left the calendar. Without any events the
+// calendar may not have loaded yet, so the titles stay as they are (also
+// the ones saved before a restart).
 func (c *Claude) refreshTitles(ctx context.Context, cal calendar.Snapshot, now time.Time) {
+	if len(cal.Events) == 0 {
+		return
+	}
 	c.mu.RLock()
 	have := c.titles
 	c.mu.RUnlock()
@@ -112,6 +117,7 @@ func (c *Claude) refreshTitles(ctx context.Context, cal calendar.Snapshot, now t
 		c.mu.Lock()
 		c.titles = next
 		c.mu.Unlock()
+		c.dirty = true
 	}
 }
 

@@ -43,6 +43,7 @@ const weekSystem = `Du skriver noen få linjer om dagene som kommer, til en hjem
 Regler:
 - Norsk bokmål. Én til fem linjer, hver en kort, naturlig setning om én ting, høyst 90 tegn, uten punktum til slutt.
 - Si ukedagen («onsdag», «på torsdag»), ikke datoen. «I dag» og «i morgen» er greit.
+- Skriv bare om det som skjer. Ingen linjer om at noe ikke skjer («ingen bursdager», «ingen barnebytter»); dager uten middag er unntaket. Skjer det lite, holder én linje.
 - Skriv med egne ord, ikke siter titler fra kalenderen ordrett. Et navn i en tittel er som regel den avtalen gjelder, ikke et sted.
 - Bare fakta fra dataene. Hvert tall og klokkeslett du skriver, må stå i dataene. Ikke gjett på hvem som skal hvor eller hvorfor.
 - Klokkeslett som «kl. 16» eller «kl. 16:30», temperaturer som «8°», og «−» for minus. Ikke nevn regnsjanse under 50 %.
@@ -50,7 +51,7 @@ Regler:
 
 type weekText struct {
 	written
-	lines []string
+	Lines []string `json:"lines"`
 }
 
 // WeekStart is the first day the week ahead covers: today, and from 18:00
@@ -100,8 +101,8 @@ func (c *Claude) refreshWeek(ctx context.Context, cal calendar.Snapshot, now tim
 
 	c.mu.Lock()
 	last := c.week.written
-	if hash == last.hash {
-		c.week.checked = now
+	if hash == last.Hash {
+		c.week.Checked = now
 	}
 	c.mu.Unlock()
 	if !c.weekJob.due(last, hash, start, now) {
@@ -129,7 +130,8 @@ func (c *Claude) refreshWeek(ctx context.Context, cal calendar.Snapshot, now tim
 	}
 	c.weekJob.succeeded(now)
 	c.mu.Lock()
-	c.week = weekText{written{hash: hash, period: start, checked: now}, lines}
+	c.week = weekText{written{Hash: hash, Period: start, Checked: now}, lines}
+	c.dirty = true
 	c.mu.Unlock()
 	slog.Info("claude: week", "lines", strings.Join(lines, " | "))
 }

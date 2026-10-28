@@ -35,7 +35,6 @@ skjermen er som før.
 - Ingen tekst skrives mens en side rendres. Alt skrives i bakgrunnen.
 - Tellulf bytter ikke selv til `uke` søndag kveld. Det er automasjonens jobb,
   som for de andre modusene.
-- Ingen lagring mellom omstarter: titlene spørres om igjen etter en omstart.
 
 ## Dagens setning
 
@@ -124,6 +123,27 @@ Fragmentet `uke` rendres hvert 15. sekund som de andre datafragmentene.
 - Nye tekster logges på info-nivå («claude: today», «claude: week»,
   «claude: title»), så det er lett å se hva Claude skriver. Tokens og
   svartid per kall logges med `TELLULF_DEBUG`.
+
+## Lagring
+
+Med `TELLULF_STATE_DIR` lagres tekstene i `claude.json` der (i Docker et
+volum på `/data`). Uten den ligger de bare i minnet, og alt skrives på nytt
+etter en omstart, med et minutt eller to uten setning og uke.
+
+- Én JSON-fil, ikke en database: det er noen få KB som leses én gang ved
+  oppstart og aldri spørres mot.
+- Lagres etter hver endring, og ellers hvert kvarter, så tidspunktet for når
+  inndataene sist ble sett, aldri er langt bak. Skrives til en midlertidig
+  fil som så får det riktige navnet, så fila aldri blir halvskrevet.
+- Lagrede tekster følger de samme reglene som nye: setningen vises bare på
+  sin dag og så lenge inndataene er sett de siste 90 minuttene, uka bare for
+  sin uke. Etter en vanlig omstart vises de med en gang, og det første kallet
+  kommer først når inndataene har endret seg.
+- Fila merkes med modellen og promptene. Bytter du modell eller endres en
+  prompt, blir den gamle fila liggende ubrukt og overskrevet, og alt skrives
+  på nytt.
+- Titlene glemmes ikke før kalenderen har lastet; før det har kalenderen
+  ingen hendelser, og da beholdes de lagrede.
 
 ## Kostnad
 

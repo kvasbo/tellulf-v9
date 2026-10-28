@@ -43,6 +43,10 @@ week's lines (`/uke`). Design notes: `docs/superpowers/specs/2026-10-28-claude-d
   (`input.go`). Every number in an answer must appear in the input (`grounded`), or the
   text is thrown away and the job backs off.
 - Titles are keyed by title + description (`TitleKey`), asked for once each.
+- With `TELLULF_STATE_DIR` the texts are saved to `claude.json` there (`state.go`): after
+  every change and every 15 minutes, written to a temp file and renamed. A file from another
+  model or other prompts (`stateVersion`) is ignored. Saved texts follow the same rules as
+  fresh ones, so a restart shows them at once and only asks for what has changed.
 - `go test -tags live -run Live -v ./internal/claude` runs the prompts against the real
   API on a made-up week; use it when changing a prompt or comparing models.
 
@@ -157,7 +161,8 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 CAL_ID_AUDUN, CAL_ID_BARNEUKER, CAL_ID_BURSDAG, CAL_ID_FELLES, CAL_ID_KINDERGARDEN,
 CAL_ID_MIDDAG, EXPOSE_PORT, GOOGLE_KEY_B64, MQTT_HOST, MQTT_PASS, MQTT_USER,
 TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV, TELLULF_DEBUG,
-TELLULF_MODE_TIMEOUT, ANTHROPIC_API_KEY and TELLULF_CLAUDE_MODEL (optional)
+TELLULF_MODE_TIMEOUT, ANTHROPIC_API_KEY, TELLULF_CLAUDE_MODEL and TELLULF_STATE_DIR
+(optional)
 
 Loaded from the environment, plus `.env` in the working directory if present (godotenv;
 existing environment variables win).

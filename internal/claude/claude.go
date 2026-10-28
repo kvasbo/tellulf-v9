@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
@@ -35,8 +36,9 @@ import (
 const DefaultModel = "claude-haiku-5-5"
 
 type Config struct {
-	APIKey string
-	Model  string // DefaultModel when empty
+	APIKey   string
+	Model    string // DefaultModel when empty
+	StateDir string // where the texts are kept between restarts; "" for memory only
 }
 
 // Sources are what the texts are written from.
@@ -67,6 +69,11 @@ type Claude struct {
 
 	// Only touched by Run's goroutine.
 	todayJob, weekJob, titlesJob job
+	dirty                        bool      // a text has changed since the last save
+	saved                        time.Time // when the texts were last saved
+
+	statePath string // "" without a state directory
+	version   string // the model and the prompts the saved texts must match
 }
 
 // New makes a Claude that writes with the given API key.
@@ -77,7 +84,13 @@ func New(cfg Config, src Sources) *Claude {
 	}
 	client := anthropic.NewClient(option.WithAPIKey(cfg.APIKey))
 	slog.Info("Claude enabled", "model", model)
-	return newClaude(src, sdkGenerator(client, model))
+	c := newClaude(src, sdkGenerator(client, model))
+	if cfg.StateDir != "" {
+		c.statePath = filepath.Join(cfg.StateDir, stateFile)
+		c.version = stateVersion(model)
+		c.load()
+	}
+	return c
 }
 
 func newClaude(src Sources, generate generateFunc) *Claude {
@@ -108,6 +121,9 @@ func (c *Claude) refresh(ctx context.Context) {
 	c.refreshTitles(ctx, cal, now)
 	c.refreshToday(ctx, cal, now)
 	c.refreshWeek(ctx, cal, now)
+	if c.statePath != "" && (c.dirty || now.Sub(c.saved) >= saveEvery) {
+		c.save(now)
+	}
 }
 
 // Texts returns what is current at now: today's sentence on its day while
@@ -118,27 +134,28 @@ func (c *Claude) Texts(now time.Time) Texts {
 	defer c.mu.RUnlock()
 	t := Texts{Titles: c.titles}
 	if c.today.current(dateKey(now), now, todayMaxAge) {
-		t.Today = c.today.text
+		t.Today = c.today.Text
 	}
 	if c.week.current(dateKey(WeekStart(now)), now, weekMaxAge) {
-		t.Week = c.week.lines
+		t.Week = c.week.Lines
 	}
 	return t
 }
 
 // --- Pacing ------------------------------------------------------------------------
 
-// written is what every text keeps about where it came from.
+// written is what every text keeps about where it came from. The texts
+// are saved as JSON (see state.go).
 type written struct {
-	hash    string    // of the input it was written from
-	period  string    // the date it is for: today, or the week's first day
-	checked time.Time // when that input was last seen unchanged
+	Hash    string    `json:"hash"`    // of the input it was written from
+	Period  string    `json:"period"`  // the date it is for: today, or the week's first day
+	Checked time.Time `json:"checked"` // when that input was last seen unchanged
 }
 
 // current says whether the text is for period and still matches what it
 // was written from: its input has been seen unchanged within maxAge.
 func (w written) current(period string, now time.Time, maxAge time.Duration) bool {
-	return w.period == period && now.Sub(w.checked) < maxAge
+	return w.Period == period && now.Sub(w.Checked) < maxAge
 }
 
 // maxRetry caps the wait after failed requests.
@@ -169,10 +186,10 @@ func (j *job) failed(now time.Time) {
 // given the last one: when the input has changed and the job is ready, and
 // at once when a new period has begun, unless requests are failing.
 func (j *job) due(last written, hash, period string, now time.Time) bool {
-	if hash == last.hash {
+	if hash == last.Hash {
 		return false
 	}
-	if period != last.period && j.retry == 0 {
+	if period != last.Period && j.retry == 0 {
 		return true
 	}
 	return j.ready(now)

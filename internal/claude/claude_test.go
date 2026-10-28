@@ -121,7 +121,7 @@ func TestTidy(t *testing.T) {
 func TestJobPacing(t *testing.T) {
 	j := job{interval: time.Hour}
 	now := morning
-	last := written{hash: "a", period: "2026-10-28"}
+	last := written{Hash: "a", Period: "2026-10-28"}
 	if j.due(last, "a", "2026-10-28", now) {
 		t.Error("due with the same input")
 	}

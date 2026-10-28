@@ -47,7 +47,7 @@ Regler:
 
 type todayText struct {
 	written
-	text string
+	Text string `json:"text"`
 }
 
 // todayInput is what the sentence is written from: the hour now, today
@@ -92,8 +92,8 @@ func (c *Claude) refreshToday(ctx context.Context, cal calendar.Snapshot, now ti
 
 	c.mu.Lock()
 	last := c.today.written
-	if hash == last.hash {
-		c.today.checked = now
+	if hash == last.Hash {
+		c.today.Checked = now
 	}
 	c.mu.Unlock()
 	if !c.todayJob.due(last, hash, day, now) {
@@ -121,7 +121,8 @@ func (c *Claude) refreshToday(ctx context.Context, cal calendar.Snapshot, now ti
 	}
 	c.todayJob.succeeded(now)
 	c.mu.Lock()
-	c.today = todayText{written{hash: hash, period: day, checked: now}, text}
+	c.today = todayText{written{Hash: hash, Period: day, Checked: now}, text}
+	c.dirty = true
 	c.mu.Unlock()
 	slog.Info("claude: today", "text", text)
 }

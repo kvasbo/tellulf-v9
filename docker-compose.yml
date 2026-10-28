@@ -21,6 +21,12 @@ services:
       - TELLULF_MODE_TIMEOUT=${TELLULF_MODE_TIMEOUT:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - TELLULF_CLAUDE_MODEL=${TELLULF_CLAUDE_MODEL:-}
+      # Claude's texts survive restarts here.
+      - TELLULF_STATE_DIR=/data
+    volumes:
+      - tellulf-data:/data
+volumes:
+  tellulf-data:
 networks:
   default:
     name: ${NETWORK_NAME}
