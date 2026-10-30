@@ -81,7 +81,7 @@ func TestUke(t *testing.T) {
 	if err := Uke(u).Render(context.Background(), &b); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{`<p>Barna kommer fredag kl. 16</p>`, `<span class="weekday">I dag</span> <span class="dinner">Taco</span>`} {
+	for _, want := range []string{`<p>Barna kommer fredag kl. 16</p>`, `<span class="weekday">I dag<span class="dot dot-away"></span></span> <span class="dinner">Taco</span>`} {
 		if !strings.Contains(b.String(), want) {
 			t.Errorf("missing %s in %s", want, b.String())
 		}

@@ -53,15 +53,17 @@ templ Calendar(c view.Calendar, sun view.Sun, st view.Stamps) {
 	</div>
 }
 
-// dayRows are days on two lines each: the kids dot, the day, the dinner
-// and the weather, then the appointments.
+// dayRows are days on two lines each: the day and the kids dot, the dinner
+// and the weather, then the appointments. Without a dinner the appointments
+// start on the day's line.
 templ dayRows(days []view.Day) {
 	for _, d := range days {
-		<div class="day">
+		<div class={ "day", templ.KV("no-dinner", d.Dinner == "") }>
 			<div class="row1">
-				@kidsDot(d.Kids)
-				<span class="weekday">{ d.Label }</span>
-				<span class="dinner">{ d.Dinner }</span>
+				<span class="weekday">{ d.Label }@kidsDot(d.Kids)</span>
+				if d.Dinner != "" {
+					<span class="dinner">{ d.Dinner }</span>
+				}
 				<span class="wx">{ d.Weather }</span>
 			</div>
 			if len(d.Events) > 0 {
