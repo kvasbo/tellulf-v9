@@ -202,14 +202,20 @@ func hourTick(h time.Time) string {
 // "0 %". Ahead means on course to pass the cap, and pay spot price, before
 // the month ends.
 func paceVsQuota(consumption, cap float64, now time.Time) string {
-	now = now.In(tz.Oslo)
-	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, tz.Oslo)
-	monthEnd := monthStart.AddDate(0, 1, 0)
-	gone := float64(now.Sub(monthStart)) / float64(monthEnd.Sub(monthStart))
-	expected := math.Max(gone*cap, 1) // at midnight on the 1st nothing is expected yet
+	expected := quotaSoFar(cap, now)
 	diff := tz.Round((consumption - expected) / expected * 100)
 	if diff > 0 {
 		return "+" + Pct(diff)
 	}
 	return Pct(diff)
+}
+
+// quotaSoFar is the part of cap a straight-line use over the month has
+// reached by now, in kWh, and at least 1.
+func quotaSoFar(cap float64, now time.Time) float64 {
+	now = now.In(tz.Oslo)
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, tz.Oslo)
+	monthEnd := monthStart.AddDate(0, 1, 0)
+	gone := float64(now.Sub(monthStart)) / float64(monthEnd.Sub(monthStart))
+	return math.Max(gone*cap, 1) // at midnight on the 1st nothing is expected yet
 }

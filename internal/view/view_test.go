@@ -47,25 +47,26 @@ func TestBuildTrainsNoneReachable(t *testing.T) {
 	}
 }
 
-// Under the cap the cell shows the month's use and how much of the quota it
-// has taken, and no price: every kWh costs the same fixed Norgespris.
+// Under the cap the cell shows the month's use and how much it is of the
+// quota the month so far gives (on 15 October at 10, 346 of 745 hours: 2322
+// of 5000 kWh), and no price: every kWh costs the same fixed Norgespris.
 func TestBuildPowerUnderCap(t *testing.T) {
 	d := tibber.PowerData{Timestamp: ten, EffectivePrice: 0.5, MonthlyConsumption: 2345, Cap: 5000}
-	want := Power{Label: "Strøm hjemme", HasData: true, Power: "0,0 kW", Usage: "2345 kWh · 47 %"}
-	if got := BuildPower(d, tibber.Home); got != want {
+	want := Power{Label: "Strøm hjemme", HasData: true, Power: "0,0 kW", Usage: "2345 kWh · 101 %"}
+	if got := BuildPower(d, tibber.Home, ten); got != want {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 	d.CurrentPower = -400
-	if got := BuildPower(d, tibber.Home).Power; got != "−0,4 kW" {
+	if got := BuildPower(d, tibber.Home, ten).Power; got != "−0,4 kW" {
 		t.Errorf("producing: got %q", got)
 	}
 }
 
 // Once the quota is used up, kWh cost spot price again, so the price shows.
 func TestBuildPowerAtAndOverCap(t *testing.T) {
-	for kWh, usage := range map[float64]string{1000: "1000 kWh · 100 %", 1234: "1234 kWh · 123 %"} {
+	for kWh, usage := range map[float64]string{1000: "1000 kWh · 215 %", 1234: "1234 kWh · 266 %"} {
 		d := tibber.PowerData{Timestamp: ten, EffectivePrice: 1.234, MonthlyConsumption: kWh, Cap: 1000}
-		p := BuildPower(d, tibber.Cabin)
+		p := BuildPower(d, tibber.Cabin, ten)
 		if p.Label != "Hytta" || p.Usage != usage || p.Price != "1,23 kr" {
 			t.Errorf("%v kWh: got %+v", kWh, p)
 		}
@@ -75,7 +76,7 @@ func TestBuildPowerAtAndOverCap(t *testing.T) {
 // Without a cap there is no quota share, and the price always matters.
 func TestBuildPowerWithoutCap(t *testing.T) {
 	d := tibber.PowerData{Timestamp: ten, CurrentPrice: 0.22, MonthlyConsumption: 812.4}
-	p := BuildPower(d, tibber.Cabin)
+	p := BuildPower(d, tibber.Cabin, ten)
 	if p.Usage != "812 kWh" || p.Price != "0,22 kr" {
 		t.Errorf("got %+v", p)
 	}
@@ -83,7 +84,7 @@ func TestBuildPowerWithoutCap(t *testing.T) {
 
 func TestBuildPowerNoData(t *testing.T) {
 	want := Power{Label: "Strøm hjemme"}
-	if got := BuildPower(tibber.PowerData{}, tibber.Home); got != want {
+	if got := BuildPower(tibber.PowerData{}, tibber.Home, ten); got != want {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 }

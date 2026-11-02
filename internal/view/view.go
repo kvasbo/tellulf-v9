@@ -60,20 +60,21 @@ func BuildStamps(started time.Time) Stamps {
 // --- Power -----------------------------------------------------------------------
 
 // Power is one bottom-row cell: the power drawn right now, under it the
-// month's consumption and how much of the Norgespris quota it has used, and
-// the price only once the quota is used up, since until then every kWh costs
-// the same fixed price.
+// month's consumption and how much of the Norgespris quota it has used
+// against the part of it the month so far gives (100 % is on pace), and the
+// price only once the quota is used up, since until then every kWh costs the
+// same fixed price.
 type Power struct {
 	Label   string // "Strøm hjemme", "Hytta"
 	HasData bool   // false until the live feed has delivered
 	Power   string // "0,0 kW"
-	Usage   string // "2345 kWh · 47 %"; just the kWh without a cap
+	Usage   string // "2345 kWh · 94 %"; just the kWh without a cap
 	Price   string // "1,23 kr" past the cap or without one, "" under it
 }
 
 var placeLabels = map[tibber.Place]string{tibber.Home: "Strøm hjemme", tibber.Cabin: "Hytta"}
 
-func BuildPower(d tibber.PowerData, place tibber.Place) Power {
+func BuildPower(d tibber.PowerData, place tibber.Place, now time.Time) Power {
 	p := Power{Label: placeLabels[place], HasData: !d.Timestamp.IsZero()}
 	if !p.HasData {
 		return p
@@ -83,7 +84,7 @@ func BuildPower(d tibber.PowerData, place tibber.Place) Power {
 	p.Power = KW(d.CurrentPower)
 	p.Usage = KWh(d.MonthlyConsumption)
 	if d.Cap > 0 {
-		p.Usage += " · " + Pct(d.MonthlyConsumption/d.Cap*100)
+		p.Usage += " · " + Pct(d.MonthlyConsumption/quotaSoFar(d.Cap, now)*100)
 		if d.MonthlyConsumption < d.Cap {
 			return p
 		}
