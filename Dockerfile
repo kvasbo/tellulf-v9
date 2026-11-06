@@ -7,13 +7,17 @@ RUN go mod download
 
 COPY . .
 
+# For every step below: with the same flags, the final build reuses what the
+# tests compiled instead of compiling everything again.
+ENV CGO_ENABLED=0 GOFLAGS=-trimpath
+
 # Regenerate the templ components (so the build never uses stale generated
 # code), check, test, then build a static binary with all static files
 # embedded.
 RUN go generate ./... \
 	&& go vet ./... \
 	&& go test ./... \
-	&& CGO_ENABLED=0 go build -trimpath \
+	&& go build \
 		-ldflags="-s -w -X github.com/kvasbo/tellulf-v9/internal/buildinfo.Time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 		-o /tellulf .
 
