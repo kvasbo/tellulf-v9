@@ -329,6 +329,17 @@ main {
 	color: var(--faint);
 }
 
+/* Whether an activity is replied to in Spond. */
+.mark {
+	margin-left: 8px;
+	font-size: 0.85em;
+	color: var(--accent);
+}
+
+.faded .mark {
+	color: inherit;
+}
+
 .days {
 	flex: 1;
 	min-height: 0;

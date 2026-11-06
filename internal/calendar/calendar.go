@@ -32,6 +32,8 @@ type Event struct {
 	End         time.Time // for full-day events: midnight of the last day
 	FullDay     bool
 	Source      Source // only set for the two main event calendars
+	Mark        string // set by internal/spond: a few characters after the title, "✓", "ikke svart"
+	Detail      string // set by internal/spond: the same in words for Claude's sentence
 }
 
 // IDs of the Google calendars to read. Empty IDs are skipped.
@@ -58,6 +60,9 @@ type Calendar struct {
 	cfg   Config
 	fetch fetchFunc
 
+	// Extend, if set before anyone reads, adds to every Snapshot (internal/spond).
+	Extend func(Snapshot) Snapshot
+
 	mu   sync.RWMutex
 	data Snapshot
 }
@@ -77,8 +82,12 @@ func New(ctx context.Context, cfg Config, serviceAccountJSON []byte) (*Calendar,
 // Snapshot returns the current calendar data.
 func (c *Calendar) Snapshot() Snapshot {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.data
+	s := c.data
+	c.mu.RUnlock()
+	if c.Extend != nil {
+		return c.Extend(s)
+	}
+	return s
 }
 
 // Run refreshes events every minute, and birthdays, dinners, barneuker and

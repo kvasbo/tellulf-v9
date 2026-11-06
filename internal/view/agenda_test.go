@@ -161,3 +161,12 @@ func TestAgendaUsesClaudesTitles(t *testing.T) {
 		t.Errorf("notes %+v", d.Notes)
 	}
 }
+
+func TestAgendaCarriesMarks(t *testing.T) {
+	e := timed("Agnes på turn", mon.Add(17*time.Hour), time.Hour)
+	e.Mark = "✓"
+	got := BuildAgenda(calendar.Snapshot{Events: []calendar.Event{e, timed("Lege", mon.Add(18*time.Hour), time.Hour)}}, nil, nil, nil, calNow, 1).Days[0].Events
+	if got[0].Mark != "✓" || got[1].Mark != "" {
+		t.Errorf("got %+v", got)
+	}
+}

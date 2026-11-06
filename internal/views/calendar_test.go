@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/a-h/templ"
+
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
 	"github.com/kvasbo/tellulf-v9/internal/view"
 )
@@ -85,5 +87,36 @@ func TestUke(t *testing.T) {
 		if !strings.Contains(b.String(), want) {
 			t.Errorf("missing %s in %s", want, b.String())
 		}
+	}
+}
+
+// The mark is drawn after the title on the overview and the calendar page,
+// and nothing is drawn for an event without one.
+func TestMarksAreDrawn(t *testing.T) {
+	const mark = `<span class="mark">ikke svart</span>`
+	render := func(t *testing.T, c templ.Component) string {
+		t.Helper()
+		var b strings.Builder
+		if err := c.Render(context.Background(), &b); err != nil {
+			t.Fatal(err)
+		}
+		return b.String()
+	}
+	overview := render(t, Calendar(view.Calendar{
+		Today: view.Today{Events: []view.TodayEvent{{Title: "Turn", Mark: "ikke svart"}, {Title: "Lege"}}},
+		Days:  []view.Day{{Events: []view.DayEvent{{Text: "17:00 Turn", Mark: "ikke svart"}, {Text: "18:00 Lege"}}}},
+	}, view.Sun{}, view.Stamps{}))
+	if n := strings.Count(overview, mark); n != 2 {
+		t.Errorf("%d marks on the overview, want 2:\n%s", n, overview)
+	}
+	if n := strings.Count(overview, `class="mark"`); n != 2 {
+		t.Errorf("%d mark elements on the overview, want 2", n)
+	}
+	agenda := render(t, Agenda(view.Agenda{Days: []view.AgendaDay{{Events: []view.AgendaEvent{{Title: "Turn", Mark: "ikke svart"}, {Title: "Lege"}}}}}))
+	if n := strings.Count(agenda, mark); n != 1 {
+		t.Errorf("%d marks on the calendar page, want 1:\n%s", n, agenda)
+	}
+	if n := strings.Count(agenda, `class="mark"`); n != 1 {
+		t.Errorf("%d mark elements on the calendar page, want 1", n)
 	}
 }

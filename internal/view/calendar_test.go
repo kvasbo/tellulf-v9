@@ -214,3 +214,27 @@ func TestCalendarUsesClaudesTexts(t *testing.T) {
 		t.Errorf("without Claude: %+v", c.Today)
 	}
 }
+
+// A mark (from Spond) follows its event on today's list and the coming days,
+// and an event without one has none.
+func TestCalendarCarriesMarks(t *testing.T) {
+	tue := mon.AddDate(0, 0, 1)
+	marked := func(start time.Time) calendar.Event {
+		e := timed("Agnes på turn", start, time.Hour)
+		e.Mark = "ikke svart"
+		return e
+	}
+	snap := calendar.Snapshot{Events: []calendar.Event{
+		marked(mon.Add(17 * time.Hour)),
+		timed("Tannlege", mon.Add(18*time.Hour), time.Hour),
+		marked(tue.Add(17 * time.Hour)),
+		timed("Lege", tue.Add(18*time.Hour), time.Hour),
+	}}
+	c := BuildCalendar(snap, nil, nil, claude.Texts{}, calNow, 2)
+	if got := c.Today.Events; got[0].Mark != "ikke svart" || got[1].Mark != "" {
+		t.Errorf("today: %+v", got)
+	}
+	if got := c.Days[0].Events; got[0].Mark != "ikke svart" || got[1].Mark != "" {
+		t.Errorf("tomorrow: %+v", got)
+	}
+}

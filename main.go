@@ -25,6 +25,7 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/mode"
 	"github.com/kvasbo/tellulf-v9/internal/smarthouse"
+	"github.com/kvasbo/tellulf-v9/internal/spond"
 	"github.com/kvasbo/tellulf-v9/internal/tibber"
 	"github.com/kvasbo/tellulf-v9/internal/weather"
 	"github.com/kvasbo/tellulf-v9/internal/web"
@@ -64,6 +65,19 @@ func run() error {
 	} else {
 		src.Calendar = cal
 		wg.Go(func() { cal.Run(ctx) })
+	}
+
+	// Spond adds to the calendar, so it needs one. See internal/spond for how
+	// to remove it.
+	switch email, password := os.Getenv("SPOND_EMAIL"), os.Getenv("SPOND_PASSWORD"); {
+	case email == "" || password == "":
+		slog.Warn("Spond disabled", "reason", "SPOND_EMAIL and SPOND_PASSWORD must both be set")
+	case src.Calendar == nil:
+		slog.Warn("Spond disabled", "reason", "the calendar is disabled")
+	default:
+		s := spond.New(spond.Config{Email: email, Password: password})
+		src.Calendar.Extend = s.Extend
+		wg.Go(func() { s.Run(ctx) })
 	}
 
 	if host := os.Getenv("MQTT_HOST"); host == "" {

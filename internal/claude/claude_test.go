@@ -190,6 +190,43 @@ func TestTodayInput(t *testing.T) {
 	}
 }
 
+// Details on today's and tomorrow's events (from Spond) go into the sentence's
+// input: not on what is over or dimmed, not further ahead, and not in the week.
+func TestTodayInputHasEventDetails(t *testing.T) {
+	thu := wed.AddDate(0, 0, 1)
+	detailed := func(title string, start time.Time, source calendar.Source, detail string) calendar.Event {
+		return calendar.Event{Title: title, Start: start, End: start.Add(time.Hour), Source: source, Detail: detail}
+	}
+	cal := calendar.Snapshot{
+		Events: []calendar.Event{
+			detailed("Over", wed.Add(5*time.Hour), calendar.Audun, "ikke svart i Spond"),
+			detailed("Agnes på turn", wed.Add(10*time.Hour), calendar.Felles, "ikke svart i Spond, oppmøte 09:45"),
+			detailed("Dimmed", wed.Add(18*time.Hour), calendar.Felles, "svart ja i Spond"),
+			detailed("Jonas: Kamp", thu.Add(11*time.Hour), calendar.Audun, "svart ja i Spond"),
+			detailed("Far ahead", wed.AddDate(0, 0, 2).Add(11*time.Hour), calendar.Audun, "svart nei i Spond"),
+			timed("Tannlege", wed.Add(9*time.Hour), time.Hour),
+		},
+		Barneuker: []calendar.Event{fullDay("Audun - Hanne", wed)},
+	}
+	c := newTest(cal, &fake{})
+	in := todayInput(cal, c.src.Hourly(morning), nil, morning)
+	want := "Fra Spond:\n- onsdag 28. oktober, 10:00 Agnes på turn: ikke svart i Spond, oppmøte 09:45\n- torsdag 29. oktober, 11:00 Jonas: Kamp: svart ja i Spond\n"
+	if !strings.Contains(in, want) {
+		t.Errorf("input lacks %q:\n%s", want, in)
+	}
+	for _, not := range []string{"Over:", "Dimmed:", "Far ahead:", "Tannlege:"} {
+		if strings.Contains(in, not) {
+			t.Errorf("input has %q:\n%s", not, in)
+		}
+	}
+	if week := weekInput(cal, nil, nil, morning); strings.Contains(week, "Spond") {
+		t.Errorf("the week has details:\n%s", week)
+	}
+	if plain := todayInput(calendar.Snapshot{}, c.src.Hourly(morning), nil, morning); strings.Contains(plain, "Spond") {
+		t.Errorf("without details:\n%s", plain)
+	}
+}
+
 // The sentence is written once per input, held for its day while the input
 // is seen, and turned down when it brings in a number of its own.
 func TestToday(t *testing.T) {

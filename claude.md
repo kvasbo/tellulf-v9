@@ -50,6 +50,26 @@ week's lines (`/uke`). Design notes: `docs/superpowers/specs/2026-10-28-claude-d
 - `go test -tags live -run Live -v ./internal/claude` runs the prompts against the real
   API on a made-up week; use it when changing a prompt or comparing models.
 
+## Spond
+
+`internal/spond` reads the kids' activities and adds them to the calendar. It only reads, and
+it uses Spond's private API (the one github.com/Olen/Spond found), so it may break; it is kept
+easy to remove, and how is at the top of `client.go`.
+
+- It joins in through one hook, `Calendar.Extend`, which every `Snapshot()` passes through. The
+  rest of the code only sees ordinary events, plus `Event.Mark` (for the screen) and
+  `Event.Detail` (for today's sentence), which are empty without Spond.
+- An activity Felles already has stays one line, with Felles' title: the titles have nothing in
+  common ("Agnes på turn", "TURN 5.-7. klasse"), so the match is the same start or meeting time
+  plus the child's first name in the Felles title. Others get a line of their own, as Felles
+  events, so they dim when the kids are away.
+- "ikke svart" shows from 7 days before the activity or its reply deadline, and not on dimmed
+  events: most sessions never get a reply, so showing it sooner would mark almost everything.
+  "kolliderer" shows at any distance, when another Felles event naming the child overlaps.
+- Fetched every 5 minutes. After an hour without an answer the data is dropped and the screen is
+  as without Spond. A rejected login isn't tried again before a restart, so it can't lock the
+  account.
+
 ## Architecture
 
 Go server (`main.go`), rendered HTML pushed to the browser over SSE.
@@ -102,6 +122,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - `internal/weather` — MET Norway forecasts (hourly + subseasonal), Oslo and the cabin
 - `internal/calendar` — Google Calendar (official Go client), kids schedule, fading rules
 - `internal/claude` — Claude's texts (official Anthropic Go SDK, structured output)
+- `internal/spond` — the kids' activities and replies from Spond, added to the calendar
 - `internal/entur` — metro departures
 - `internal/smarthouse` — MQTT sensor readings and the mode (paho)
 - `internal/mode` — the pages and their paths, and parsing the MQTT payload
@@ -161,8 +182,8 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 CAL_ID_AUDUN, CAL_ID_BARNEUKER, CAL_ID_BURSDAG, CAL_ID_FELLES, CAL_ID_KINDERGARDEN,
 CAL_ID_MIDDAG, EXPOSE_PORT, GOOGLE_KEY_B64, MQTT_HOST, MQTT_PASS, MQTT_USER,
 TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV, TELLULF_DEBUG,
-TELLULF_MODE_TIMEOUT, ANTHROPIC_API_KEY, TELLULF_CLAUDE_MODEL and TELLULF_STATE_DIR
-(optional)
+TELLULF_MODE_TIMEOUT, ANTHROPIC_API_KEY, TELLULF_CLAUDE_MODEL, TELLULF_STATE_DIR,
+SPOND_EMAIL and SPOND_PASSWORD (optional)
 
 Loaded from the environment, plus `.env` in the working directory if present (godotenv;
 existing environment variables win).

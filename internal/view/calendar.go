@@ -32,6 +32,7 @@ type TodayEvent struct {
 	Time  string // "12:00"; "" for an event that started on an earlier day
 	Title string
 	Hytta string // the cabin's forecast, "(5°, 20 % regn)", on events that mention hytta
+	Mark  string // after the title, "✓", "ikke svart"; "" without one
 	Faded bool
 }
 
@@ -45,6 +46,7 @@ type Day struct {
 
 type DayEvent struct {
 	Text  string
+	Mark  string // after the text, "✓", "ikke svart"; "" without one
 	Faded bool
 }
 
@@ -96,6 +98,7 @@ func buildToday(cal calendar.Snapshot, dailyHytta map[string]weather.Daily, text
 			Time:  e.DisplayTime.Start,
 			Title: title,
 			Hytta: suffix(e),
+			Mark:  e.Mark,
 			Faded: e.Faded,
 		})
 	}
@@ -141,7 +144,7 @@ func buildDay(cal calendar.Snapshot, daily map[string]weather.Daily, titles clau
 			// never between the time and the title.
 			text = e.DisplayTime.Start + " " + text
 		}
-		d.Events = append(d.Events, DayEvent{Text: text, Faded: e.Faded})
+		d.Events = append(d.Events, DayEvent{Text: text, Mark: e.Mark, Faded: e.Faded})
 	}
 	return d
 }

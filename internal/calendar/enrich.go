@@ -184,6 +184,11 @@ func displayTitle(e Event, k kind, thisYear int) string {
 	return e.Title
 }
 
+// FadedOn says whether e is greyed out on d.
+func (s Snapshot) FadedOn(e Event, d time.Time) bool {
+	return isFaded(e, d, s.KidsStatusForDate(d))
+}
+
 // isFaded says whether a felles event should be greyed out, i.e. whether the
 // kids are away while it happens. On exchange days the handover at 16:00
 // splits the day. Events that span the day rather than start in it have no

@@ -132,6 +132,7 @@ Three ways to set them:
 | `ANTHROPIC_API_KEY` | Claude's texts (optional) |
 | `TELLULF_CLAUDE_MODEL` | The model for them (default `claude-haiku-5-5`) |
 | `TELLULF_STATE_DIR` | A writable directory where Claude's texts are kept between restarts (optional; memory only without it) |
+| `SPOND_EMAIL`, `SPOND_PASSWORD` | The kids' activities and replies from Spond (optional; needs the calendar) |
 | `GOOGLE_KEY_B64` | Base64-encoded Google service account key (JSON) |
 | `CAL_ID_FELLES`, `CAL_ID_AUDUN` | Event calendars |
 | `CAL_ID_BURSDAG` | Birthdays |

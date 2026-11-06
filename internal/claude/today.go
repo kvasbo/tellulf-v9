@@ -35,6 +35,7 @@ Setningen din står under middagen. Den skal bare si noe skjermen ikke sier av s
 - en hyttetur og været på hytta
 - noe tidlig i morgen som må forberedes i kveld
 - en bursdag i morgen
+- barnas aktiviteter i Spond: et svar som mangler i dag eller i morgen, en aktivitet som kolliderer med noe annet, eller når de må møte opp
 
 Regler:
 - Norsk bokmål, én setning, høyst 80 tegn, uten punktum til slutt.
@@ -61,6 +62,7 @@ func todayInput(cal calendar.Snapshot, hours []weather.Hourly, hytta map[string]
 	describeDay(&b, cal, now, now)
 	b.WriteString("\nI morgen, " + longDate(tomorrow) + ":\n")
 	describeDay(&b, cal, tomorrow, now)
+	writeEventDetails(&b, cal, []time.Time{now, tomorrow}, now)
 	b.WriteString("\nVæret i Oslo, time for time:\n")
 	for _, h := range hours[:min(len(hours), todayHours)] {
 		item(&b, hourLine(h))
@@ -78,6 +80,26 @@ func todayInput(cal calendar.Snapshot, hours []weather.Hourly, hytta map[string]
 		}
 	}
 	return b.String()
+}
+
+// writeEventDetails lists what internal/spond says about the events on dates,
+// leaving out what is over and what the screen dims.
+func writeEventDetails(b *strings.Builder, cal calendar.Snapshot, dates []time.Time, now time.Time) {
+	var lines []string
+	for _, d := range dates {
+		for _, e := range cal.EventsForDate(d) {
+			if e.Detail != "" && !e.Faded && !e.End.Before(now) {
+				lines = append(lines, longDate(d)+", "+e.DisplayTime.Start+" "+e.Title+": "+e.Detail)
+			}
+		}
+	}
+	if len(lines) == 0 {
+		return
+	}
+	b.WriteString("\nFra Spond:\n")
+	for _, l := range lines {
+		item(b, l)
+	}
 }
 
 // refreshToday writes a new sentence when the input has changed: about

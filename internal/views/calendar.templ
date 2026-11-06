@@ -38,6 +38,9 @@ templ Calendar(c view.Calendar, sun view.Sun, st view.Stamps) {
 					if e.Hytta != "" {
 						<span class="hytta">{ e.Hytta }</span>
 					}
+					if e.Mark != "" {
+						<span class="mark">{ e.Mark }</span>
+					}
 				</span>
 			</div>
 		}
@@ -74,7 +77,12 @@ templ dayRows(days []view.Day) {
 							// lets the line break after it.
 							{ "​" }
 						}
-						<span class={ "item", templ.KV("faded", e.Faded) }>{ e.Text }</span>
+						<span class={ "item", templ.KV("faded", e.Faded) }>
+							{ e.Text }
+							if e.Mark != "" {
+								<span class="mark">{ e.Mark }</span>
+							}
+						</span>
 					}
 				</div>
 			}

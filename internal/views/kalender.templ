@@ -27,7 +27,12 @@ templ Agenda(a view.Agenda) {
 			for _, e := range d.Events {
 				<div class={ "ev", templ.KV("faded", e.Faded) }>
 					<span class="time">{ e.Time }</span>
-					<span class="title">{ e.Title }</span>
+					<span class="title">
+						{ e.Title }
+						if e.Mark != "" {
+							<span class="mark">{ e.Mark }</span>
+						}
+					</span>
 					<span class="ev-detail">{ e.Detail }</span>
 					if e.Note != "" {
 						<span class="ev-detail">{ e.Note }</span>

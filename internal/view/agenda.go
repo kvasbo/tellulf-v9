@@ -37,6 +37,7 @@ type AgendaEvent struct {
 	Title  string // in full, or Claude's short title for one the overview cuts
 	Detail string // "til 13:30 · Storgata 1 · 5°, 20 % regn"
 	Note   string // Claude's note from the description, "Ta med gymtøy"; "" without one
+	Mark   string // after the title, "✓", "ikke svart"; "" without one
 	Faded  bool
 }
 
@@ -121,6 +122,7 @@ func buildAgendaDay(cal calendar.Snapshot, daily, dailyHytta map[string]weather.
 			Title:  fullTitle(e, titles),
 			Detail: strings.Join(detail, " · "),
 			Note:   titles.For(e.Event).Note,
+			Mark:   e.Mark,
 			Faded:  e.Faded,
 		})
 	}
