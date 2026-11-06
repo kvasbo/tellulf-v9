@@ -118,8 +118,6 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - Auto-reload: the server's version is its start time. It's in the page and sent
   right after each SSE snapshot, plus every minute; `client.js` reloads when it
   differs from `data-version` on `<body>`, so any restart reloads open screens within seconds.
-
-## Packages
   It also reloads at midnight, and when no version has come for 3 minutes (a stream gone
   silent without an error). Both ask the server first (`reloadWhenUp`) and try again every
   30 seconds until it answers: a reload while it is away would leave an error page, with no
@@ -127,6 +125,8 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - Live power numbers are hidden (`powerIsCurrent`) when the last measurement is over 10
   minutes old or from yesterday: a dead feed's reading must not pass for now. The month's
   use, the price and the charts stay.
+
+## Packages
 
 - `internal/weather` — MET Norway forecasts (hourly + subseasonal), Oslo and the cabin
 - `internal/calendar` — Google Calendar (official Go client), kids schedule, fading rules
