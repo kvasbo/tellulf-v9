@@ -153,8 +153,10 @@ function onMode(path) {
 // one means it restarted, maybe with new code, so reload. Going to another
 // page is a same-origin navigation, which styles.css turns into a page
 // transition.
+let versionAt = Date.now();
 connect('/sse', {
 	version: (v) => {
+		versionAt = Date.now();
 		if (v !== document.body.dataset.version) window.location.reload();
 	},
 	mode: onMode,
@@ -175,10 +177,30 @@ if (calendarEl) {
 checkCalendarVisibility();
 document.fonts.ready.then(checkCalendarVisibility);
 
-// Reload page once per day (midnight) - robust against NTP clock adjustments
+// A reload while the server is away would leave an error page, with no script
+// to recover from it, so ask first. The check below tries again until it can.
+async function reloadWhenUp() {
+	try {
+		const res = await fetch(window.location.href, {
+			method: 'HEAD',
+			cache: 'no-store',
+		});
+		if (res.ok) window.location.reload();
+	} catch {
+		// Still away.
+	}
+}
+
+// Reload once per day (midnight), robust against NTP clock adjustments, and
+// when the version hasn't come for a few minutes: then the stream has gone
+// silent without an error, and the page would show old data under a live clock.
+const STREAM_SILENT_MS = 3 * 60 * 1000;
 const lastDayForReload = new Date().getDate();
 setInterval(() => {
-	if (new Date().getDate() !== lastDayForReload) {
-		window.location.reload();
+	const newDay = new Date().getDate() !== lastDayForReload;
+	const silent = Date.now() - versionAt > STREAM_SILENT_MS;
+	if (newDay || silent) {
+		if (silent) report('sse: silent, reloading');
+		reloadWhenUp();
 	}
 }, 30000);

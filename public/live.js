@@ -1,6 +1,6 @@
 // Keeps the page live. Connects to the server's event stream and puts each
 // fragment into the element whose data-sse attribute names it. After each
-// event, a 'fragment' event naming it is dispatched on document for code
+// fragment, a 'fragment' event naming it is dispatched on document for code
 // that reacts to new content.
 import { report } from './report.js';
 
@@ -15,8 +15,10 @@ const RETRY_MS = 5000;
 export function connect(url, handlers = {}) {
 	const listeners = {};
 	for (const el of document.querySelectorAll('[data-sse]')) {
-		listeners[el.dataset.sse] = (html) => {
+		const name = el.dataset.sse;
+		listeners[name] = (html) => {
 			el.innerHTML = html;
+			document.dispatchEvent(new CustomEvent('fragment', { detail: name }));
 		};
 	}
 	Object.assign(listeners, handlers);
@@ -25,10 +27,7 @@ export function connect(url, handlers = {}) {
 	function open() {
 		const source = new EventSource(`${url}?events=${events}`);
 		for (const [name, fn] of Object.entries(listeners)) {
-			source.addEventListener(name, (e) => {
-				fn(e.data);
-				document.dispatchEvent(new CustomEvent('fragment', { detail: name }));
-			});
+			source.addEventListener(name, (e) => fn(e.data));
 		}
 		source.addEventListener('open', () => report('sse: connected'));
 		source.addEventListener('error', () => {
