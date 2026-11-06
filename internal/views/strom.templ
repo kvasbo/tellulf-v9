@@ -14,7 +14,9 @@ templ Strom(s view.Strom) {
 	<span class="label">{ s.Label }</span>
 	if s.HasData {
 		<div class="now">
-			<div class="kw">{ s.Now }<span class="unit">kW</span></div>
+			if s.Now != "" {
+				<div class="kw">{ s.Now }<span class="unit">kW</span></div>
+			}
 			<div class="lines">
 				<div class="line1">{ s.Line1 }</div>
 				<div class="line2">{ s.Line2 }</div>

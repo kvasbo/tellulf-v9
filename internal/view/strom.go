@@ -34,13 +34,18 @@ func BuildStrom(d tibber.Details, place tibber.Place, now time.Time) Strom {
 		return s
 	}
 	now = now.In(tz.Oslo)
-	s.Now = nb(Fixed(d.CurrentPower/1000, 1))
-	s.Line1 = "Snitt " + KW(d.AveragePower) + " · topp " + KW(d.MaxPower)
-	s.Line2 = "Lavest " + KW(d.MinPower) + " i dag"
-	if d.MaxPowerProduction > 0 {
-		s.Line2 += " · sol topp " + KW(d.MaxPowerProduction)
+	today := todayRow(d, now)
+	if powerIsCurrent(d.PowerData, now) {
+		s.Now = nb(Fixed(d.CurrentPower/1000, 1))
+		s.Line1 = "Snitt " + KW(d.AveragePower) + " · topp " + KW(d.MaxPower)
+		s.Line2 = "Lavest " + KW(d.MinPower) + " i dag"
+		if d.MaxPowerProduction > 0 {
+			s.Line2 += " · sol topp " + KW(d.MaxPowerProduction)
+		}
+	} else {
+		today.Value, today.Details = "", nil // the chart's hours are from the history too
 	}
-	s.Rows = []Row{todayRow(d, now), monthRow(d, now), priceRow(d, now)}
+	s.Rows = []Row{today, monthRow(d, now), priceRow(d, now)}
 	return s
 }
 

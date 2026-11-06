@@ -5,6 +5,7 @@ package tibber
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -245,28 +246,55 @@ func (t *Tibber) updatePrice(p Place, now time.Time) {
 // --- Monthly consumption ----------------------------------------------------------
 
 // runMonthly fetches this month's consumption shortly after start and then
-// on every full hour. Consumption isn't real-time, so polling more often is
-// pointless.
+// once every hour of the clock. Consumption isn't real-time, so polling more
+// often is pointless.
 func (t *Tibber) runMonthly(ctx context.Context, p Place) {
 	if !schedule.Sleep(ctx, 2*time.Second) { // let the feeds deliver today's total first
 		return
 	}
-	t.updateMonthly(ctx, p)
+	var pace monthlyPace
 	schedule.Every(ctx, time.Minute, func(ctx context.Context) {
-		if tz.Now().Minute() == 0 {
-			t.updateMonthly(ctx, p)
+		if now := tz.Now(); pace.due(now) {
+			pace.done(now, t.updateMonthly(ctx, p, now))
 		}
 	})
 }
 
-func (t *Tibber) updateMonthly(ctx context.Context, p Place) {
-	now := tz.Now()
+// monthlyPace says when to fetch next: once an hour, and when that fails, soon
+// again with the backoff Tibber requires, since a failure at midnight would
+// otherwise leave the numbers wrong for an hour.
+type monthlyPace struct {
+	hour     time.Time // the hour of the last success
+	failures int
+	next     time.Time // no retry before this
+}
+
+func (m *monthlyPace) due(now time.Time) bool {
+	return !now.Truncate(time.Hour).Equal(m.hour) && !now.Before(m.next)
+}
+
+func (m *monthlyPace) done(now time.Time, err error) {
+	if err != nil && !errors.Is(err, errUnauthorized) {
+		m.failures++
+		m.next = now.Add(backoff(m.failures))
+		return
+	}
+	// Tibber says not to retry a rejected token, so that waits for its hour too.
+	m.hour, m.failures, m.next = now.Truncate(time.Hour), 0, time.Time{}
+}
+
+func (t *Tibber) updateMonthly(ctx context.Context, p Place, now time.Time) error {
 	hours := now.Day()*24 + now.Hour() + 3
 	nodes, err := t.gql.hourlyConsumption(ctx, t.homeIDs[p], hours)
 	if err != nil {
 		slog.Error("could not fetch monthly consumption", "place", p, "err", err)
-		return
+		return err
 	}
+	t.applyMonthly(p, nodes, now)
+	return nil
+}
+
+func (t *Tibber) applyMonthly(p Place, nodes []consumptionNode, now time.Time) {
 	usage := monthHoursBeforeToday(nodes, now)
 	total := 0.0
 	for _, h := range usage {
@@ -281,6 +309,11 @@ func (t *Tibber) updateMonthly(ctx context.Context, p Place) {
 	t.days[p] = dayTotals(usage)
 	t.historyToday[p] = historyToday(nodes, now)
 	d := t.data[p]
+	if !tz.SameDay(d.Timestamp, now) {
+		// No measurement yet today, so these are the day before's, which the
+		// history above now has: added to it, that day would count twice.
+		d.AccumulatedConsumption, d.AccumulatedProduction, d.AccumulatedCost = 0, 0, 0
+	}
 	d.MonthlyConsumption = total + d.AccumulatedConsumption
 	d.MonthlyCost = cost + d.AccumulatedCost
 	slog.Debug("monthly consumption fetched", "place", p, "kwh_before_today", total)

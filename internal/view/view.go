@@ -74,14 +74,28 @@ type Power struct {
 
 var placeLabels = map[tibber.Place]string{tibber.Home: "Strøm hjemme", tibber.Cabin: "Hytta"}
 
+// powerStaleAfter is how long the last live measurement counts as the power
+// right now. A Pulse reports every few seconds, and the feed reconnects after
+// five minutes of silence, so this means it is really gone.
+const powerStaleAfter = 10 * time.Minute
+
+// powerIsCurrent says whether the live numbers can be shown as now and today:
+// a dead feed would otherwise leave its last reading up as if it were live,
+// and after midnight show the day before's totals as today's.
+func powerIsCurrent(d tibber.PowerData, now time.Time) bool {
+	return now.Sub(d.Timestamp) <= powerStaleAfter && tz.SameDay(d.Timestamp, now)
+}
+
 func BuildPower(d tibber.PowerData, place tibber.Place, now time.Time) Power {
 	p := Power{Label: placeLabels[place], HasData: !d.Timestamp.IsZero()}
 	if !p.HasData {
 		return p
 	}
-	// Tenths of a kW, so per-second watt jitter doesn't produce new HTML
-	// every tick (which would defeat the SSE dedup).
-	p.Power = KW(d.CurrentPower)
+	if powerIsCurrent(d, now) {
+		// Tenths of a kW, so per-second watt jitter doesn't produce new HTML
+		// every tick (which would defeat the SSE dedup).
+		p.Power = KW(d.CurrentPower)
+	}
 	p.Usage = KWh(d.MonthlyConsumption)
 	if d.Cap > 0 {
 		p.Usage += " · " + Pct(d.MonthlyConsumption/quotaSoFar(d.Cap, now)*100)
