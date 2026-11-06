@@ -1,6 +1,8 @@
 package smarthouse
 
 import (
+	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -79,6 +81,45 @@ func TestModeRecordsWhen(t *testing.T) {
 	s.handle("tellulf/mode", "strom")
 	if m, since := s.Mode(); m != mode.Strom || !since.Equal(at) {
 		t.Errorf("got %q at %v, want strom at %v", m, since, at)
+	}
+}
+
+// fakeClient records what PublishMode sends.
+type fakeClient struct {
+	mqtt.Client
+	open bool
+	sent []string
+}
+
+func (c *fakeClient) IsConnectionOpen() bool { return c.open }
+
+func (c *fakeClient) Publish(topic string, _ byte, retained bool, payload any) mqtt.Token {
+	c.sent = append(c.sent, fmt.Sprintf("%s=%v retained=%v", topic, payload, retained))
+	return nil
+}
+
+// The state goes out once per change, waits for a connection, and goes out
+// again after a reconnect in case the broker lost it.
+func TestPublishMode(t *testing.T) {
+	c := &fakeClient{}
+	s := New()
+	s.client = c
+
+	s.PublishMode(mode.Strom) // not connected: nothing, and not forgotten
+	c.open = true
+	s.PublishMode(mode.Strom)
+	s.PublishMode(mode.Strom)
+	s.PublishMode(mode.Oversikt)
+	s.resendMode()
+	s.PublishMode(mode.Oversikt)
+
+	want := []string{
+		"tellulf/mode/state=strom retained=true",
+		"tellulf/mode/state=oversikt retained=true",
+		"tellulf/mode/state=oversikt retained=true",
+	}
+	if !slices.Equal(c.sent, want) {
+		t.Errorf("sent %q, want %q", c.sent, want)
 	}
 }
 

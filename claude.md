@@ -25,6 +25,8 @@ Design notes: `docs/superpowers/specs/2026-10-27-moduser-design.md`.
   page (opened directly) stays and goes home after the same timeout (`data-mode-timeout` on
   `<body>`) unless the mode changes first.
 - Retained mode messages are ignored: the broker replays them on every reconnect.
+- The page actually showing goes out on `tellulf/mode/state`, retained, as a mode's name:
+  on every change (timeouts too) and after every reconnect. Tellulf only writes it.
 - The detail pages share `shell` and `head` in `layout.templ`; the power and weather pages
   build their rows as `view.Row` (text block plus a `view.Chart`, SVG geometry computed in
   `internal/view/chart.go`). The week page reuses the overview's day rows (`dayRows`).

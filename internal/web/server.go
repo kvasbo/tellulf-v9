@@ -391,6 +391,9 @@ func (s *Server) Publish(ctx context.Context) {
 	publishMode := func() {
 		if m := s.mode(); m != "" {
 			s.hub.Publish("mode", m.Path())
+			if s.src.Smarthouse != nil {
+				s.src.Smarthouse.PublishMode(m)
+			}
 		}
 	}
 

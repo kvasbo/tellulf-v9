@@ -41,6 +41,7 @@ type Smarthouse struct {
 	data      Readings
 	mode      mode.Mode // the overview until a message on modeTopic
 	modeSince time.Time // when it came
+	stateSent mode.Mode // last value on modeStateTopic; empty: send it again
 	now       func() time.Time
 }
 
@@ -49,6 +50,11 @@ type Smarthouse struct {
 // retained message is ignored: the broker replays it on every reconnect,
 // which would bring an old page back.
 const modeTopic = "tellulf/mode"
+
+// modeStateTopic says, retained, which page the screens are showing: a mode's
+// name, also after a timeout took them back to the overview. Others can follow
+// it; a Stream Deck lights the key of the active mode.
+const modeStateTopic = "tellulf/mode/state"
 
 func New() *Smarthouse {
 	return &Smarthouse{mode: mode.Oversikt, now: time.Now}
@@ -77,6 +83,7 @@ func (s *Smarthouse) Connect(cfg Config) error {
 			c.Subscribe("tellulf/weather/#", 0, s.onMessage)
 			c.Subscribe(modeTopic, 0, s.onMessage)
 			c.Publish("tellulf/poll", 0, false, "Tellulf is online and polling")
+			s.resendMode()
 		}).
 		SetConnectionLostHandler(func(_ mqtt.Client, err error) {
 			slog.Warn("MQTT connection lost", "err", err)
@@ -132,6 +139,29 @@ func (s *Smarthouse) Mode() (mode.Mode, time.Time) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.mode, s.modeSince
+}
+
+// PublishMode puts the page the screens show on modeStateTopic when it has
+// changed. The web server calls it every second, so a change made while the
+// connection is down goes out once it is back.
+func (s *Smarthouse) PublishMode(m mode.Mode) {
+	s.mu.Lock()
+	send := m != s.stateSent && s.client.IsConnectionOpen()
+	if send {
+		s.stateSent = m
+	}
+	s.mu.Unlock()
+	if send {
+		s.client.Publish(modeStateTopic, 0, true, string(m))
+	}
+}
+
+// resendMode makes the next PublishMode send the state whatever it is: the
+// broker may have lost it while the connection was down.
+func (s *Smarthouse) resendMode() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.stateSent = ""
 }
 
 func (s *Smarthouse) onMessage(_ mqtt.Client, msg mqtt.Message) {
