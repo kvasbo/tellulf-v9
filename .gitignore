@@ -1,5 +1,6 @@
 # Built binary
 /tellulf
+/dist
 
 # OS
 .DS_Store

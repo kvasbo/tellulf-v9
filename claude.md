@@ -131,7 +131,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - `internal/tibber` — live feed (own graphql-transport-ws client on coder/websocket),
   daily price list, monthly consumption, Norgespris maths
 - `internal/sun` — NOAA sunrise/sunset, shown in the I DAG header and on the weather page
-- `internal/buildinfo` — build time, set by the Dockerfile via `-ldflags -X` (shown as "dev" otherwise)
+- `internal/buildinfo` — build time, set by the CI build via `-ldflags -X` (shown as "dev" otherwise)
 - `internal/view` — builds template data; `internal/views` — templ components;
   `internal/web` — HTTP, SSE hub, static files
 
@@ -148,7 +148,9 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   --window-size=1920,1080 --timeout=12000 --screenshot=out.png http://localhost:3000/`
   (`--timeout`, not `--virtual-time-budget`: the SSE stream never settles).
 - `go build -o tellulf .` — production binary (self-contained)
-- `docker build .` — runs generate, vet, test and build; distroless image
+- CI (`.github/workflows/build.yml`) runs generate, vet, test and build on the runner, with Go's
+  cache kept between runs, then copies `dist/tellulf` into a distroless image. `docker build .`
+  by hand needs a Linux binary there first (the command is at the top of the Dockerfile).
 
 ## APIs
 

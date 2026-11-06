@@ -1,29 +1,10 @@
-FROM golang:1.27.3-alpine AS build
-
-WORKDIR /src
-
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY . .
-
-# For every step below: with the same flags, the final build reuses what the
-# tests compiled instead of compiling everything again.
-ENV CGO_ENABLED=0 GOFLAGS=-trimpath
-
-# Regenerate the templ components (so the build never uses stale generated
-# code), check, test, then build a static binary with all static files
-# embedded.
-RUN go generate ./... \
-	&& go vet ./... \
-	&& go test ./... \
-	&& go build \
-		-ldflags="-s -w -X github.com/kvasbo/tellulf-v9/internal/buildinfo.Time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-		-o /tellulf .
-
+# Holds only the binary: .github/workflows/build.yml generates, checks, tests
+# and compiles it first, with Go's cache kept between runs. To build this by
+# hand, make a Linux binary first:
+#   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o dist/tellulf .
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=build /tellulf /tellulf
+COPY dist/tellulf /tellulf
 
 EXPOSE 3000
 

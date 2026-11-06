@@ -106,9 +106,16 @@ go build -o tellulf .
 The binary is self-contained: compiled templates, static files, the client JavaScript and the time
 zone database are embedded, so it can run from any directory.
 
-`docker build .` regenerates the templates, then runs vet, test and build, and produces a distroless image.
-GitHub Actions builds and pushes an image to `ghcr.io/kvasbo/tellulf-v9` on every push,
-tagged with the branch name and commit SHA. `docker-compose.yml` runs the `main` image.
+GitHub Actions regenerates the templates, runs vet and test, compiles the binary, and pushes a
+distroless image holding it to `ghcr.io/kvasbo/tellulf-v9` on every push, tagged with the branch
+name and commit SHA. `docker-compose.yml` runs the `main` image.
+
+The Dockerfile only copies that binary. To build the image by hand, compile for Linux first:
+
+```sh
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o dist/tellulf .
+docker build .
+```
 
 ## Environment variables
 
@@ -165,7 +172,7 @@ internal/
 ## Updating dependencies
 
 Dependabot (`.github/dependabot.yml`) opens weekly pull requests for Go modules, the
-Docker build image and GitHub Actions. To check or update by hand:
+Docker base image and GitHub Actions. To check or update by hand:
 
 - See what's outdated: `go list -m -u all` (newer versions in brackets)
 - Security: `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`
