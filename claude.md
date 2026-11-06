@@ -120,6 +120,13 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   differs from `data-version` on `<body>`, so any restart reloads open screens within seconds.
 
 ## Packages
+  It also reloads at midnight, and when no version has come for 3 minutes (a stream gone
+  silent without an error). Both ask the server first (`reloadWhenUp`) and try again every
+  30 seconds until it answers: a reload while it is away would leave an error page, with no
+  script to recover. Test it by mocking `Date.now` and `fetch` in the page.
+- Live power numbers are hidden (`powerIsCurrent`) when the last measurement is over 10
+  minutes old or from yesterday: a dead feed's reading must not pass for now. The month's
+  use, the price and the charts stay.
 
 - `internal/weather` — MET Norway forecasts (hourly + subseasonal), Oslo and the cabin
 - `internal/calendar` — Google Calendar (official Go client), kids schedule, fading rules
@@ -156,8 +163,13 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 - **Tibber**: Power usage and cost. Reference: https://developer.tibber.com/docs/reference
   - Max two open websockets per token (one per home here). Feeds reconnect with jittered
-    exponential backoff, wait 1–60s after "1001 Going away", stop on a rejected token, and
-    check `realTimeConsumptionEnabled` before reconnecting.
+    exponential backoff, wait 1–60s after "1001 Going away", and check
+    `realTimeConsumptionEnabled` before reconnecting. On a rejected token they stop until a
+    restart, and don't retry on a timer: Tibber's docs say the client "must not retry with
+    same token". A stopped feed just leaves the power blank.
+  - Monthly consumption: once an hour, and after a failure again with the jittered backoff
+    Tibber requires (`monthlyPace`), so a failed midnight fetch isn't left for an hour. A
+    rejected token waits for the next hour.
   - Prices: today+tomorrow fetched once and cached; current price is picked locally. From
     13:00 a list without tomorrow is fetched again, at most every 15 minutes.
   - Today's hourly consumption: the consumption history lags an hour or two, so the live
