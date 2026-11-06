@@ -139,6 +139,48 @@ func TestMarks(t *testing.T) {
 	}
 }
 
+// Before the invite has gone out everyone is listed as unanswered, but there
+// is nothing to answer yet, so nothing is said about a reply or a clash.
+func TestUnsentInvite(t *testing.T) {
+	unsent := func(r Reply) Event {
+		e := turn(turnAt, r)
+		e.InviteAt = mergeNow.Add(time.Hour)
+		return e
+	}
+	withMeetup := unsent(Unanswered)
+	withMeetup.Meetup = turnAt.Add(-30 * time.Minute)
+	clashing := []calendar.Event{felles("Legetime Agnes", turnAt.Add(30*time.Minute), time.Hour)}
+	cases := []struct {
+		name         string
+		other        []calendar.Event
+		event        Event
+		now          time.Time
+		mark, detail string
+	}{
+		{"not sent", nil, unsent(Unanswered), mergeNow, "", ""},
+		{"not sent, with a clash", clashing, unsent(Unanswered), mergeNow, "", ""},
+		{"not sent, the meeting time still counts", nil, withMeetup, mergeNow, "", "oppmøte 16:30"},
+		{"a minute before it goes out", nil, unsent(Unanswered), mergeNow.Add(59 * time.Minute), "", ""},
+		{"as it goes out", nil, unsent(Unanswered), mergeNow.Add(time.Hour), "ikke svart", "ikke svart i Spond"},
+		{"sent, with a clash", clashing, unsent(Unanswered), mergeNow.Add(time.Hour), "kolliderer", "ikke svart i Spond, kolliderer med Legetime Agnes"},
+		{"not sent but answered", nil, unsent(Accepted), mergeNow, "✓", "svart ja i Spond"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			line := findSpondLine(t, merge(snapshot(c.other...), []Event{c.event}, c.now).Events)
+			if line.Mark != c.mark || line.Detail != c.detail {
+				t.Errorf("got %q, %q; want %q, %q", line.Mark, line.Detail, c.mark, c.detail)
+			}
+		})
+	}
+
+	// The same on a line Felles already has, and the session still shows.
+	got := merge(snapshot(felles("Agnes på turn", turnAt, 90*time.Minute)), []Event{unsent(Unanswered)}, mergeNow).Events
+	if len(got) != 1 || got[0].Mark != "" || got[0].Detail != "" {
+		t.Errorf("duplicate: %+v", got)
+	}
+}
+
 // Dimmed events are for the other home: no nagging, but what is answered
 // still shows.
 func TestNoNagWhenTheKidsAreAway(t *testing.T) {

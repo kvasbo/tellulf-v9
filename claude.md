@@ -63,9 +63,11 @@ easy to remove, and how is at the top of `client.go`.
   common ("Agnes på turn", "TURN 5.-7. klasse"), so the match is the same start or meeting time
   plus the child's first name in the Felles title. Others get a line of their own, as Felles
   events, so they dim when the kids are away.
+- An activity whose `inviteTime` is still ahead hasn't been sent: everyone is listed as
+  unanswered, but there is nothing to answer yet, so it gets no mark and no reply detail. The
+  field is gone once the invite is out. `scheduled=true` keeps these in the list.
 - "ikke svart" shows from 7 days before the activity or its reply deadline, and not on dimmed
-  events: most sessions never get a reply, so showing it sooner would mark almost everything.
-  "kolliderer" shows at any distance, when another Felles event naming the child overlaps.
+  events. "kolliderer" shows at any distance, when another Felles event naming the child overlaps.
 - Fetched every 5 minutes. After an hour without an answer the data is dropped and the screen is
   as without Spond. A rejected login isn't tried again before a restart, so it can't lock the
   account.

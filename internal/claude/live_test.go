@@ -46,7 +46,8 @@ func TestLive(t *testing.T) {
 	teams := timed("Invitasjon: Kvartalsgjennomgang økonomi og drift Q4 – ledergruppen (Teams) @ ons. 28. okt. 2026 12:00 - 13:30", wed.Add(12*time.Hour), 90*time.Minute)
 	teams.Description = `<p>Hei alle,</p><p>Vi går gjennom tallene for Q4. Les vedlagt rapport før møtet.</p>________________________________________________________________________________<br><b>Microsoft Teams</b><br>Bli med i møtet nå<br>Møte-ID: 384 221 907 55<br>Passord: x7Ab9c`
 	fotball := calendar.Event{Title: "Fotballtrening Engebret", Start: wed.Add(17 * time.Hour), End: wed.Add(18 * time.Hour), Source: calendar.Felles,
-		Description: "Oppmøte 16:45 ved kunstgressbanen. Husk drikkeflaske og leggskinn!"}
+		Description: "Oppmøte 16:45 ved kunstgressbanen. Husk drikkeflaske og leggskinn!",
+		Detail:      "ikke svart i Spond, oppmøte 16:45"}
 	cal := calendar.Snapshot{
 		Events: []calendar.Event{
 			teams,

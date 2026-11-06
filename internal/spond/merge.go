@@ -10,8 +10,7 @@ import (
 )
 
 // nagDays is how close an event or its reply deadline has to be before a
-// missing reply is shown. Most sessions never get a reply, so showing it
-// further ahead would mark almost everything.
+// missing reply is shown: an invite can be out weeks ahead.
 const nagDays = 7
 
 // merge adds Spond's events to a snapshot. An event Felles already has stays
@@ -61,8 +60,11 @@ func mentions(e calendar.Event, child string) bool {
 // describe says how s stands: briefly for the screen, in words for Claude.
 // own is the index in snap.Events of s's own line, -1 if it has none there.
 func describe(snap calendar.Snapshot, line calendar.Event, s Event, own int, now time.Time) (mark, detail string) {
+	// Before the invite goes out everyone is listed as unanswered, but there
+	// is nothing to answer yet.
+	sent := !now.Before(s.InviteAt)
 	clash := ""
-	if s.Reply == Unanswered && !deadlinePassed(s, now) {
+	if sent && s.Reply == Unanswered && !deadlinePassed(s, now) {
 		clash = clashWith(snap, s, own)
 	}
 	var words []string
@@ -77,6 +79,9 @@ func describe(snap calendar.Snapshot, line calendar.Event, s Event, own int, now
 		mark = "venteliste"
 		words = append(words, "på venteliste i Spond")
 	default:
+		if !sent {
+			break
+		}
 		if clash != "" {
 			mark = "kolliderer"
 		} else if needsReply(s, now) && !snap.FadedOn(line, s.Start) {

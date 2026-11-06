@@ -63,6 +63,7 @@ type Event struct {
 	Start, End  time.Time
 	Meetup      time.Time // zero without a meeting time
 	RSVPBy      time.Time // zero without a deadline
+	InviteAt    time.Time // when the invite goes out; zero once it has
 	Reply       Reply
 }
 
@@ -139,6 +140,7 @@ type apiEvent struct {
 	EndTimestamp    time.Time `json:"endTimestamp"`
 	MeetupTimestamp time.Time `json:"meetupTimestamp"`
 	RSVPDate        time.Time `json:"rsvpDate"`
+	InviteTime      time.Time `json:"inviteTime"`
 	Cancelled       bool      `json:"cancelled"`
 	BehalfOfIDs     []string  `json:"behalfOfIds"`
 	Location        struct {
@@ -196,6 +198,7 @@ func (e apiEvent) forChild(id, name string) Event {
 		End:         e.EndTimestamp.In(tz.Oslo),
 		Meetup:      e.MeetupTimestamp.In(tz.Oslo),
 		RSVPBy:      e.RSVPDate.In(tz.Oslo),
+		InviteAt:    e.InviteTime.In(tz.Oslo),
 		Reply:       e.reply(id),
 	}
 }

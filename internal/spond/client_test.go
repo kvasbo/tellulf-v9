@@ -33,7 +33,7 @@ const eventsJSON = `[
 	 "responses": {"acceptedIds": ["M-OTHER"], "declinedIds": [], "unansweredIds": ["M-AGNES"], "waitinglistIds": [], "unconfirmedIds": []}},
 	{"id": "E2", "heading": "Heming – Grei", "type": "EVENT", "behalfOfIds": ["M-JONAS"], "matchEvent": true,
 	 "description": "Ta med drikke", "location": {"id": "L1", "feature": "Slemdal kunstgress", "address": "Slemdalsveien 1"},
-	 "meetupTimestamp": "2026-11-07T08:30:00Z", "rsvpDate": "2026-11-06T20:00:00Z",
+	 "meetupTimestamp": "2026-11-07T08:30:00Z", "rsvpDate": "2026-11-06T20:00:00Z", "inviteTime": "2026-11-04T09:00:00Z",
 	 "startTimestamp": "2026-11-07T09:00:00Z", "endTimestamp": "2026-11-07T10:00:00Z",
 	 "responses": {"acceptedIds": ["M-JONAS"], "declinedIds": [], "unansweredIds": [], "waitinglistIds": [], "unconfirmedIds": []}},
 	{"id": "E3", "heading": "Trening", "behalfOfIds": ["M-JONAS"],
@@ -147,6 +147,12 @@ func TestRefreshReadsTheKidsEvents(t *testing.T) {
 	}
 	if want := time.Date(2026, 11, 6, 21, 0, 0, 0, tz.Oslo); !match.RSVPBy.Equal(want) {
 		t.Errorf("deadline: %v, want %v", match.RSVPBy, want)
+	}
+	if want := time.Date(2026, 11, 4, 10, 0, 0, 0, tz.Oslo); !match.InviteAt.Equal(want) {
+		t.Errorf("invite: %v, want %v", match.InviteAt, want)
+	}
+	if !got[0].InviteAt.IsZero() {
+		t.Errorf("an event without inviteTime: %v", got[0].InviteAt)
 	}
 
 	q := f.lastEvents.Load().URL.Query()
