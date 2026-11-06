@@ -76,8 +76,12 @@ func New(ctx context.Context, cfg Config, serviceAccountJSON []byte) (*Calendar,
 	if err != nil {
 		return nil, fmt.Errorf("google calendar: %w", err)
 	}
-	return &Calendar{cfg: cfg, fetch: googleFetcher(svc)}, nil
+	return &Calendar{cfg: cfg, fetch: googleFetcher(svc, fetchTimeout)}, nil
 }
+
+// fetchTimeout bounds one calendar's fetch. The refresh loops wait for it, so
+// without a limit a stalled request would stop them for good, without a word.
+const fetchTimeout = 30 * time.Second
 
 // Snapshot returns the current calendar data.
 func (c *Calendar) Snapshot() Snapshot {
@@ -176,8 +180,10 @@ func (c *Calendar) refreshBhgCount(ctx context.Context) {
 	slog.Debug("bhg days left", "count", n)
 }
 
-func googleFetcher(svc *gcal.Service) fetchFunc {
+func googleFetcher(svc *gcal.Service, timeout time.Duration) fetchFunc {
 	return func(ctx context.Context, calendarID string, timeMax time.Time) ([]Event, error) {
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 		var out []Event
 		call := svc.Events.List(calendarID).
 			TimeMin(tz.Now().Format(time.RFC3339)).
