@@ -17,7 +17,7 @@ import (
 type Calendar struct {
 	Today Today
 	Days  []Day  // tomorrow onwards
-	Bhg   string // "bhg: 12"; "" until fetched
+	Bhg   string // "bhg: 12 (6)", in brackets the days with Audun; "" until fetched
 }
 
 type Today struct {
@@ -61,6 +61,9 @@ func BuildCalendar(cal calendar.Snapshot, daily, dailyHytta map[string]weather.D
 	out := Calendar{Today: buildToday(cal, dailyHytta, texts, now)}
 	if cal.BhgDaysLeft != nil {
 		out.Bhg = "bhg: " + strconv.Itoa(*cal.BhgDaysLeft)
+		if cal.BhgDaysWithMe != nil {
+			out.Bhg += " (" + strconv.Itoa(*cal.BhgDaysWithMe) + ")"
+		}
 	}
 	for i := 1; i < days; i++ {
 		out.Days = append(out.Days, buildDay(cal, daily, texts.Titles, now.AddDate(0, 0, i), i))

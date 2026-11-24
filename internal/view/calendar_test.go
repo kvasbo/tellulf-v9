@@ -174,6 +174,10 @@ func TestBhgCorner(t *testing.T) {
 	if got := BuildCalendar(calendar.Snapshot{BhgDaysLeft: &n}, nil, nil, claude.Texts{}, calNow, 1).Bhg; got != "bhg: 12" {
 		t.Errorf("bhg = %q", got)
 	}
+	mine := 5
+	if got := BuildCalendar(calendar.Snapshot{BhgDaysLeft: &n, BhgDaysWithMe: &mine}, nil, nil, claude.Texts{}, calNow, 1).Bhg; got != "bhg: 12 (5)" {
+		t.Errorf("bhg with my days = %q", got)
+	}
 	if got := BuildCalendar(calendar.Snapshot{}, nil, nil, claude.Texts{}, calNow, 1).Bhg; got != "" {
 		t.Errorf("bhg = %q, want empty", got)
 	}

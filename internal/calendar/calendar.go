@@ -51,6 +51,9 @@ type Snapshot struct {
 	Barneuker []Event
 	// Number of "bhg" days left until kindergarten is done (nil until fetched)
 	BhgDaysLeft *int
+	// How many of those days he starts at Audun's (nil without the barneuker
+	// calendar, or until fetched)
+	BhgDaysWithMe *int
 }
 
 // fetchFunc lists visible events in a calendar from now until timeMax.
@@ -158,26 +161,50 @@ func (c *Calendar) refreshList(ctx context.Context, name, id string, set func(*S
 	slog.Debug("calendar fetched", "calendar", name, "count", len(events))
 }
 
+// bhgUntil is past Engebret's last day of kindergarten.
+var bhgUntil = time.Date(2027, 9, 1, 0, 0, 0, 0, tz.Oslo)
+
 // refreshBhgCount counts remaining kindergarten ("bhg") days until Engebret
-// is done, fetching the childcare calendar through August 2027.
+// is done, fetching the childcare calendar through August 2027, and how many
+// of them he is with Audun: the days he wakes up there, so whole days and the
+// day he goes to Hanne, but not the day he comes back.
 func (c *Calendar) refreshBhgCount(ctx context.Context) {
 	if c.cfg.Kindergarden == "" {
-		c.update(func(s *Snapshot) { s.BhgDaysLeft = nil })
+		c.update(func(s *Snapshot) { s.BhgDaysLeft, s.BhgDaysWithMe = nil, nil })
 		return
 	}
-	events, err := c.fetch(ctx, c.cfg.Kindergarden, time.Date(2027, 9, 1, 0, 0, 0, 0, tz.Oslo))
+	events, err := c.fetch(ctx, c.cfg.Kindergarden, bhgUntil)
 	if err != nil {
 		slog.Error("could not fetch kindergarten calendar", "err", err)
 		return
 	}
-	n := 0
+	var days []time.Time
 	for _, e := range events {
 		if strings.Contains(strings.ToLower(e.Title), "bhg") {
-			n++
+			days = append(days, e.Start)
 		}
 	}
+	n := len(days)
 	c.update(func(s *Snapshot) { s.BhgDaysLeft = &n })
 	slog.Debug("bhg days left", "count", n)
+
+	if c.cfg.Barneuker == "" {
+		c.update(func(s *Snapshot) { s.BhgDaysWithMe = nil })
+		return
+	}
+	weeks, err := c.fetch(ctx, c.cfg.Barneuker, bhgUntil)
+	if err != nil {
+		slog.Error("could not fetch barneuker for the kindergarten count; keeping previous", "err", err)
+		return
+	}
+	kids, mine := Snapshot{Barneuker: weeks}, 0
+	for _, d := range days {
+		if k := kids.KidsStatusForDate(d); k == KidsFull || k == KidsLeaving {
+			mine++
+		}
+	}
+	c.update(func(s *Snapshot) { s.BhgDaysWithMe = &mine })
+	slog.Debug("bhg days with me", "count", mine)
 }
 
 func googleFetcher(svc *gcal.Service, timeout time.Duration) fetchFunc {

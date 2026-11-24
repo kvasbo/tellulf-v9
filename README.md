@@ -144,7 +144,7 @@ Three ways to set them:
 | `CAL_ID_FELLES`, `CAL_ID_AUDUN` | Event calendars |
 | `CAL_ID_BURSDAG` | Birthdays |
 | `CAL_ID_MIDDAG` | Dinners |
-| `CAL_ID_BARNEUKER` | Kids' weeks |
+| `CAL_ID_BARNEUKER` | Kids' weeks (also the bhg days with Audun, in brackets) |
 | `CAL_ID_KINDERGARDEN` | Kindergarten days (the "bhg" count) |
 
 The calendar needs `GOOGLE_KEY_B64` plus at least one `CAL_ID_*`.
