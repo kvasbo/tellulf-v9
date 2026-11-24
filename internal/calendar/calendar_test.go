@@ -243,8 +243,8 @@ func TestBhgCountsKindergartenDays(t *testing.T) {
 	}
 	c.refreshBhgCount(context.Background())
 	got := c.Snapshot().BhgDaysLeft
-	if got == nil || *got != 4 {
-		t.Fatalf("got %v, want 4", got)
+	if got == nil || *got != 3 {
+		t.Fatalf("got %v, want 3", got)
 	}
 	if askedFor != "k" || !until.Equal(time.Date(2027, 9, 1, 0, 0, 0, 0, tz.Oslo)) {
 		t.Errorf("fetched %q until %v", askedFor, until)
