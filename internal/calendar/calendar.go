@@ -51,7 +51,7 @@ type Snapshot struct {
 	Barneuker []Event
 	// Number of "bhg" days left until kindergarten is done (nil until fetched)
 	BhgDaysLeft *int
-	// How many of those days he starts at Audun's (nil without the barneuker
+	// How many of those days he is at Audun's, handover days included (nil without the barneuker
 	// calendar, or until fetched)
 	BhgDaysWithMe *int
 }
@@ -166,8 +166,8 @@ var bhgUntil = time.Date(2027, 9, 1, 0, 0, 0, 0, tz.Oslo)
 
 // refreshBhgCount counts remaining kindergarten ("bhg") days until Engebret
 // is done, fetching the childcare calendar through August 2027, and how many
-// of them he is with Audun: the days he wakes up there, so whole days and the
-// day he goes to Hanne, but not the day he comes back.
+// of them he is with Audun for at least part of the day: whole days and both
+// handover days.
 func (c *Calendar) refreshBhgCount(ctx context.Context) {
 	if c.cfg.Kindergarden == "" {
 		c.update(func(s *Snapshot) { s.BhgDaysLeft, s.BhgDaysWithMe = nil, nil })
@@ -199,7 +199,7 @@ func (c *Calendar) refreshBhgCount(ctx context.Context) {
 	}
 	kids, mine := Snapshot{Barneuker: weeks}, 0
 	for _, d := range days {
-		if k := kids.KidsStatusForDate(d); k == KidsFull || k == KidsLeaving {
+		if kids.KidsStatusForDate(d) != KidsAway {
 			mine++
 		}
 	}

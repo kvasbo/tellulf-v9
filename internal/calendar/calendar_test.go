@@ -243,16 +243,16 @@ func TestBhgCountsKindergartenDays(t *testing.T) {
 	}
 	c.refreshBhgCount(context.Background())
 	got := c.Snapshot().BhgDaysLeft
-	if got == nil || *got != 3 {
-		t.Fatalf("got %v, want 3", got)
+	if got == nil || *got != 4 {
+		t.Fatalf("got %v, want 4", got)
 	}
 	if askedFor != "k" || !until.Equal(time.Date(2027, 9, 1, 0, 0, 0, 0, tz.Oslo)) {
 		t.Errorf("fetched %q until %v", askedFor, until)
 	}
 }
 
-// In brackets: the bhg days he wakes up at Audun's. Whole days and the day he
-// goes to Hanne count, the day he comes back and Hanne's days do not.
+// In brackets: the bhg days he is at Audun's. Whole days and both handover
+// days count, Hanne's days do not.
 func TestBhgCountsDaysWithMe(t *testing.T) {
 	d := func(n int) time.Time { return day.AddDate(0, 0, n) }
 	bhg := func(n int) Event {
@@ -280,13 +280,13 @@ func TestBhgCountsDaysWithMe(t *testing.T) {
 		},
 	}
 	c.refreshBhgCount(context.Background())
-	if got := c.Snapshot().BhgDaysWithMe; got == nil || *got != 3 {
-		t.Fatalf("got %v, want 3", got)
+	if got := c.Snapshot().BhgDaysWithMe; got == nil || *got != 4 {
+		t.Fatalf("got %v, want 4", got)
 	}
 	failing = true
 	c.refreshBhgCount(context.Background())
-	if got := c.Snapshot().BhgDaysWithMe; got == nil || *got != 3 {
-		t.Errorf("after a failed fetch: got %v, want the previous 3", got)
+	if got := c.Snapshot().BhgDaysWithMe; got == nil || *got != 4 {
+		t.Errorf("after a failed fetch: got %v, want the previous 4", got)
 	}
 	c.cfg.Barneuker = ""
 	c.refreshBhgCount(context.Background())
