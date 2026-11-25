@@ -14,31 +14,28 @@ import (
 const nagDays = 7
 
 // merge adds Spond's events to a snapshot. An event Felles already has stays
-// one line, with Felles' title, unless it is declined in Spond: then nobody is
-// going, and the line goes. The others get a line of their own. They all
-// count as Felles, which is what dims them when the kids are away.
+// one line, with Felles' title; the others get a line of their own. They all
+// count as Felles, which is what dims them when the kids are away. What is
+// declined in Spond doesn't show at all, not even Felles' line: nobody is going.
 func merge(snap calendar.Snapshot, events []Event, now time.Time) calendar.Snapshot {
 	if len(events) == 0 {
 		return snap
 	}
-	// Taken out first, so a line that is gone is no clash for anything else.
-	hidden := make([]bool, len(events))
-	kept := make([]calendar.Event, 0, len(snap.Events))
-	for _, e := range snap.Events {
-		j := slices.IndexFunc(events, func(s Event) bool { return s.Reply == Declined && isSame(e, s) })
-		if j >= 0 {
-			hidden[j] = true
-			continue
+	var declined []Event
+	events = slices.DeleteFunc(slices.Clone(events), func(s Event) bool {
+		if s.Reply == Declined {
+			declined = append(declined, s)
+			return true
 		}
-		kept = append(kept, e)
-	}
-	snap.Events = kept
+		return false
+	})
+	// Taken out first, so a line that is gone is no clash for anything else.
+	snap.Events = slices.DeleteFunc(slices.Clone(snap.Events), func(e calendar.Event) bool {
+		return slices.ContainsFunc(declined, func(s Event) bool { return isSame(e, s) })
+	})
 
 	out := slices.Clone(snap.Events)
-	for j, s := range events {
-		if hidden[j] {
-			continue
-		}
+	for _, s := range events {
 		i := slices.IndexFunc(snap.Events, func(e calendar.Event) bool { return isSame(e, s) })
 		if i >= 0 {
 			out[i].Mark, out[i].Detail = describe(snap, snap.Events[i], s, i, now)
@@ -89,9 +86,6 @@ func describe(snap calendar.Snapshot, line calendar.Event, s Event, own int, now
 	case Accepted:
 		mark = "✓"
 		words = append(words, "svart ja i Spond")
-	case Declined:
-		mark = "✕"
-		words = append(words, "svart nei i Spond")
 	case Waiting:
 		mark = "venteliste"
 		words = append(words, "på venteliste i Spond")

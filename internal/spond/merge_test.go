@@ -48,17 +48,17 @@ func TestDuplicateStaysOneLineWithTheReply(t *testing.T) {
 	}
 }
 
-// Declined in Spond, Felles' line goes: nobody is going. Only in Spond, the
-// line stays with its mark, and an unanswered one stays as it was.
-func TestDeclinedDuplicateIsHidden(t *testing.T) {
+// Declined in Spond doesn't show: not Felles' line, and no line of its own.
+// An unanswered one stays as it was.
+func TestDeclinedIsHidden(t *testing.T) {
 	other := felles("Tannlege", mergeDay.Add(9*time.Hour), time.Hour)
 	got := merge(snapshot(other, felles("Agnes på turn", turnAt, 90*time.Minute)), []Event{turn(turnAt, Declined)}, mergeNow).Events
 	if len(got) != 1 || got[0].Title != "Tannlege" {
-		t.Errorf("declined duplicate: %+v", got)
+		t.Errorf("declined, in Felles too: %+v", got)
 	}
 
-	if line := findSpondLine(t, merge(snapshot(other), []Event{turn(turnAt, Declined)}, mergeNow).Events); line.Mark != "✕" {
-		t.Errorf("declined, only in Spond: mark %q", line.Mark)
+	if got := merge(snapshot(other), []Event{turn(turnAt, Declined)}, mergeNow).Events; len(got) != 1 || got[0].Title != "Tannlege" {
+		t.Errorf("declined, only in Spond: %+v", got)
 	}
 
 	if got := merge(snapshot(felles("Agnes på turn", turnAt, 90*time.Minute)), []Event{turn(turnAt, Unanswered)}, mergeNow).Events; len(got) != 1 {
@@ -144,7 +144,6 @@ func TestMarks(t *testing.T) {
 		want  string
 	}{
 		{"accepted", turn(soon, Accepted), "✓"},
-		{"declined", turn(soon, Declined), "✕"},
 		{"on the waiting list", turn(soon, Waiting), "venteliste"},
 		{"no reply this week", turn(soon, Unanswered), "ikke svart"},
 		{"no reply at exactly seven days", turn(inSevenDays, Unanswered), "ikke svart"},
@@ -234,7 +233,7 @@ func TestConflicts(t *testing.T) {
 		{"overlapping appointment", felles("Legetime Agnes", turnAt.Add(30*time.Minute), time.Hour), turn(turnAt, Unanswered), "kolliderer"},
 		{"appointment ends as it starts", felles("Legetime Agnes", turnAt.Add(-time.Hour), time.Hour), turn(turnAt, Unanswered), "ikke svart"},
 		{"someone else's trip", fellesFullDay("Jonas på tur", berlinFrom, berlinTo), turn(duringBerlin, Unanswered), ""},
-		{"already answered", fellesFullDay("Agnes og Audun i Berlin", berlinFrom, berlinTo), turn(duringBerlin, Declined), "✕"},
+		{"already answered", fellesFullDay("Agnes og Audun i Berlin", berlinFrom, berlinTo), turn(duringBerlin, Accepted), "✓"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -283,7 +282,6 @@ func TestDetail(t *testing.T) {
 	}{
 		{"no reply", nil, turn(turnAt, Unanswered), "ikke svart i Spond"},
 		{"yes", nil, turn(turnAt, Accepted), "svart ja i Spond"},
-		{"no", nil, turn(turnAt, Declined), "svart nei i Spond"},
 		{"waiting", nil, turn(turnAt, Waiting), "på venteliste i Spond"},
 		{"meeting time", nil, withMeetup, "svart ja i Spond, oppmøte 16:30"},
 		{"clash", []calendar.Event{felles("Legetime Agnes", turnAt.Add(30*time.Minute), time.Hour)}, clash, "ikke svart i Spond, kolliderer med Legetime Agnes"},
