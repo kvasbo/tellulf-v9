@@ -65,6 +65,9 @@ easy to remove, and how is at the top of `client.go`.
   common ("Agnes på turn", "TURN 5.-7. klasse"), so the match is the same start or meeting time
   plus the child's first name in the Felles title. Others get a line of their own, as Felles
   events, so they dim when the kids are away.
+- An activity in both that is declined in Spond (an actual no, not unanswered) is taken out of
+  the calendar, before clashes are checked, so it clashes with nothing. Declined and only in
+  Spond, it keeps its line with ✕.
 - An activity whose `inviteTime` is still ahead hasn't been sent: everyone is listed as
   unanswered, but there is nothing to answer yet, so it gets no mark and no reply detail. The
   field is gone once the invite is out. `scheduled=true` keeps these in the list.

@@ -14,14 +14,31 @@ import (
 const nagDays = 7
 
 // merge adds Spond's events to a snapshot. An event Felles already has stays
-// one line, with Felles' title; the others get a line of their own. They all
+// one line, with Felles' title, unless it is declined in Spond: then nobody is
+// going, and the line goes. The others get a line of their own. They all
 // count as Felles, which is what dims them when the kids are away.
 func merge(snap calendar.Snapshot, events []Event, now time.Time) calendar.Snapshot {
 	if len(events) == 0 {
 		return snap
 	}
+	// Taken out first, so a line that is gone is no clash for anything else.
+	hidden := make([]bool, len(events))
+	kept := make([]calendar.Event, 0, len(snap.Events))
+	for _, e := range snap.Events {
+		j := slices.IndexFunc(events, func(s Event) bool { return s.Reply == Declined && isSame(e, s) })
+		if j >= 0 {
+			hidden[j] = true
+			continue
+		}
+		kept = append(kept, e)
+	}
+	snap.Events = kept
+
 	out := slices.Clone(snap.Events)
-	for _, s := range events {
+	for j, s := range events {
+		if hidden[j] {
+			continue
+		}
 		i := slices.IndexFunc(snap.Events, func(e calendar.Event) bool { return isSame(e, s) })
 		if i >= 0 {
 			out[i].Mark, out[i].Detail = describe(snap, snap.Events[i], s, i, now)

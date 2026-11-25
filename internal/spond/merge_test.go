@@ -48,6 +48,32 @@ func TestDuplicateStaysOneLineWithTheReply(t *testing.T) {
 	}
 }
 
+// Declined in Spond, Felles' line goes: nobody is going. Only in Spond, the
+// line stays with its mark, and an unanswered one stays as it was.
+func TestDeclinedDuplicateIsHidden(t *testing.T) {
+	other := felles("Tannlege", mergeDay.Add(9*time.Hour), time.Hour)
+	got := merge(snapshot(other, felles("Agnes på turn", turnAt, 90*time.Minute)), []Event{turn(turnAt, Declined)}, mergeNow).Events
+	if len(got) != 1 || got[0].Title != "Tannlege" {
+		t.Errorf("declined duplicate: %+v", got)
+	}
+
+	if line := findSpondLine(t, merge(snapshot(other), []Event{turn(turnAt, Declined)}, mergeNow).Events); line.Mark != "✕" {
+		t.Errorf("declined, only in Spond: mark %q", line.Mark)
+	}
+
+	if got := merge(snapshot(felles("Agnes på turn", turnAt, 90*time.Minute)), []Event{turn(turnAt, Unanswered)}, mergeNow).Events; len(got) != 1 {
+		t.Errorf("unanswered duplicate: %+v", got)
+	}
+
+	// What is gone clashes with nothing.
+	declined := turn(turnAt, Declined)
+	declined.Heading = "Konkurranse"
+	got = merge(snapshot(felles("Agnes konkurranse", turnAt, 3*time.Hour)), []Event{declined, turn(turnAt.Add(time.Hour), Unanswered)}, mergeNow).Events
+	if line := findSpondLine(t, got); len(got) != 1 || line.Mark != "ikke svart" {
+		t.Errorf("clash with a hidden line: %+v", got)
+	}
+}
+
 func TestWhatCountsAsADuplicate(t *testing.T) {
 	audun := felles("Agnes på turn", turnAt, time.Hour)
 	audun.Source = calendar.Audun
