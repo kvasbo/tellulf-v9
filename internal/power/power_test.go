@@ -117,16 +117,17 @@ func TestDataFromHoursWithoutLive(t *testing.T) {
 	}
 }
 
-// A current live feed gives today's total; its cost splits at the cap with
+// A current Tibber feed gives today's total; its cost splits at the cap with
 // the price now.
 func TestDataUsesLiveWhenCurrent(t *testing.T) {
 	p := testPower()
+	p.norgespris.CabinCap = 100
 	now := nov(26, 13, 40)
-	p.storeHours(Home, append(hourly(nov(25, 0, 0), 24, 4), hourly(nov(26, 0, 0), 13, 1)...), now)
+	p.storeHours(Cabin, append(hourly(nov(25, 0, 0), 24, 4), hourly(nov(26, 0, 0), 13, 1)...), now)
 	pricesFor(p, nov(25, 0, 0), nov(26, 0, 0), 2)
-	p.measure(Home, tibber.Measurement{Power: 800, AccumulatedConsumption: 15}, now.Add(-2*time.Minute))
+	p.measure(Cabin, tibber.Measurement{Power: 800, AccumulatedConsumption: 15}, now.Add(-2*time.Minute))
 
-	d := p.Data(Home, now)
+	d := p.Data(Cabin, now)
 	if !d.IsLive(now) || !near(d.AccumulatedConsumption, 15) || !d.TodayUntil.IsZero() {
 		t.Errorf("today: live %v, %v kWh until %v", d.IsLive(now), d.AccumulatedConsumption, d.TodayUntil)
 	}
@@ -139,7 +140,7 @@ func TestDataUsesLiveWhenCurrent(t *testing.T) {
 	}
 
 	// Eleven minutes later the feed counts as gone, and the hours take over.
-	if d := p.Data(Home, now.Add(11*time.Minute)); d.IsLive(now.Add(11*time.Minute)) || !near(d.AccumulatedConsumption, 13) {
+	if d := p.Data(Cabin, now.Add(11*time.Minute)); d.IsLive(now.Add(11*time.Minute)) || !near(d.AccumulatedConsumption, 13) {
 		t.Errorf("stale: %v kWh", d.AccumulatedConsumption)
 	}
 }

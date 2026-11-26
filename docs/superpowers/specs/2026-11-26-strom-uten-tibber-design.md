@@ -185,11 +185,47 @@ to ganger.
 - `docker-compose.yml`, README og CLAUDE.md oppdateres. Produksjonsoppsettet
   i Jeeves-dockerfiler trenger også `ELVIA_TOKEN`; det pushes ikke herfra.
 
-### HAN-leseren senere
+### HAN-leseren (lagt til samme dag)
 
-`power` får da en metode for live-målinger hjemme (samme form som Tibbers
-`Measurement`, eller en egen), og alt over virker uendret: `IsLive`, i dag fra
-live, `liveHours` som fyller timene Elvia ikke har ennå.
+Tibber Pulse hjemme er satt til å sende til vår MQTT-broker, på `pulse/ams`
+(oppsett: https://hushagehobby.no/fra-tibber-pulse-til-lokal-mqtt-i-home-assistant/).
+Pulsen sender da ikke lenger til Tibber. Sett på brokeren 2026-11-26:
+
+- Hver melding er én hel HDLC-ramme fra måleren, med `7E` i begge ender,
+  type 3, adresser, HCS og FCS (CRC-16/X-25), så LLC `E6 E7 00` og en DLMS
+  data-notification (`0F`, invoke id, `00` for ingen tid). Måleren er Aidon
+  V2: en liste av strukturer med OBIS-kode, verdi og skalering/enhet.
+- Hvert 2,5. sekund: bare effekt inn (1.0.1.7.0.255, W).
+- Hvert 10. sekund: effekt inn og ut, reaktiv effekt, strøm L1 og L3 (IT-nett,
+  ingen L2), spenning på alle tre faser, versjon, måler-id og -type.
+- Hver hele time: også målerstand (1.0.1.8.0.255) og målerens klokke.
+- Pulsens egen status kommer som JSON på samme topic (`{"status":{…}}`) og
+  hoppes over.
+
+Design:
+
+- **`internal/han`** dekoder en ramme: sjekker flagg, lengde og FCS, leser
+  DLMS-verdiene og gir OBIS-kode → skalert verdi. Bare Aidon-formatet (OBIS
+  ved hver verdi); Kaifa og Kamstrup er ikke med før noen trenger dem.
+- **`smarthouse`** abonnerer på `pulse/ams` og gir rå meldinger videre (ikke
+  de som er lagret på brokeren, som er gamle).
+- **`power.HAN(payload)`** gjør dem til live-tall hjemme: effekten nå (inn
+  minus ut), lavest og høyest i dag fra målingene, og en løpende sum i dag
+  ved å integrere effekten mellom målinger (ikke over hull på over et
+  minutt). Den summen gir `liveHours` for timene Elvia ikke har ennå. Siden
+  summen ikke vokser over hull, merkes hver time den kommer inn i, også etter
+  et hull, og timen for dagens første måling fra den målingen av. Etter en
+  omstart er de timene derfor for lave til Elvia har dem.
+- Eksport kommer bare hvert 10. sekund; den siste brukes for rammene mellom.
+- `han` avviser segmenterte rammer og data som slutter midt i et tall.
+- **I dag hjemme** med live: summen av timene, der Elvia vinner der den har
+  timen og HAN fyller resten (`mergeHours`). Ikke HAN-summen alene: den
+  kjenner bare tiden siden oppstart. Snittet er i dag delt på tiden siden
+  midnatt. Hytta er som før (Tibbers egen dagssum).
+- Målerstanden brukes ikke ennå: integrasjonen er nær nok for timene Elvia
+  ikke har, og Elvia retter dem innen en time.
+- Faller Pulsen ut, er live borte etter 10 minutter, og hjemme viser timene
+  fra Elvia som før.
 
 ## Overlatt til den som bygger
 

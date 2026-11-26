@@ -83,23 +83,26 @@ func run() error {
 		wg.Go(func() { s.Run(ctx) })
 	}
 
-	if host := os.Getenv("MQTT_HOST"); host == "" {
-		slog.Warn("sensors disabled", "reason", "MQTT_HOST is not set")
-	} else {
-		sh := smarthouse.New()
-		if err := sh.Connect(smarthouse.Config{Host: host, User: os.Getenv("MQTT_USER"), Password: os.Getenv("MQTT_PASS")}); err != nil {
-			return err
-		}
-		defer sh.Close()
-		src.Smarthouse = sh
-	}
-
 	if cfg, err := powerConfig(); err != nil {
 		slog.Warn("power disabled", "reason", err)
 	} else {
 		p := power.New(cfg)
 		src.Power = p
 		wg.Go(func() { p.Run(ctx) })
+	}
+
+	if host := os.Getenv("MQTT_HOST"); host == "" {
+		slog.Warn("sensors disabled", "reason", "MQTT_HOST is not set")
+	} else {
+		sh := smarthouse.New()
+		if src.Power != nil {
+			sh.OnHAN(src.Power.HAN) // the home's live power, from the Tibber Pulse
+		}
+		if err := sh.Connect(smarthouse.Config{Host: host, User: os.Getenv("MQTT_USER"), Password: os.Getenv("MQTT_PASS")}); err != nil {
+			return err
+		}
+		defer sh.Close()
+		src.Smarthouse = sh
 	}
 
 	if key := os.Getenv("ANTHROPIC_API_KEY"); key == "" {

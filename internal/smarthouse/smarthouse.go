@@ -36,6 +36,7 @@ type Config struct {
 
 type Smarthouse struct {
 	client mqtt.Client
+	onHAN  func([]byte) // set before Connect; nil: hanTopic isn't subscribed
 
 	mu        sync.RWMutex
 	data      Readings
@@ -56,8 +57,18 @@ const modeTopic = "tellulf/mode"
 // it; a Stream Deck lights the key of the active mode.
 const modeStateTopic = "tellulf/mode/state"
 
+// hanTopic is where the Tibber Pulse at home publishes the meter's HAN
+// frames, one raw frame per message, and its own status as JSON.
+const hanTopic = "pulse/ams"
+
 func New() *Smarthouse {
 	return &Smarthouse{mode: mode.Oversikt, now: time.Now}
+}
+
+// OnHAN passes every message on hanTopic to fn. Call it before Connect.
+// Retained messages are left out: they are old.
+func (s *Smarthouse) OnHAN(fn func([]byte)) {
+	s.onHAN = fn
 }
 
 // Connect starts the MQTT client. Paho reconnects on its own, both for the
@@ -82,6 +93,13 @@ func (s *Smarthouse) Connect(cfg Config) error {
 			// Subscribe again on every (re)connect; the session is not persistent.
 			c.Subscribe("tellulf/weather/#", 0, s.onMessage)
 			c.Subscribe(modeTopic, 0, s.onMessage)
+			if s.onHAN != nil {
+				c.Subscribe(hanTopic, 0, func(_ mqtt.Client, msg mqtt.Message) {
+					if !msg.Retained() {
+						s.onHAN(msg.Payload())
+					}
+				})
+			}
 			c.Publish("tellulf/poll", 0, false, "Tellulf is online and polling")
 			s.resendMode()
 		}).

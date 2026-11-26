@@ -98,6 +98,7 @@ type Power struct {
 	marks   map[Place]*liveHours
 	// The cabin's latest solar production, W.
 	lastCabinProduction float64
+	hanHome             hanHome
 }
 
 func New(cfg Config) *Power {
@@ -214,13 +215,26 @@ func (p *Power) derive(pl Place, now time.Time) PowerData {
 	for _, h := range before {
 		used += h.Consumption
 	}
-	if d.IsLive(now) {
+	switch {
+	case d.IsLive(now) && pl == Home:
+		// The HAN reader has only counted since it started, so today is the
+		// hours: Elvia's where it has them, the reader's for the rest.
+		hours := mergeHours(today, p.marks[pl].hours(now), now)
+		d.AccumulatedConsumption = 0
+		for _, h := range hours {
+			d.AccumulatedConsumption += h.Consumption
+		}
+		if gone := now.Sub(tz.StartOfDay(now)).Hours(); gone > 0 {
+			d.AveragePower = d.AccumulatedConsumption * 1000 / gone
+		}
+		d.AccumulatedCost = n.AccumulatedCost(pl, hours, p.spotAt, used)
+	case d.IsLive(now):
 		// Split today's live total into the part still under the monthly cap
 		// (Norgespris) and the part above it (spot price now).
 		subsidized := max(0, min(d.AccumulatedConsumption, d.Cap-used))
 		market := d.AccumulatedConsumption - subsidized
 		d.AccumulatedCost = subsidized*n.PriceAt(now) + market*d.CurrentPrice
-	} else {
+	default:
 		d.AccumulatedConsumption, d.AccumulatedProduction, d.TodayUntil = 0, 0, time.Time{}
 		for _, h := range today {
 			d.AccumulatedConsumption += h.Consumption

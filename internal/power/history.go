@@ -39,6 +39,21 @@ func (l *liveHours) add(now time.Time, acc float64) {
 	l.last, l.lastAcc = now, acc
 }
 
+// addCounter is add for a total that doesn't grow across gaps in the
+// readings (the HAN reader's, which only counts between close readings):
+// every hour it enters is marked, also after a gap, and the hour of the
+// day's first reading from that reading on.
+func (l *liveHours) addCounter(now time.Time, acc float64) {
+	if !tz.SameDay(l.last, now) {
+		l.marks, l.lastAcc = map[time.Time]float64{}, acc
+	}
+	hour := now.Truncate(time.Hour) // Oslo's offset is whole hours
+	if _, ok := l.marks[hour]; !ok {
+		l.marks[hour] = l.lastAcc
+	}
+	l.last, l.lastAcc = now, acc
+}
+
 // hours is the consumption in each hour today with a mark at its start:
 // up to the next mark, or for the hour now, up to the latest total.
 func (l *liveHours) hours(now time.Time) []Usage {

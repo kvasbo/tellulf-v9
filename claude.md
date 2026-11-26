@@ -130,7 +130,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - Live power numbers are hidden (`PowerData.IsLive`) when the last measurement is over 10
   minutes old or from yesterday: a dead feed's reading must not pass for now. Today's use
   then comes from the known hours, marked "til kl. 13"; the month, the price and the charts
-  stay. At home there is no live feed until the HAN reader arrives, so it always looks so.
+  stay. At home the live feed is the HAN reader; without it, it always looks so.
 
 ## Packages
 
@@ -139,13 +139,14 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - `internal/claude` — Claude's texts (official Anthropic Go SDK, structured output)
 - `internal/spond` — the kids' activities and replies from Spond, added to the calendar
 - `internal/entur` — metro departures
-- `internal/smarthouse` — MQTT sensor readings and the mode (paho)
+- `internal/smarthouse` — MQTT sensor readings, the mode and the HAN frames (paho)
 - `internal/mode` — the pages and their paths, and parsing the MQTT payload
 - `internal/power` — puts power together for the home and the cabin: the month's hours,
   the live feed, prices, Norgespris maths. Keeps raw data; `Data`/`Details(place, now)`
   work the numbers out when read. Design notes:
   `docs/superpowers/specs/2026-11-26-strom-uten-tibber-design.md`.
 - `internal/elvia` — the home's hourly consumption from Elvia
+- `internal/han` — decodes the home meter's HAN frames (HDLC + DLMS, Aidon's layout)
 - `internal/tibber` — the cabin's live feed (own graphql-transport-ws client on
   coder/websocket) and hourly consumption
 - `internal/spotpris` — spot prices from hvakosterstrommen.no
@@ -205,6 +206,12 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - **Claude** (Anthropic API): today's sentence, short titles, the week. Calendar data is
   sent to it. Without `ANTHROPIC_API_KEY` it is off.
 - **MQTT**: Sensor data (temperature, humidity, pressure) and the mode (`tellulf/mode`).
+  The home's Tibber Pulse publishes the meter's HAN frames to `pulse/ams` (one raw HDLC frame
+  per message: power every 2.5 s, phases every 10 s, the meter reading every hour) and its own
+  status as JSON on the same topic. `power.HAN` takes the power now and counts the energy
+  between readings for the hours Elvia doesn't have yet; Elvia's hours win where both have
+  one. The Pulse no longer sends to Tibber. A `go run` binary on macOS may be refused the
+  local network ("no route to host") where `nc` and Ruby get through.
   Don't develop against the real broker: a mode message there switches the real screen.
 
 ## Norgespris

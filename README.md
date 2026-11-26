@@ -160,10 +160,11 @@ internal/
   calendar/           Google Calendar, kids' schedule, fading rules
   claude/             Claude's texts: today's sentence, short titles, the week
   entur/              metro departures
-  smarthouse/         MQTT sensor readings and the mode
+  smarthouse/         MQTT sensor readings, the mode and the home's HAN frames
   mode/               the pages (modes) and their paths
   power/              power at home and the cabin: hours, live feed, prices, Norgespris
   elvia/              the home's hourly use from Elvia
+  han/                decodes the home meter's HAN frames
   tibber/             the cabin's live feed and hourly use from Tibber
   spotpris/           spot prices from hvakosterstrommen.no
   sun/                sunrise/sunset
