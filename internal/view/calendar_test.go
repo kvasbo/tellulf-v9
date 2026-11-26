@@ -150,22 +150,34 @@ func TestDayEventsLine(t *testing.T) {
 	}
 }
 
-func TestHyttaSuffixOnlyToday(t *testing.T) {
-	tue := mon.AddDate(0, 0, 1)
+// Events that mention hytta get the cabin's forecast on every day that has
+// one, so a planned trip shows its weather ahead.
+func TestHyttaSuffixEveryDay(t *testing.T) {
+	tue, wed, thu := mon.AddDate(0, 0, 1), mon.AddDate(0, 0, 2), mon.AddDate(0, 0, 3)
 	snap := calendar.Snapshot{Events: []calendar.Event{
 		timed("Hytta", mon.Add(13*time.Hour), 2*time.Hour),
-		timed("Hytta", tue.Add(13*time.Hour), 2*time.Hour),
+		timed("Til hytta", tue.Add(13*time.Hour), 2*time.Hour),
+		fullDay("Hytta", wed),
+		fullDay("Hytta", thu),
 	}}
 	hytta := map[string]weather.Daily{
 		mon.Format(time.DateOnly): {MaxTemp: 5.2, LightRainProbability: 20},
-		tue.Format(time.DateOnly): {MaxTemp: 5.2, LightRainProbability: 20},
+		tue.Format(time.DateOnly): {MaxTemp: -1.6, LightRainProbability: 70},
+		wed.Format(time.DateOnly): {MaxTemp: 3, LightRainProbability: 0},
 	}
-	c := BuildCalendar(snap, nil, hytta, claude.Texts{}, calNow, 2)
-	if got := c.Today.Events[0].Hytta; got != "(5°, 20 % regn)" {
+	c := BuildCalendar(snap, nil, hytta, claude.Texts{}, calNow, 4)
+	if got := plain(c.Today.Events[0].Hytta); got != "(5°, 20 % regn)" {
 		t.Errorf("today hytta = %q", got)
 	}
-	if got := c.Days[0].Events[0].Text; got != "13:00 Hytta" {
-		t.Errorf("tomorrow text = %q", got)
+	want := [][]string{{"13:00 Til hytta (−2°, 70 % regn)"}, {"Hytta (3°, 0 % regn)"}, {"Hytta"}}
+	for i, w := range want {
+		var got []string
+		for _, s := range texts(c.Days[i].Events) {
+			got = append(got, plain(s))
+		}
+		if !slices.Equal(got, w) {
+			t.Errorf("day %d = %q, want %q", i+1, got, w)
+		}
 	}
 }
 

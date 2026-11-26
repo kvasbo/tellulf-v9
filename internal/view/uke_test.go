@@ -22,7 +22,7 @@ func TestUkeDays(t *testing.T) {
 		return out
 	}
 
-	u := BuildUke(snap, nil, claude.Texts{Week: lines}, calNow)
+	u := BuildUke(snap, nil, nil, claude.Texts{Week: lines}, calNow)
 	if !slices.Equal(u.Lines, lines) {
 		t.Errorf("lines = %q", u.Lines)
 	}
@@ -34,7 +34,7 @@ func TestUkeDays(t *testing.T) {
 		t.Errorf("today's dinner = %q", u.Days[0].Dinner)
 	}
 
-	u = BuildUke(snap, nil, claude.Texts{}, mon.Add(19*time.Hour))
+	u = BuildUke(snap, nil, nil, claude.Texts{}, mon.Add(19*time.Hour))
 	want = []string{"Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag", "Søndag", "Mandag 2."}
 	if got := labels(u); !slices.Equal(got, want) || u.Lines != nil {
 		t.Errorf("evening: labels = %q, lines = %q; want %q and none", got, u.Lines, want)

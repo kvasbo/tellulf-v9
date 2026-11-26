@@ -66,7 +66,7 @@ func BuildCalendar(cal calendar.Snapshot, daily, dailyHytta map[string]weather.D
 		}
 	}
 	for i := 1; i < days; i++ {
-		out.Days = append(out.Days, buildDay(cal, daily, texts.Titles, now.AddDate(0, 0, i), i))
+		out.Days = append(out.Days, buildDay(cal, daily, dailyHytta, texts.Titles, now.AddDate(0, 0, i), i))
 	}
 	return out
 }
@@ -80,27 +80,16 @@ func buildToday(cal calendar.Snapshot, dailyHytta map[string]weather.Daily, text
 		}
 		t.Notes = append(t.Notes, text)
 	}
-	hytta, hasHytta := dailyHytta[date.Format(time.DateOnly)]
-	suffix := func(e calendar.EnrichedEvent) string {
-		if !hasHytta || !strings.Contains(strings.ToLower(e.Title), "hytta") {
-			return ""
-		}
-		return "(" + Deg(hytta.MaxTemp) + ", " + Pct(hytta.LightRainProbability) + " regn)"
-	}
 	for _, e := range eventsByStart(cal, date) {
 		title := shortTitle(e, texts.Titles)
 		if e.FullDay {
-			note := title
-			if s := suffix(e); s != "" {
-				note += " " + s
-			}
-			t.Notes = append(t.Notes, note)
+			t.Notes = append(t.Notes, withHytta(title, dailyHytta, e, date))
 			continue
 		}
 		t.Events = append(t.Events, TodayEvent{
 			Time:  e.DisplayTime.Start,
 			Title: title,
-			Hytta: suffix(e),
+			Hytta: hyttaSuffix(dailyHytta, e, date),
 			Mark:  e.Mark,
 			Faded: e.Faded,
 		})
@@ -108,7 +97,25 @@ func buildToday(cal calendar.Snapshot, dailyHytta map[string]weather.Daily, text
 	return t
 }
 
-func buildDay(cal calendar.Snapshot, daily map[string]weather.Daily, titles claude.Titles, date time.Time, i int) Day {
+// hyttaSuffix is the cabin's forecast for date, "(5°, 20 % regn)", when e
+// mentions hytta and there is a forecast for that day; "" otherwise.
+func hyttaSuffix(dailyHytta map[string]weather.Daily, e calendar.EnrichedEvent, date time.Time) string {
+	f, ok := dailyHytta[date.Format(time.DateOnly)]
+	if !ok || !strings.Contains(strings.ToLower(e.Title), "hytta") {
+		return ""
+	}
+	return "(" + Deg(f.MaxTemp) + ", " + Pct(f.LightRainProbability) + " regn)"
+}
+
+// withHytta puts hyttaSuffix after text, when there is one.
+func withHytta(text string, dailyHytta map[string]weather.Daily, e calendar.EnrichedEvent, date time.Time) string {
+	if s := hyttaSuffix(dailyHytta, e, date); s != "" {
+		return text + " " + s
+	}
+	return text
+}
+
+func buildDay(cal calendar.Snapshot, daily, dailyHytta map[string]weather.Daily, titles claude.Titles, date time.Time, i int) Day {
 	d := Day{
 		Kids:   cal.KidsStatusForDate(date),
 		Label:  Capitalize(weekdays[date.Weekday()]),
@@ -134,7 +141,7 @@ func buildDay(cal calendar.Snapshot, daily map[string]weather.Daily, titles clau
 	events := eventsByStart(cal, date)
 	for _, e := range events {
 		if e.FullDay {
-			d.Events = append(d.Events, DayEvent{Text: shortTitle(e, titles), Faded: e.Faded})
+			d.Events = append(d.Events, DayEvent{Text: withHytta(shortTitle(e, titles), dailyHytta, e, date), Faded: e.Faded})
 		}
 	}
 	for _, e := range events {
@@ -147,7 +154,7 @@ func buildDay(cal calendar.Snapshot, daily map[string]weather.Daily, titles clau
 			// never between the time and the title.
 			text = e.DisplayTime.Start + " " + text
 		}
-		d.Events = append(d.Events, DayEvent{Text: text, Mark: e.Mark, Faded: e.Faded})
+		d.Events = append(d.Events, DayEvent{Text: withHytta(text, dailyHytta, e, date), Mark: e.Mark, Faded: e.Faded})
 	}
 	return d
 }

@@ -18,14 +18,14 @@ type Uke struct {
 
 // BuildUke lays out the week Claude writes about: seven days from today,
 // or from tomorrow in the evening (claude.WeekStart).
-func BuildUke(cal calendar.Snapshot, daily map[string]weather.Daily, texts claude.Texts, now time.Time) Uke {
+func BuildUke(cal calendar.Snapshot, daily, dailyHytta map[string]weather.Daily, texts claude.Texts, now time.Time) Uke {
 	now = now.In(tz.Oslo)
 	u := Uke{Lines: texts.Week}
 	start := claude.WeekStart(now)
 	for i := range claude.WeekDays {
 		date := start.AddDate(0, 0, i)
 		ahead := daysBetween(now, date)
-		d := buildDay(cal, daily, texts.Titles, date, ahead)
+		d := buildDay(cal, daily, dailyHytta, texts.Titles, date, ahead)
 		if ahead == 0 {
 			d.Label = "I dag"
 		}

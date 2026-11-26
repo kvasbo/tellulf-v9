@@ -202,7 +202,8 @@ func (s *Server) ukePage(now time.Time) views.UkePage {
 }
 
 func (s *Server) uke(now time.Time) view.Uke {
-	return view.BuildUke(s.calendarSnapshot(), s.src.Weather.DailyForecasts(weather.Oslo), s.texts(now), now)
+	return view.BuildUke(s.calendarSnapshot(), s.src.Weather.DailyForecasts(weather.Oslo),
+		s.src.Weather.DailyForecasts(weather.Hytta), s.texts(now), now)
 }
 
 func (s *Server) vaer(now time.Time) view.Vaer {
