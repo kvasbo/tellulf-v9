@@ -186,16 +186,17 @@ func TestCurrentPriceKeepsLastKnown(t *testing.T) {
 	}
 }
 
+// Today and tomorrow first, then back to the 1st.
 func TestWantedDays(t *testing.T) {
 	days := func(now time.Time) (int, time.Time, time.Time) {
 		w := wantedDays(now)
 		return len(w), w[0], w[len(w)-1]
 	}
-	if n, first, last := days(nov(26, 12, 59)); n != 26 || !first.Equal(nov(1, 0, 0)) || !last.Equal(nov(26, 0, 0)) {
-		t.Errorf("before 13: %d days, %v–%v", n, first, last)
+	if n, first, last := days(nov(26, 12, 59)); n != 26 || !first.Equal(nov(26, 0, 0)) || !last.Equal(nov(1, 0, 0)) {
+		t.Errorf("before 13: %d days, %v … %v", n, first, last)
 	}
-	if n, _, last := days(nov(26, 13, 0)); n != 27 || !last.Equal(nov(27, 0, 0)) {
-		t.Errorf("from 13: %d days, last %v", n, last)
+	if w := wantedDays(nov(26, 13, 0)); len(w) != 27 || !w[1].Equal(nov(27, 0, 0)) || !w[2].Equal(nov(25, 0, 0)) {
+		t.Errorf("from 13: %v", w)
 	}
 	dec1 := time.Date(2026, 12, 1, 0, 10, 0, 0, tz.Oslo)
 	if n, first, _ := days(dec1); n != 1 || !first.Equal(tz.StartOfDay(dec1)) {

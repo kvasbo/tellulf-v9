@@ -19,15 +19,17 @@ const (
 )
 
 // wantedDays are the days whose prices are needed at now: every day of the
-// month so far, to price its hours, and tomorrow from 13:00.
+// month so far, to price its hours, and tomorrow from 13:00. Today and
+// tomorrow come first, then the days before, latest first, so a past day
+// that fails can't hold up the price now.
 func wantedDays(now time.Time) []time.Time {
 	now = now.In(tz.Oslo)
-	last := tz.StartOfDay(now)
+	today := tz.StartOfDay(now)
+	out := []time.Time{today}
 	if now.Hour() >= tomorrowFrom {
-		last = last.AddDate(0, 0, 1)
+		out = append(out, today.AddDate(0, 0, 1))
 	}
-	var out []time.Time
-	for d := startOfMonth(now); !d.After(last); d = d.AddDate(0, 0, 1) {
+	for d := today.AddDate(0, 0, -1); !d.Before(startOfMonth(now)); d = d.AddDate(0, 0, -1) {
 		out = append(out, d)
 	}
 	return out

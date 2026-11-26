@@ -15,24 +15,43 @@ import (
 // every quarter keeps the day close to now without asking much.
 const elviaEvery = 15 * time.Minute
 
-// runElvia fetches the home's hours for the month so far every elviaEvery,
-// and sooner again with backoff after a failure.
+// elviaPace says when to fetch the home's hours: every elviaEvery, at once
+// when a new month starts (until then the month isn't known, and the home
+// is blank), and with backoff after a failure.
+type elviaPace struct {
+	month    time.Time // the month of the last success
+	next     time.Time
+	failures int
+}
+
+func (e *elviaPace) due(now time.Time) bool {
+	newMonth := !startOfMonth(now).Equal(e.month)
+	return !now.Before(e.next) || newMonth && e.failures == 0
+}
+
+func (e *elviaPace) done(now time.Time, err error) {
+	if err != nil {
+		e.failures++
+		e.next = now.Add(schedule.Backoff(e.failures))
+		return
+	}
+	e.month, e.next, e.failures = startOfMonth(now), now.Add(elviaEvery), 0
+}
+
+// runElvia fetches the home's hours for the month so far, as elviaPace says.
 func (p *Power) runElvia(ctx context.Context) {
-	failures := 0
-	var next time.Time
+	var pace elviaPace
 	schedule.Every(ctx, time.Minute, func(ctx context.Context) {
 		now := tz.Now()
-		if now.Before(next) {
+		if !pace.due(now) {
 			return
 		}
 		hours, err := p.cfg.Elvia.Hours(ctx, startOfMonth(now), now.Truncate(time.Hour).Add(time.Hour))
+		pace.done(now, err)
 		if err != nil {
-			failures++
-			next = now.Add(schedule.Backoff(failures))
-			slog.Error("could not fetch consumption from Elvia", "err", err, "retry_at", next.Format(time.TimeOnly))
+			slog.Error("could not fetch consumption from Elvia", "err", err, "retry_at", pace.next.Format(time.TimeOnly))
 			return
 		}
-		failures, next = 0, now.Add(elviaEvery)
 		usage := make([]Usage, len(hours))
 		for i, h := range hours {
 			usage[i] = Usage{Start: h.Start, Consumption: h.KWh}

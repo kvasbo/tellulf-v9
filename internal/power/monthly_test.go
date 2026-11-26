@@ -62,3 +62,26 @@ func TestMonthlyPace(t *testing.T) {
 		t.Error("a rejected token should not be retried within the hour")
 	}
 }
+
+// Every quarter, at once in a new month (or the home is blank until the
+// next quarter), and with backoff after a failure.
+func TestElviaPace(t *testing.T) {
+	var p elviaPace
+	if !p.due(nov6(10, 0)) {
+		t.Fatal("the first fetch should be due at once")
+	}
+	p.done(nov6(10, 0), nil)
+	if p.due(nov6(10, 14)) || !p.due(nov6(10, 15)) {
+		t.Error("should be due every 15 minutes")
+	}
+
+	p.done(time.Date(2026, 11, 30, 23, 58, 0, 0, tz.Oslo), nil)
+	if !p.due(time.Date(2026, 12, 1, 0, 0, 0, 0, tz.Oslo)) {
+		t.Error("a new month should be fetched at once")
+	}
+
+	p.done(time.Date(2026, 12, 1, 0, 0, 0, 0, tz.Oslo), errors.New("503"))
+	if p.due(time.Date(2026, 12, 1, 0, 0, 1, 0, tz.Oslo)) {
+		t.Error("a failure should wait, even in a new month")
+	}
+}
