@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kvasbo/tellulf-v9/internal/tibber"
+	"github.com/kvasbo/tellulf-v9/internal/power"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
@@ -15,35 +15,38 @@ import (
 // quota, and the spot price today and tomorrow.
 type Strom struct {
 	Label   string // "Hjemme", "Hytta"
-	HasData bool   // false until the live feed has delivered
+	HasData bool   // false until a live feed or the month's hours have come
 	Now     string // "2,4" (kW, which the template adds)
 	Line1   string // "Snitt 1,1 kW · topp 6,2 kW"
 	Line2   string // "Lavest 0,3 kW i dag", plus "· sol topp 3,4 kW"
 	Rows    []Row  // I DAG, the month, SPOTPRIS
 }
 
-var stromLabels = map[tibber.Place]string{tibber.Home: "Hjemme", tibber.Cabin: "Hytta"}
+var stromLabels = map[power.Place]string{power.Home: "Hjemme", power.Cabin: "Hytta"}
 
 // minHourScale keeps a quiet day from filling the hourly chart: the scale
 // goes to at least this many kWh.
 const minHourScale = 1.0
 
-func BuildStrom(d tibber.Details, place tibber.Place, now time.Time) Strom {
-	s := Strom{Label: stromLabels[place], HasData: !d.Timestamp.IsZero()}
+func BuildStrom(d power.Details, place power.Place, now time.Time) Strom {
+	s := Strom{Label: stromLabels[place], HasData: hasPowerData(d.PowerData)}
 	if !s.HasData {
 		return s
 	}
 	now = now.In(tz.Oslo)
 	today := todayRow(d, now)
-	if powerIsCurrent(d.PowerData, now) {
+	if d.IsLive(now) {
 		s.Now = nb(Fixed(d.CurrentPower/1000, 1))
 		s.Line1 = "Snitt " + KW(d.AveragePower) + " · topp " + KW(d.MaxPower)
 		s.Line2 = "Lavest " + KW(d.MinPower) + " i dag"
 		if d.MaxPowerProduction > 0 {
 			s.Line2 += " · sol topp " + KW(d.MaxPowerProduction)
 		}
+	} else if d.TodayUntil.IsZero() {
+		today.Value, today.Details = "", nil // no hours known today yet
 	} else {
-		today.Value, today.Details = "", nil // the chart's hours are from the history too
+		// The known hours, so say how far they reach.
+		today.Details = append(today.Details, "til kl. "+d.TodayUntil.In(tz.Oslo).Format("15"))
 	}
 	s.Rows = []Row{today, monthRow(d, now), priceRow(d, now)}
 	return s
@@ -51,7 +54,7 @@ func BuildStrom(d tibber.Details, place tibber.Place, now time.Time) Strom {
 
 // todayRow: today's net consumption and cost, and the consumption hour by
 // hour.
-func todayRow(d tibber.Details, now time.Time) Row {
+func todayRow(d power.Details, now time.Time) Row {
 	r := Row{Label: "I dag", Value: KWh(d.AccumulatedConsumption), Details: []string{Kr(d.AccumulatedCost)}}
 	if d.AccumulatedProduction > 0 {
 		r.Details = append(r.Details, "sol "+KWh(d.AccumulatedProduction))
@@ -77,7 +80,7 @@ func todayRow(d tibber.Details, now time.Time) Row {
 // monthRow: the month's consumption, its share of the quota, the pace
 // against it, and the cost, with the consumption added up day by day
 // against a straight-line use of the quota.
-func monthRow(d tibber.Details, now time.Time) Row {
+func monthRow(d power.Details, now time.Time) Row {
 	r := Row{Label: Capitalize(months[now.Month()-1]), Value: KWh(d.MonthlyConsumption)}
 	if d.Cap > 0 {
 		r.Details = append(r.Details,
@@ -126,7 +129,7 @@ func monthRow(d tibber.Details, now time.Time) Row {
 
 // priceRow: the spot price now, today's range and the Norgespris, with the
 // price hour by hour today and tomorrow.
-func priceRow(d tibber.Details, now time.Time) Row {
+func priceRow(d power.Details, now time.Time) Row {
 	r := Row{Label: "Spotpris"}
 	if len(d.Prices) == 0 {
 		return r

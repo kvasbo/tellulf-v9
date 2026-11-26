@@ -91,8 +91,8 @@ func fakeTibber(t *testing.T, token string) *graphQL {
 
 func TestFeedProtocol(t *testing.T) {
 	gql := fakeTibber(t, "secret")
-	var got []liveMeasurement
-	f := &feed{gql: gql, place: Home, homeID: "h1", onMessage: func(_ Place, m liveMeasurement) { got = append(got, m) }}
+	var got []Measurement
+	f := &feed{gql: gql, homeID: "h1", onMessage: func(m Measurement) { got = append(got, m) }}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -108,103 +108,9 @@ func TestFeedProtocol(t *testing.T) {
 func TestFeedRejectedToken(t *testing.T) {
 	gql := fakeTibber(t, "secret")
 	gql.token = "wrong"
-	f := &feed{gql: gql, place: Home, homeID: "h1", onMessage: func(Place, liveMeasurement) {}}
-	if _, err := f.connectOnce(context.Background()); err != errUnauthorized {
-		t.Errorf("got %v, want errUnauthorized", err)
-	}
-}
-
-func TestAccumulatedCostCrossesCap(t *testing.T) {
-	n := Norgespris{Prices: []PricePeriod{{Price: 0.5}}, HomeCap: 10, CabinCap: 5}
-	hours := []hourlyUsage{
-		{Consumption: 6, Price: 2}, // all subsidized: 3.0
-		{Consumption: 6, Price: 2}, // 4 subsidized + 2 at spot: 2.0 + 4.0
-		{Consumption: 1, Price: 3}, // over cap: 3.0
-	}
-	if got := n.AccumulatedCost(Home, hours); !near(got, 12) {
-		t.Errorf("got %v, want 12", got)
-	}
-}
-
-func TestOnMeasurementSplitsTodayAtTheCap(t *testing.T) {
-	tb := New(Config{})
-	tb.norgespris = Norgespris{Prices: []PricePeriod{{Price: 0.5}}, HomeCap: 100, CabinCap: 10}
-	tb.data[Home].Cap = 100
-	tb.data[Home].CurrentPrice = 2
-	tb.monthBeforeToday[Home] = 95
-	tb.monthCostBeforeToday[Home] = 40
-
-	tb.onMeasurement(Home, liveMeasurement{Power: 800, AccumulatedConsumption: 10})
-	d := tb.PowerData(Home)
-	// 5 kWh left under the cap at 0.5, 5 kWh at spot 2.
-	if !near(d.AccumulatedCost, 12.5) || !near(d.MonthlyConsumption, 105) || !near(d.MonthlyCost, 52.5) {
-		t.Errorf("got cost %v, monthly %v, monthly cost %v", d.AccumulatedCost, d.MonthlyConsumption, d.MonthlyCost)
-	}
-	if d.EffectivePrice != 2 {
-		t.Errorf("over the cap the effective price is spot, got %v", d.EffectivePrice)
-	}
-}
-
-func TestCabinShowsProductionAsNegativePower(t *testing.T) {
-	tb := New(Config{})
-	tb.onMeasurement(Cabin, liveMeasurement{Power: 0, PowerProduction: ptr(1500)})
-	if got := tb.PowerData(Cabin).CurrentPower; got != -1500 {
-		t.Errorf("got %v, want -1500", got)
-	}
-	// A frame without production keeps using the last known value.
-	tb.onMeasurement(Cabin, liveMeasurement{Power: 0})
-	if got := tb.PowerData(Cabin).CurrentPower; got != -1500 {
-		t.Errorf("got %v, want -1500", got)
-	}
-}
-
-func TestMonthHoursBeforeToday(t *testing.T) {
-	now := time.Date(2026, 10, 3, 14, 0, 0, 0, tz.Oslo)
-	at := func(m time.Month, d, h int) time.Time { return time.Date(2026, m, d, h, 0, 0, 0, tz.Oslo) }
-	nodes := []consumptionNode{
-		{From: at(10, 2, 5), Consumption: ptr(2), Cost: ptr(3)},
-		{From: at(9, 30, 23), Consumption: ptr(9), Cost: ptr(9)}, // last month
-		{From: at(10, 1, 0), Consumption: ptr(1), Cost: ptr(1)},
-		{From: at(10, 3, 1), Consumption: ptr(9), Cost: ptr(9)}, // today
-		{From: at(10, 2, 6), Consumption: nil, Cost: nil},       // not yet known
-	}
-	got := monthHoursBeforeToday(nodes, now)
-	if len(got) != 3 || !got[0].Start.Equal(at(10, 1, 0)) || got[1].Price != 1.5 || got[2].Consumption != 0 {
-		t.Errorf("got %+v", got)
-	}
-}
-
-func TestNorgesprisPriceChangesOnNewYear2027(t *testing.T) {
-	n := defaultNorgespris
-	oslo := func(y int, m time.Month, d, h, min int) time.Time { return time.Date(y, m, d, h, min, 0, 0, tz.Oslo) }
-	cases := []struct {
-		at   time.Time
-		want float64
-	}{
-		{oslo(2025, 10, 1, 0, 0), 0.50},
-		{oslo(2026, 12, 31, 23, 59), 0.50},
-		{oslo(2027, 1, 1, 0, 0), 0.5625}, // 45 øre + 25 % VAT
-		{oslo(2027, 6, 1, 12, 0), 0.5625},
-	}
-	for _, c := range cases {
-		if got := n.PriceAt(c.at); !near(got, c.want) {
-			t.Errorf("%s: got %v, want %v", c.at, got, c.want)
-		}
-		if got := n.EffectivePrice(Home, c.at, 100, 3); !near(got, c.want) {
-			t.Errorf("%s under the cap: got %v, want %v", c.at, got, c.want)
-		}
-	}
-	if got := n.EffectivePrice(Home, oslo(2027, 1, 5, 12, 0), 5000, 3); got != 3 {
-		t.Errorf("at the cap the spot price applies, got %v", got)
-	}
-
-	// Each hour is priced at the rate in effect when it was used.
-	hours := []hourlyUsage{
-		{Start: oslo(2026, 12, 31, 23, 0), Consumption: 2, Price: 1},
-		{Start: oslo(2027, 1, 1, 0, 0), Consumption: 2, Price: 1},
-	}
-	if got := n.AccumulatedCost(Home, hours); !near(got, 2*0.5+2*0.5625) {
-		t.Errorf("cost across the change: got %v", got)
+	f := &feed{gql: gql, homeID: "h1", onMessage: func(Measurement) {}}
+	if _, err := f.connectOnce(context.Background()); err != ErrUnauthorized {
+		t.Errorf("got %v, want ErrUnauthorized", err)
 	}
 }
 
@@ -215,7 +121,7 @@ func TestReconnectPlan(t *testing.T) {
 		return d >= ceiling/2 && d <= ceiling
 	}
 
-	if _, _, stop := reconnectPlan(3, true, errUnauthorized); !stop {
+	if _, _, stop := reconnectPlan(3, true, ErrUnauthorized); !stop {
 		t.Error("a rejected token must stop the feed")
 	}
 	if next, d, _ := reconnectPlan(3, false, errNoDevice); next != 3 || d != noDeviceRecheck {
@@ -250,49 +156,22 @@ func TestClassifyDuplicateConnection(t *testing.T) {
 	}
 }
 
-// priceAt picks the hourly slot that contains the moment: the start is
-// inclusive, the end exclusive, and outside the cached list there is no price.
-func TestPriceAtPicksTheCurrentHour(t *testing.T) {
-	h := func(n int) time.Time { return time.Date(2026, 10, 26, n, 0, 0, 0, tz.Oslo) }
-	tb := New(Config{})
-	tb.prices[Home] = []PricePoint{{Start: h(13), Total: 1.1}, {Start: h(14), Total: 1.4}}
-	cases := []struct {
-		name  string
-		at    time.Time
-		want  float64
-		found bool
-	}{
-		{"start of a slot", h(13), 1.1, true},
-		{"last minute of a slot", h(13).Add(59 * time.Minute), 1.1, true},
-		{"next slot on the hour", h(14), 1.4, true},
-		{"after the list", h(15), 0, false},
-		{"before the list", h(13).Add(-time.Minute), 0, false},
+func TestClientHours(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"data":{"viewer":{"home":{"consumption":{"nodes":[
+			{"from":"2026-11-26T10:00:00+01:00","consumption":1.5},
+			{"from":"2026-11-26T11:00:00+01:00","consumption":null},
+			{"from":"2026-11-26T09:00:00+01:00","consumption":2}]}}}}}`)
+	}))
+	t.Cleanup(srv.Close)
+	c := NewClient("tok", "h1")
+	c.gql.endpoint = srv.URL
+	got, err := c.Hours(context.Background(), 3)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, c := range cases {
-		got, found := tb.priceAt(Home, c.at)
-		if got != c.want || found != c.found {
-			t.Errorf("%s: got %v %v, want %v %v", c.name, got, found, c.want, c.found)
-		}
-	}
-	if _, found := tb.priceAt(Cabin, h(13)); found {
-		t.Error("the cabin has no prices cached")
-	}
-}
-
-// When the cached list doesn't cover now, the last known price stays rather
-// than dropping to zero.
-func TestUpdatePriceKeepsTheLastKnownPrice(t *testing.T) {
-	h := func(n int) time.Time { return time.Date(2026, 10, 26, n, 0, 0, 0, tz.Oslo) }
-	tb := New(Config{})
-	tb.prices[Home] = []PricePoint{{Start: h(13), Total: 1.4}}
-
-	tb.updatePrice(Home, h(13).Add(30*time.Minute))
-	d := tb.PowerData(Home)
-	if d.CurrentPrice != 1.4 || d.EffectivePrice != 0.5 {
-		t.Fatalf("in the slot: spot %v, effective %v; want 1.4 and the Norgespris 0.5", d.CurrentPrice, d.EffectivePrice)
-	}
-	tb.updatePrice(Home, h(16))
-	if got := tb.PowerData(Home).CurrentPrice; got != 1.4 {
-		t.Errorf("outside the list: spot %v, want the last known 1.4", got)
+	ten := time.Date(2026, 11, 26, 10, 0, 0, 0, tz.Oslo)
+	if len(got) != 2 || !got[0].Start.Equal(ten) || got[0].KWh != 1.5 || got[1].KWh != 2 {
+		t.Errorf("got %+v", got)
 	}
 }

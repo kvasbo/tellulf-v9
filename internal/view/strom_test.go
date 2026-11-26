@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kvasbo/tellulf-v9/internal/tibber"
+	"github.com/kvasbo/tellulf-v9/internal/power"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
 func oslo(d, h, m int) time.Time { return time.Date(2026, 10, d, h, m, 0, 0, tz.Oslo) }
 
 // stromDetails is a home at 11:30 on 27 October, behind the quota's pace.
-func stromDetails() tibber.Details {
-	d := tibber.Details{
-		PowerData: tibber.PowerData{
+func stromDetails() power.Details {
+	d := power.Details{
+		PowerData: power.PowerData{
 			Timestamp:              oslo(27, 11, 30),
 			CurrentPower:           2440,
 			AveragePower:           1130,
@@ -31,13 +31,13 @@ func stromDetails() tibber.Details {
 		Norgespris: 0.5,
 	}
 	for h := range 11 {
-		d.Hours = append(d.Hours, tibber.Usage{Start: oslo(27, h, 0), Consumption: float64(h) / 4})
+		d.Hours = append(d.Hours, power.Usage{Start: oslo(27, h, 0), Consumption: float64(h) / 4})
 	}
 	for day := 1; day < 27; day++ {
-		d.Days = append(d.Days, tibber.Usage{Start: oslo(day, 0, 0), Consumption: 85})
+		d.Days = append(d.Days, power.Usage{Start: oslo(day, 0, 0), Consumption: 85})
 	}
 	for h := range 24 {
-		d.Prices = append(d.Prices, tibber.PricePoint{Start: oslo(27, h, 0), Total: 0.19 + float64(h)/60})
+		d.Prices = append(d.Prices, power.PricePoint{Start: oslo(27, h, 0), Total: 0.19 + float64(h)/60})
 	}
 	return d
 }
@@ -61,14 +61,14 @@ func nowBars(c *Chart) int {
 }
 
 func TestBuildStromNoData(t *testing.T) {
-	got := BuildStrom(tibber.Details{}, tibber.Cabin, oslo(27, 11, 30))
+	got := BuildStrom(power.Details{}, power.Cabin, oslo(27, 11, 30))
 	if got.Label != "Hytta" || got.HasData || got.Now != "" || got.Rows != nil {
 		t.Errorf("got %+v, want just the label", got)
 	}
 }
 
 func TestBuildStromText(t *testing.T) {
-	got := BuildStrom(stromDetails(), tibber.Home, oslo(27, 11, 30))
+	got := BuildStrom(stromDetails(), power.Home, oslo(27, 11, 30))
 	if got.Label != "Hjemme" || got.Now != "2,4" ||
 		got.Line1 != "Snitt 1,1 kW · topp 6,2 kW" || got.Line2 != "Lavest 0,3 kW i dag" {
 		t.Errorf("head: got %+v", got)
@@ -98,7 +98,7 @@ func TestBuildStromProduction(t *testing.T) {
 	d.CurrentPower = -1840
 	d.MaxPowerProduction = 3400
 	d.AccumulatedProduction = 3.1
-	got := BuildStrom(d, tibber.Cabin, oslo(27, 11, 30))
+	got := BuildStrom(d, power.Cabin, oslo(27, 11, 30))
 	if got.Now != "−1,8" || got.Line2 != "Lavest 0,3 kW i dag · sol topp 3,4 kW" ||
 		!slices.Equal(got.Rows[0].Details, []string{"7,12 kr", "sol 3,1 kWh"}) {
 		t.Errorf("got %q, %q, %q", got.Now, got.Line2, got.Rows[0].Details)
@@ -108,7 +108,7 @@ func TestBuildStromProduction(t *testing.T) {
 // Today by the hour: one place per hour, bars where there is data, the
 // hour now in the accent, and every sixth hour labelled.
 func TestTodayChart(t *testing.T) {
-	c := BuildStrom(stromDetails(), tibber.Home, oslo(27, 11, 30)).Rows[0].Chart
+	c := BuildStrom(stromDetails(), power.Home, oslo(27, 11, 30)).Rows[0].Chart
 	if len(c.Bars) != 11 || nowBars(c) != 0 {
 		t.Errorf("bars: got %d, %d now; want 11 and none (11:00 has no data yet)", len(c.Bars), nowBars(c))
 	}
@@ -121,8 +121,8 @@ func TestTodayChart(t *testing.T) {
 	}
 
 	d := stromDetails()
-	d.Hours = append(d.Hours, tibber.Usage{Start: oslo(27, 11, 0), Consumption: 0.4})
-	c = BuildStrom(d, tibber.Home, oslo(27, 11, 30)).Rows[0].Chart
+	d.Hours = append(d.Hours, power.Usage{Start: oslo(27, 11, 0), Consumption: 0.4})
+	c = BuildStrom(d, power.Home, oslo(27, 11, 30)).Rows[0].Chart
 	if nowBars(c) != 1 || c.Bars[11].Class != "now" {
 		t.Errorf("the hour now should be the accent bar: %+v", c.Bars)
 	}
@@ -139,7 +139,7 @@ func TestChartsMatchHoursAcrossZones(t *testing.T) {
 	for i := range d.Prices {
 		d.Prices[i].Start = d.Prices[i].Start.In(tibberZone)
 	}
-	rows := BuildStrom(d, tibber.Home, oslo(27, 11, 30)).Rows
+	rows := BuildStrom(d, power.Home, oslo(27, 11, 30)).Rows
 	if n := len(rows[0].Chart.Bars); n != 11 {
 		t.Errorf("hours: %d bars, want 11", n)
 	}
@@ -152,7 +152,7 @@ func TestChartsMatchHoursAcrossZones(t *testing.T) {
 func TestTodayChartOnDSTDay(t *testing.T) {
 	d := stromDetails()
 	d.Hours = nil
-	c := BuildStrom(d, tibber.Home, oslo(25, 12, 0)).Rows[0].Chart
+	c := BuildStrom(d, power.Home, oslo(25, 12, 0)).Rows[0].Chart
 	if got := tickTexts(c.Ticks); !slices.Equal(got, []string{"00", "06", "12", "18"}) {
 		t.Errorf("ticks %q", got)
 	}
@@ -164,7 +164,7 @@ func TestTodayChartOnDSTDay(t *testing.T) {
 // The month adds up day by day against a straight line to the quota at
 // the month's end, with the quota itself as a limit line.
 func TestMonthChart(t *testing.T) {
-	c := BuildStrom(stromDetails(), tibber.Home, oslo(27, 11, 30)).Rows[1].Chart
+	c := BuildStrom(stromDetails(), power.Home, oslo(27, 11, 30)).Rows[1].Chart
 	if len(c.Bars) != 27 || c.Bars[26].Class != "now" {
 		t.Fatalf("bars: got %d, last now %v", len(c.Bars), c.Bars[len(c.Bars)-1].Class)
 	}
@@ -193,7 +193,7 @@ func TestMonthChart(t *testing.T) {
 	// Past the quota the scale follows the consumption.
 	d := stromDetails()
 	d.MonthlyConsumption = 6000
-	c = BuildStrom(d, tibber.Home, oslo(27, 11, 30)).Rows[1].Chart
+	c = BuildStrom(d, power.Home, oslo(27, 11, 30)).Rows[1].Chart
 	if c.Bars[26].Y != "0.0" {
 		t.Errorf("past the quota today's bar should reach the top: %+v", c.Bars[26])
 	}
@@ -202,7 +202,7 @@ func TestMonthChart(t *testing.T) {
 // Prices: today and tomorrow, 48 places, the hour now in the accent, and
 // the Norgespris as a reference line. Tomorrow's first tick is its weekday.
 func TestPriceChart(t *testing.T) {
-	c := BuildStrom(stromDetails(), tibber.Home, oslo(27, 11, 30)).Rows[2].Chart
+	c := BuildStrom(stromDetails(), power.Home, oslo(27, 11, 30)).Rows[2].Chart
 	if len(c.Bars) != 24 || nowBars(c) != 1 || c.Bars[11].Class != "now" {
 		t.Errorf("bars: got %d, now %d", len(c.Bars), nowBars(c))
 	}
@@ -225,13 +225,13 @@ func TestPriceChart(t *testing.T) {
 func TestPriceChartNegative(t *testing.T) {
 	d := stromDetails()
 	d.Prices[3].Total = -0.1
-	c := BuildStrom(d, tibber.Home, oslo(27, 11, 30)).Rows[2].Chart
+	c := BuildStrom(d, power.Home, oslo(27, 11, 30)).Rows[2].Chart
 	hi := 0.19 + 23.0/60
 	zero := Fixed(yFor(0, -0.1, hi), 1)
 	if b := c.Bars[3]; b.Y != zero || b.H != Fixed(yFor(-0.1, -0.1, hi)-yFor(0, -0.1, hi), 1) {
 		t.Errorf("negative bar %+v, want from the zero line at %s", b, zero)
 	}
-	if got := BuildStrom(d, tibber.Home, oslo(27, 11, 30)).Rows[2].Details[0]; got != "−0,10–0,57 kr i dag" {
+	if got := BuildStrom(d, power.Home, oslo(27, 11, 30)).Rows[2].Details[0]; got != "−0,10–0,57 kr i dag" {
 		t.Errorf("range %q", got)
 	}
 }
@@ -239,7 +239,7 @@ func TestPriceChartNegative(t *testing.T) {
 func TestPriceRowWithoutPrices(t *testing.T) {
 	d := stromDetails()
 	d.Prices = nil
-	r := BuildStrom(d, tibber.Home, oslo(27, 11, 30)).Rows[2]
+	r := BuildStrom(d, power.Home, oslo(27, 11, 30)).Rows[2]
 	if r.Label != "Spotpris" || r.Value != "" || r.Details != nil || r.Chart != nil {
 		t.Errorf("got %+v, want just the label", r)
 	}

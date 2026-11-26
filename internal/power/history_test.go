@@ -1,4 +1,4 @@
-package tibber
+package power
 
 import (
 	"testing"
@@ -100,7 +100,7 @@ func TestMergeHours(t *testing.T) {
 }
 
 func TestDayTotals(t *testing.T) {
-	hours := []hourlyUsage{
+	hours := []Usage{
 		{Start: osloAt(1, 0, 0, 0), Consumption: 1},
 		{Start: osloAt(1, 23, 0, 0), Consumption: 2},
 		{Start: osloAt(2, 0, 0, 0), Consumption: 4},
@@ -109,44 +109,5 @@ func TestDayTotals(t *testing.T) {
 	if len(got) != 2 || !got[0].Start.Equal(osloAt(1, 0, 0, 0)) || got[0].Consumption != 3 ||
 		!got[1].Start.Equal(osloAt(2, 0, 0, 0)) || got[1].Consumption != 4 {
 		t.Errorf("got %+v", got)
-	}
-}
-
-func TestHistoryTodayKeepsKnownHoursOfToday(t *testing.T) {
-	nodes := []consumptionNode{
-		{From: osloAt(26, 23, 0, 0), Consumption: ptr(9)},
-		{From: osloAt(27, 0, 0, 0), Consumption: ptr(1)},
-		{From: osloAt(27, 1, 0, 0), Consumption: nil},
-	}
-	got := historyToday(nodes, osloAt(27, 9, 0, 0))
-	if len(got) != 1 || got[0].Consumption != 1 {
-		t.Errorf("got %+v", got)
-	}
-}
-
-// From 13:00 a cached list without tomorrow counts as missing, so the
-// prices are fetched again.
-func TestMissingTomorrow(t *testing.T) {
-	tb := New(Config{})
-	tb.prices[Home] = []PricePoint{{Start: osloAt(27, 0, 0, 0), Total: 1}}
-	if tb.missingTomorrow(Home, osloAt(27, 12, 59, 0)) {
-		t.Error("before 13:00 tomorrow isn't expected yet")
-	}
-	if !tb.missingTomorrow(Home, osloAt(27, 13, 0, 0)) {
-		t.Error("from 13:00 a list without tomorrow is missing it")
-	}
-	tb.prices[Home] = append(tb.prices[Home], PricePoint{Start: osloAt(28, 0, 0, 0), Total: 1})
-	if tb.missingTomorrow(Home, osloAt(27, 15, 0, 0)) {
-		t.Error("tomorrow is cached")
-	}
-}
-
-// Details copies the live numbers and the history, and today's live hours.
-func TestDetailsIncludesProductionAndLiveHours(t *testing.T) {
-	tb := New(Config{})
-	tb.onMeasurement(Cabin, liveMeasurement{AccumulatedConsumption: 4, AccumulatedProduction: 1.5})
-	d := tb.Details(Cabin)
-	if d.AccumulatedProduction != 1.5 || d.AccumulatedConsumption != 2.5 || d.Norgespris == 0 {
-		t.Errorf("got %+v", d)
 	}
 }

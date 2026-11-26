@@ -9,7 +9,7 @@ import (
 
 	"github.com/kvasbo/tellulf-v9/internal/buildinfo"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
-	"github.com/kvasbo/tellulf-v9/internal/tibber"
+	"github.com/kvasbo/tellulf-v9/internal/power"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
@@ -66,32 +66,26 @@ func BuildStamps(started time.Time) Stamps {
 // same fixed price.
 type Power struct {
 	Label   string // "Strøm hjemme", "Hytta"
-	HasData bool   // false until the live feed has delivered
+	HasData bool   // false until a live feed or the month's hours have come
 	Power   string // "0,0 kW"
 	Usage   string // "2345 kWh · 94 %"; just the kWh without a cap
 	Price   string // "1,23 kr" past the cap or without one, "" under it
 }
 
-var placeLabels = map[tibber.Place]string{tibber.Home: "Strøm hjemme", tibber.Cabin: "Hytta"}
+var placeLabels = map[power.Place]string{power.Home: "Strøm hjemme", power.Cabin: "Hytta"}
 
-// powerStaleAfter is how long the last live measurement counts as the power
-// right now. A Pulse reports every few seconds, and the feed reconnects after
-// five minutes of silence, so this means it is really gone.
-const powerStaleAfter = 10 * time.Minute
-
-// powerIsCurrent says whether the live numbers can be shown as now and today:
-// a dead feed would otherwise leave its last reading up as if it were live,
-// and after midnight show the day before's totals as today's.
-func powerIsCurrent(d tibber.PowerData, now time.Time) bool {
-	return now.Sub(d.Timestamp) <= powerStaleAfter && tz.SameDay(d.Timestamp, now)
+// hasPowerData: a live feed has delivered, or the month's hours are known.
+// Without either there is nothing to show.
+func hasPowerData(d power.PowerData) bool {
+	return !d.Timestamp.IsZero() || d.MonthKnown
 }
 
-func BuildPower(d tibber.PowerData, place tibber.Place, now time.Time) Power {
-	p := Power{Label: placeLabels[place], HasData: !d.Timestamp.IsZero()}
+func BuildPower(d power.PowerData, place power.Place, now time.Time) Power {
+	p := Power{Label: placeLabels[place], HasData: hasPowerData(d)}
 	if !p.HasData {
 		return p
 	}
-	if powerIsCurrent(d, now) {
+	if d.IsLive(now) {
 		// Tenths of a kW, so per-second watt jitter doesn't produce new HTML
 		// every tick (which would defeat the SSE dedup).
 		p.Power = KW(d.CurrentPower)

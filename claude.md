@@ -9,7 +9,7 @@ notes and mockup are in `docs/superpowers/specs/2026-10-26-natt-redesign-design.
 ## Modes
 
 MQTT switches the screen between pages: `tellulf/mode` with `oversikt` (`/`, the Natt
-overview), `strom` (`/strom`, Tibber in detail), `kalender` (`/kalender`, two weeks in
+overview), `strom` (`/strom`, power in detail), `kalender` (`/kalender`, two weeks in
 detail), `vaer` (`/vaer`, the weather in detail) or `uke` (`/uke`, Claude's lines about the
 week beside its days); names or paths, `strøm`/`vær` work too.
 Design notes: `docs/superpowers/specs/2026-10-27-moduser-design.md`.
@@ -97,7 +97,7 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - **Biome** lints and formats `public/` (`biome.json`); CI runs `biome ci`.
 - Templates, `static/` and `public/` are embedded in the binary with `go:embed`.
 - Every data source is a struct with a `Run(ctx)` loop and state behind a mutex; getters
-  return copies. Missing config for calendar/MQTT/Tibber disables that panel with a warning.
+  return copies. Missing config for calendar/MQTT/power disables that panel with a warning.
 - All wall-clock logic uses `tz.Oslo` (tzdata embedded).
 
 ## Gotchas
@@ -127,9 +127,10 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   silent without an error). Both ask the server first (`reloadWhenUp`) and try again every
   30 seconds until it answers: a reload while it is away would leave an error page, with no
   script to recover. Test it by mocking `Date.now` and `fetch` in the page.
-- Live power numbers are hidden (`powerIsCurrent`) when the last measurement is over 10
-  minutes old or from yesterday: a dead feed's reading must not pass for now. The month's
-  use, the price and the charts stay.
+- Live power numbers are hidden (`PowerData.IsLive`) when the last measurement is over 10
+  minutes old or from yesterday: a dead feed's reading must not pass for now. Today's use
+  then comes from the known hours, marked "til kl. 13"; the month, the price and the charts
+  stay. At home there is no live feed until the HAN reader arrives, so it always looks so.
 
 ## Packages
 
@@ -140,8 +141,14 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - `internal/entur` — metro departures
 - `internal/smarthouse` — MQTT sensor readings and the mode (paho)
 - `internal/mode` — the pages and their paths, and parsing the MQTT payload
-- `internal/tibber` — live feed (own graphql-transport-ws client on coder/websocket),
-  daily price list, monthly consumption, Norgespris maths
+- `internal/power` — puts power together for the home and the cabin: the month's hours,
+  the live feed, prices, Norgespris maths. Keeps raw data; `Data`/`Details(place, now)`
+  work the numbers out when read. Design notes:
+  `docs/superpowers/specs/2026-11-26-strom-uten-tibber-design.md`.
+- `internal/elvia` — the home's hourly consumption from Elvia
+- `internal/tibber` — the cabin's live feed (own graphql-transport-ws client on
+  coder/websocket) and hourly consumption
+- `internal/spotpris` — spot prices from hvakosterstrommen.no
 - `internal/sun` — NOAA sunrise/sunset, shown in the I DAG header and on the weather page
 - `internal/buildinfo` — build time, set by the CI build via `-ldflags -X` (shown as "dev" otherwise)
 - `internal/view` — builds template data; `internal/views` — templ components;
@@ -166,8 +173,19 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 
 ## APIs
 
-- **Tibber**: Power usage and cost. Reference: https://developer.tibber.com/docs/reference
-  - Max two open websockets per token (one per home here). Feeds reconnect with jittered
+- **Elvia**: the home's consumption, `GET elvia.azure-api.net/customer/metervalues/api/v1/metervalues`
+  (v1; v2 is a 404) with `Authorization: Bearer $ELVIA_TOKEN`, a personal token from Min side
+  (valid until 2031, covers only the home's meter). Hourly only, and an hour is there less
+  than an hour after it ends; the latest are `verified: false` and may still change, so the
+  month so far is fetched again every 15 minutes. No real-time data. `maxhours` (the
+  capacity tariff's peak hours) works too but isn't shown.
+- **hvakosterstrommen.no**: spot prices for NO1 (home and cabin), one file per day, no key:
+  `/api/v1/prices/2026/11-26_NO1.json`, without VAT (×1.25). 404 until published (tomorrow's
+  around 13:00, then asked for at most every 15 minutes). Every day of the month is fetched
+  once, to price its hours; quarter hours would be averaged to hours (`spotpris`).
+- **Tibber** (the cabin only): live feed and hourly consumption. Reference:
+  https://developer.tibber.com/docs/reference
+  - Max two open websockets per token. Feeds reconnect with jittered
     exponential backoff, wait 1–60s after "1001 Going away", and check
     `realTimeConsumptionEnabled` before reconnecting. On a rejected token they stop until a
     restart, and don't retry on a timer: Tibber's docs say the client "must not retry with
@@ -175,8 +193,6 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
   - Monthly consumption: once an hour, and after a failure again with the jittered backoff
     Tibber requires (`monthlyPace`), so a failed midnight fetch isn't left for an hour. A
     rejected token waits for the next hour.
-  - Prices: today+tomorrow fetched once and cached; current price is picked locally. From
-    13:00 a list without tomorrow is fetched again, at most every 15 minutes.
   - Today's hourly consumption: the consumption history lags an hour or two, so the live
     feed marks the running total at each hour boundary to fill in (`history.go`). Match
     hours by Unix time: Tibber's times carry their own zone, so equal `time.Time`s differ
@@ -196,13 +212,14 @@ Go server (`main.go`), rendered HTML pushed to the browser over SSE.
 - Home cap: 5000 kWh/month, cabin cap: 1000 kWh/month; spot price above the cap
 - Fixed price (incl. 25 % VAT): 0.50 kr/kWh from 2025-10-01, 0.5625 kr/kWh (45 øre + mva)
   from 2027-01-01. Each kWh is priced at the rate in effect when it was used.
-  Schedule lives in `defaultNorgespris` in `internal/tibber/norgespris.go`.
+  Schedule lives in `defaultNorgespris` in `internal/power/norgespris.go`. The cost is
+  worked out hour by hour from the hours and the spot prices, the same for both places.
 
 ## Environment Variables
 
 CAL_ID_AUDUN, CAL_ID_BARNEUKER, CAL_ID_BURSDAG, CAL_ID_FELLES, CAL_ID_KINDERGARDEN,
-CAL_ID_MIDDAG, EXPOSE_PORT, GOOGLE_KEY_B64, MQTT_HOST, MQTT_PASS, MQTT_USER,
-TIBBER_ID_CABIN, TIBBER_ID_HOME, TIBBER_KEY, TELLULF_DEV, TELLULF_DEBUG,
+CAL_ID_MIDDAG, ELVIA_TOKEN, EXPOSE_PORT, GOOGLE_KEY_B64, MQTT_HOST, MQTT_PASS, MQTT_USER,
+TIBBER_ID_CABIN, TIBBER_KEY, TELLULF_DEV, TELLULF_DEBUG,
 TELLULF_MODE_TIMEOUT, ANTHROPIC_API_KEY, TELLULF_CLAUDE_MODEL, TELLULF_STATE_DIR,
 SPOND_EMAIL and SPOND_PASSWORD (optional)
 

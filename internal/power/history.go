@@ -1,4 +1,4 @@
-package tibber
+package power
 
 import (
 	"maps"
@@ -7,35 +7,6 @@ import (
 
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
-
-// Usage is the energy used in one hour or one day.
-type Usage struct {
-	Start       time.Time
-	Consumption float64 // kWh
-}
-
-// Details is everything the power page shows for one place.
-type Details struct {
-	PowerData
-	Hours      []Usage      // today's hours in order; an hour without data is missing
-	Days       []Usage      // this month's days before today, from the consumption history
-	Prices     []PricePoint // today, and tomorrow once Tibber has published it
-	Norgespris float64      // the fixed price now, kr/kWh
-}
-
-// Details returns a copy of everything known about p.
-func (t *Tibber) Details(p Place) Details {
-	now := time.Now()
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return Details{
-		PowerData:  *t.data[p],
-		Hours:      mergeHours(t.historyToday[p], t.live[p].hours(now), now),
-		Days:       t.days[p], // replaced, never changed in place
-		Prices:     t.prices[p],
-		Norgespris: t.norgespris.PriceAt(now),
-	}
-}
 
 // liveHours turns the live feed's running total into hourly consumption:
 // it marks the total at every hour boundary it sees. The history has
@@ -90,8 +61,8 @@ func (l *liveHours) hours(now time.Time) []Usage {
 
 // mergeHours combines today's hours from the history with those measured
 // live. The history wins where both have an hour; hours from another day
-// are dropped. Hours are matched by Unix time, since the history's times
-// carry Tibber's zone and the live ones ours.
+// are dropped. Hours are matched by Unix time, since the sources' times
+// carry their own zones.
 func mergeHours(history, live []Usage, now time.Time) []Usage {
 	byHour := map[int64]float64{}
 	for _, list := range [][]Usage{live, history} {
@@ -109,7 +80,7 @@ func mergeHours(history, live []Usage, now time.Time) []Usage {
 }
 
 // dayTotals sums hours (in order) into one Usage per Oslo day.
-func dayTotals(hours []hourlyUsage) []Usage {
+func dayTotals(hours []Usage) []Usage {
 	var out []Usage
 	for _, h := range hours {
 		day := tz.StartOfDay(h.Start)
@@ -118,17 +89,6 @@ func dayTotals(hours []hourlyUsage) []Usage {
 			continue
 		}
 		out = append(out, Usage{Start: day, Consumption: h.Consumption})
-	}
-	return out
-}
-
-// historyToday picks today's known hours from the consumption history.
-func historyToday(nodes []consumptionNode, now time.Time) []Usage {
-	var out []Usage
-	for _, n := range nodes {
-		if n.Consumption != nil && tz.SameDay(n.From, now) {
-			out = append(out, Usage{Start: n.From, Consumption: *n.Consumption})
-		}
 	}
 	return out
 }

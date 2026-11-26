@@ -21,8 +21,8 @@ import (
 	"github.com/kvasbo/tellulf-v9/internal/claude"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/mode"
+	"github.com/kvasbo/tellulf-v9/internal/power"
 	"github.com/kvasbo/tellulf-v9/internal/smarthouse"
-	"github.com/kvasbo/tellulf-v9/internal/tibber"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 	"github.com/kvasbo/tellulf-v9/internal/view"
 	"github.com/kvasbo/tellulf-v9/internal/views"
@@ -30,7 +30,7 @@ import (
 )
 
 // Sources are the data sources the pages are built from. Calendar,
-// Smarthouse, Tibber and Claude are nil when not configured; their panels
+// Smarthouse, Power and Claude are nil when not configured; their panels
 // then render empty (without Claude: as they were before it), and without
 // Smarthouse there is no mode to follow.
 type Sources struct {
@@ -38,7 +38,7 @@ type Sources struct {
 	Entur      *entur.Entur
 	Calendar   *calendar.Calendar
 	Smarthouse *smarthouse.Smarthouse
-	Tibber     *tibber.Tibber
+	Power      *power.Power
 	Claude     *claude.Claude
 }
 
@@ -134,11 +134,11 @@ func (s *Server) fragments() map[string]fragment {
 		{"calendar", func(now time.Time) templ.Component {
 			return views.Calendar(s.calendar(now), view.BuildSun(now), view.BuildStamps(s.started))
 		}},
-		{"power-home", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Home, now)) }},
-		{"power-cabin", func(now time.Time) templ.Component { return views.Power(s.power(tibber.Cabin, now)) }},
+		{"power-home", func(now time.Time) templ.Component { return views.Power(s.power(power.Home, now)) }},
+		{"power-cabin", func(now time.Time) templ.Component { return views.Power(s.power(power.Cabin, now)) }},
 		{"trains", func(now time.Time) templ.Component { return views.Entur(s.trains(now)) }},
-		{"strom-home", func(now time.Time) templ.Component { return views.Strom(s.strom(tibber.Home, now)) }},
-		{"strom-cabin", func(now time.Time) templ.Component { return views.Strom(s.strom(tibber.Cabin, now)) }},
+		{"strom-home", func(now time.Time) templ.Component { return views.Strom(s.strom(power.Home, now)) }},
+		{"strom-cabin", func(now time.Time) templ.Component { return views.Strom(s.strom(power.Cabin, now)) }},
 		{"kalender", func(now time.Time) templ.Component { return views.Agenda(s.agenda(now)) }},
 		{"vaer", func(now time.Time) templ.Component { return views.Vaer(s.vaer(now)) }},
 		{"uke", func(now time.Time) templ.Component { return views.Uke(s.uke(now)) }},
@@ -166,8 +166,8 @@ func (s *Server) page(now time.Time) views.Page {
 		Weather:    s.weather(now),
 		Sun:        view.BuildSun(now),
 		Calendar:   s.calendar(now),
-		PowerHome:  s.power(tibber.Home, now),
-		PowerCabin: s.power(tibber.Cabin, now),
+		PowerHome:  s.power(power.Home, now),
+		PowerCabin: s.power(power.Cabin, now),
 		Trains:     s.trains(now),
 	}
 }
@@ -175,8 +175,8 @@ func (s *Server) page(now time.Time) views.Page {
 func (s *Server) stromPage(now time.Time) views.StromPage {
 	return views.StromPage{
 		Frame: s.frame(now),
-		Home:  s.strom(tibber.Home, now),
-		Cabin: s.strom(tibber.Cabin, now),
+		Home:  s.strom(power.Home, now),
+		Cabin: s.strom(power.Cabin, now),
 	}
 }
 
@@ -255,18 +255,18 @@ func (s *Server) texts(now time.Time) claude.Texts {
 	return s.src.Claude.Texts(now)
 }
 
-func (s *Server) strom(p tibber.Place, now time.Time) view.Strom {
-	var d tibber.Details
-	if s.src.Tibber != nil {
-		d = s.src.Tibber.Details(p)
+func (s *Server) strom(p power.Place, now time.Time) view.Strom {
+	var d power.Details
+	if s.src.Power != nil {
+		d = s.src.Power.Details(p, now)
 	}
 	return view.BuildStrom(d, p, now)
 }
 
-func (s *Server) power(p tibber.Place, now time.Time) view.Power {
-	var d tibber.PowerData
-	if s.src.Tibber != nil {
-		d = s.src.Tibber.PowerData(p)
+func (s *Server) power(p power.Place, now time.Time) view.Power {
+	var d power.PowerData
+	if s.src.Power != nil {
+		d = s.src.Power.Data(p, now)
 	}
 	return view.BuildPower(d, p, now)
 }

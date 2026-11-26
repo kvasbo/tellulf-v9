@@ -1,6 +1,6 @@
 # Strøm uten Tibber hjemme
 
-Dato: 2026-11-26. Status: valgt (alternativ B), ikke implementert.
+Dato: 2026-11-26. Status: implementert (alternativ B). Sanntid hjemme venter på HAN-leseren.
 
 ## Hva og hvorfor
 

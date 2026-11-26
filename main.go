@@ -22,10 +22,13 @@ import (
 
 	"github.com/kvasbo/tellulf-v9/internal/calendar"
 	"github.com/kvasbo/tellulf-v9/internal/claude"
+	"github.com/kvasbo/tellulf-v9/internal/elvia"
 	"github.com/kvasbo/tellulf-v9/internal/entur"
 	"github.com/kvasbo/tellulf-v9/internal/mode"
+	"github.com/kvasbo/tellulf-v9/internal/power"
 	"github.com/kvasbo/tellulf-v9/internal/smarthouse"
 	"github.com/kvasbo/tellulf-v9/internal/spond"
+	"github.com/kvasbo/tellulf-v9/internal/spotpris"
 	"github.com/kvasbo/tellulf-v9/internal/tibber"
 	"github.com/kvasbo/tellulf-v9/internal/weather"
 	"github.com/kvasbo/tellulf-v9/internal/web"
@@ -91,12 +94,12 @@ func run() error {
 		src.Smarthouse = sh
 	}
 
-	if cfg, err := tibberConfig(); err != nil {
+	if cfg, err := powerConfig(); err != nil {
 		slog.Warn("power disabled", "reason", err)
 	} else {
-		t := tibber.New(cfg)
-		src.Tibber = t
-		wg.Go(func() { t.Run(ctx) })
+		p := power.New(cfg)
+		src.Power = p
+		wg.Go(func() { p.Run(ctx) })
 	}
 
 	if key := os.Getenv("ANTHROPIC_API_KEY"); key == "" {
@@ -220,14 +223,24 @@ func newCalendar(ctx context.Context) (*calendar.Calendar, error) {
 	return calendar.New(ctx, cfg, key)
 }
 
-func tibberConfig() (tibber.Config, error) {
-	cfg := tibber.Config{
-		Token:   os.Getenv("TIBBER_KEY"),
-		HomeID:  os.Getenv("TIBBER_ID_HOME"),
-		CabinID: os.Getenv("TIBBER_ID_CABIN"),
+// powerConfig: Elvia for the home, Tibber for the cabin, and spot prices
+// (no key) for both. Power is on when either place is configured.
+func powerConfig() (power.Config, error) {
+	var cfg power.Config
+	if token := os.Getenv("ELVIA_TOKEN"); token != "" {
+		cfg.Elvia = elvia.New(token)
 	}
-	if cfg.Token == "" || cfg.HomeID == "" || cfg.CabinID == "" {
-		return cfg, errors.New("TIBBER_KEY, TIBBER_ID_HOME and TIBBER_ID_CABIN must all be set")
+	if key, id := os.Getenv("TIBBER_KEY"), os.Getenv("TIBBER_ID_CABIN"); key != "" && id != "" {
+		cfg.Tibber = tibber.NewClient(key, id)
 	}
+	switch {
+	case cfg.Elvia == nil && cfg.Tibber == nil:
+		return cfg, errors.New("neither ELVIA_TOKEN nor TIBBER_KEY and TIBBER_ID_CABIN are set")
+	case cfg.Elvia == nil:
+		slog.Warn("power at home disabled", "reason", "ELVIA_TOKEN is not set")
+	case cfg.Tibber == nil:
+		slog.Warn("power at the cabin disabled", "reason", "TIBBER_KEY and TIBBER_ID_CABIN must both be set")
+	}
+	cfg.Prices = spotpris.New("NO1") // home and cabin are both in NO1
 	return cfg, nil
 }

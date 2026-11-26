@@ -86,12 +86,11 @@ ANTHROPIC_API_KEY=... go test -tags live -run Live -v ./internal/claude
 
   The design notes and the mockup it follows are in `docs/superpowers/specs/`.
 
-To try power data without your own account, use Tibber's public demo token and home
-(the values in `stack.env`):
+To try the cabin's power data without your own account, use Tibber's public demo token
+and home (the values in `stack.env`). Spot prices need no key:
 
 ```sh
 TIBBER_KEY=3A77EECF61BD445F47241A5A36202185C35AF3AF58609E19B53F3A8872AD7BE1-1 \
-TIBBER_ID_HOME=96a14971-525a-4420-aae9-e5aedaa129ff \
 TIBBER_ID_CABIN=96a14971-525a-4420-aae9-e5aedaa129ff \
 TELLULF_DEV=1 go run .
 ```
@@ -135,7 +134,8 @@ Three ways to set them:
 | `TELLULF_DEBUG` | Set to anything to log routine fetches too |
 | `TELLULF_MODE_TIMEOUT` | How long a page other than the overview stays up: `90s`, `5m`, or seconds; `0` for good (default `2m`) |
 | `MQTT_HOST`, `MQTT_USER`, `MQTT_PASS` | Outdoor sensors and the mode, e.g. `mqtt://broker:1883` (port defaults to 1883) |
-| `TIBBER_KEY`, `TIBBER_ID_HOME`, `TIBBER_ID_CABIN` | Power usage and price; all three are required |
+| `ELVIA_TOKEN` | Power used at home, from Elvia (a personal token from Min side → Tilganger) |
+| `TIBBER_KEY`, `TIBBER_ID_CABIN` | The cabin's live power and use, from Tibber; both are required |
 | `ANTHROPIC_API_KEY` | Claude's texts (optional) |
 | `TELLULF_CLAUDE_MODEL` | The model for them (default `claude-haiku-5-5`) |
 | `TELLULF_STATE_DIR` | A writable directory where Claude's texts are kept between restarts (optional; memory only without it) |
@@ -162,7 +162,10 @@ internal/
   entur/              metro departures
   smarthouse/         MQTT sensor readings and the mode
   mode/               the pages (modes) and their paths
-  tibber/             live power feed, prices, monthly totals, Norgespris
+  power/              power at home and the cabin: hours, live feed, prices, Norgespris
+  elvia/              the home's hourly use from Elvia
+  tibber/             the cabin's live feed and hourly use from Tibber
+  spotpris/           spot prices from hvakosterstrommen.no
   sun/                sunrise/sunset
   view/               turns data into what the templates print
   views/              templ components (*.templ) and their generated Go code

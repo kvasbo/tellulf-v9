@@ -36,8 +36,8 @@ const liveQuery = `subscription($homeId: ID!) {
   }
 }`
 
-// liveMeasurement fields marked nullable in Tibber's schema are pointers.
-type liveMeasurement struct {
+// Measurement is one frame of the live feed. Fields marked nullable in Tibber's schema are pointers.
+type Measurement struct {
 	Timestamp              string   `json:"timestamp"`
 	Power                  float64  `json:"power"`
 	AccumulatedConsumption float64  `json:"accumulatedConsumption"`
@@ -74,15 +74,14 @@ var errDuplicate = errors.New("tibber: duplicate connection")
 
 type feed struct {
 	gql       *graphQL
-	place     Place
 	homeID    string
-	onMessage func(Place, liveMeasurement)
+	onMessage func(Measurement)
 }
 
 // run keeps the feed connected until ctx is cancelled or Tibber rejects the
 // token.
 func (f *feed) run(ctx context.Context) {
-	log := slog.With("place", f.place)
+	log := slog.With("feed", "tibber")
 	attempt := 0
 	for {
 		gotData, err := f.connectOnce(ctx)
@@ -118,7 +117,7 @@ func (f *feed) run(ctx context.Context) {
 // wait before reconnecting, and whether to give up.
 func reconnectPlan(attempt int, gotData bool, err error) (next int, delay time.Duration, stop bool) {
 	switch {
-	case errors.Is(err, errUnauthorized):
+	case errors.Is(err, ErrUnauthorized):
 		return attempt, 0, true
 	case errors.Is(err, errNoDevice):
 		return attempt, noDeviceRecheck, false
@@ -161,7 +160,7 @@ func (f *feed) connectOnce(ctx context.Context) (gotData bool, err error) {
 	})
 	if err != nil {
 		if res != nil && (res.StatusCode == http.StatusUnauthorized || res.StatusCode == http.StatusForbidden) {
-			return false, errUnauthorized
+			return false, ErrUnauthorized
 		}
 		return false, fmt.Errorf("dial: %w", err)
 	}
@@ -178,7 +177,7 @@ func (f *feed) connectOnce(ctx context.Context) (gotData bool, err error) {
 	if err := f.awaitAck(dialCtx, conn); err != nil {
 		return false, err
 	}
-	slog.Info("connected to Tibber", "place", f.place)
+	slog.Info("connected to Tibber")
 
 	sub, _ := json.Marshal(map[string]any{
 		"query":     liveQuery,
@@ -200,7 +199,7 @@ func (f *feed) connectOnce(ctx context.Context) (gotData bool, err error) {
 		case "next":
 			var p struct {
 				Data *struct {
-					LiveMeasurement *liveMeasurement `json:"liveMeasurement"`
+					LiveMeasurement *Measurement `json:"liveMeasurement"`
 				} `json:"data"`
 				Errors []gqlError `json:"errors"`
 			}
@@ -208,11 +207,11 @@ func (f *feed) connectOnce(ctx context.Context) (gotData bool, err error) {
 				return gotData, fmt.Errorf("bad next payload: %w", err)
 			}
 			if len(p.Errors) > 0 {
-				slog.Warn("Tibber feed error", "place", f.place, "errors", p.Errors)
+				slog.Warn("Tibber feed error", "errors", p.Errors)
 			}
 			if p.Data != nil && p.Data.LiveMeasurement != nil {
 				gotData = true
-				f.onMessage(f.place, *p.Data.LiveMeasurement)
+				f.onMessage(*p.Data.LiveMeasurement)
 			}
 		case "error":
 			return gotData, fmt.Errorf("subscription error: %s", msg.Payload)
@@ -264,7 +263,7 @@ func classify(err error) error {
 	case websocket.StatusGoingAway:
 		return errGoingAway
 	case 4401, 4403: // graphql-transport-ws: Unauthorized / Forbidden
-		return errUnauthorized
+		return ErrUnauthorized
 	case 4429:
 		return errDuplicate
 	}

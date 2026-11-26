@@ -14,9 +14,9 @@ import (
 // Tibber requires a User-Agent naming both platform and driver version.
 const userAgent = "Tellulf/9.0 tellulf-tibber-go/1.0"
 
-// errUnauthorized means Tibber rejected the token. Per Tibber's client
+// ErrUnauthorized means Tibber rejected the token. Per Tibber's client
 // requirements we must not keep retrying with it.
-var errUnauthorized = errors.New("tibber rejected the API token")
+var ErrUnauthorized = errors.New("tibber rejected the API token")
 
 type graphQL struct {
 	http     *http.Client
@@ -48,7 +48,7 @@ func (g *graphQL) query(ctx context.Context, query string, vars map[string]any, 
 	}
 	defer res.Body.Close()
 	if res.StatusCode == http.StatusUnauthorized || res.StatusCode == http.StatusForbidden {
-		return errUnauthorized
+		return ErrUnauthorized
 	}
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("tibber: %s", res.Status)
@@ -73,57 +73,9 @@ func (g *graphQL) query(ctx context.Context, query string, vars map[string]any, 
 
 // --- Queries ------------------------------------------------------------------
 
-// PricePoint is the spot price for one hour.
-type PricePoint struct {
-	Start time.Time
-	Total float64 // kr/kWh incl. VAT
-}
-
-// Prices for today and tomorrow. Tibber asks clients to fetch these once a
-// day and cache them instead of polling the current price.
-const pricesQuery = `query($homeId: ID!) {
-  viewer { home(id: $homeId) { currentSubscription { priceInfo(resolution: HOURLY) {
-    today { total startsAt }
-    tomorrow { total startsAt }
-  } } } }
-}`
-
-func (g *graphQL) prices(ctx context.Context, homeID string) ([]PricePoint, error) {
-	type price struct {
-		Total    *float64  `json:"total"`
-		StartsAt time.Time `json:"startsAt"`
-	}
-	var r struct {
-		Viewer struct {
-			Home struct {
-				CurrentSubscription *struct {
-					PriceInfo *struct {
-						Today    []price `json:"today"`
-						Tomorrow []price `json:"tomorrow"`
-					} `json:"priceInfo"`
-				} `json:"currentSubscription"`
-			} `json:"home"`
-		} `json:"viewer"`
-	}
-	if err := g.query(ctx, pricesQuery, map[string]any{"homeId": homeID}, &r); err != nil {
-		return nil, err
-	}
-	sub := r.Viewer.Home.CurrentSubscription
-	if sub == nil || sub.PriceInfo == nil {
-		return nil, errors.New("tibber: home has no price info")
-	}
-	var out []PricePoint
-	for _, p := range append(sub.PriceInfo.Today, sub.PriceInfo.Tomorrow...) {
-		if p.Total != nil {
-			out = append(out, PricePoint{Start: p.StartsAt, Total: *p.Total})
-		}
-	}
-	return out, nil
-}
-
 const consumptionQuery = `query($homeId: ID!, $last: Int!) {
   viewer { home(id: $homeId) { consumption(resolution: HOURLY, last: $last) {
-    nodes { from consumption cost }
+    nodes { from consumption }
   } } }
 }`
 
@@ -133,7 +85,6 @@ const maxConsumptionNodes = 744
 type consumptionNode struct {
 	From        time.Time `json:"from"`
 	Consumption *float64  `json:"consumption"` // kWh, null when not yet known
-	Cost        *float64  `json:"cost"`
 }
 
 func (g *graphQL) hourlyConsumption(ctx context.Context, homeID string, last int) ([]consumptionNode, error) {

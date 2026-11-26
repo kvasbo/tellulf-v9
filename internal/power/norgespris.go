@@ -1,4 +1,4 @@
-package tibber
+package power
 
 import (
 	"time"
@@ -19,7 +19,7 @@ type Norgespris struct {
 // the next period starts.
 type PricePeriod struct {
 	From  time.Time
-	Price float64 // kr/kWh including VAT, comparable to Tibber's spot "total"
+	Price float64 // kr/kWh including VAT, comparable to the spot price
 }
 
 const vat = 1.25
@@ -61,21 +61,19 @@ func (n Norgespris) EffectivePrice(p Place, at time.Time, monthlyConsumption, sp
 	return n.PriceAt(at)
 }
 
-type hourlyUsage struct {
-	Start       time.Time
-	Price       float64 // spot price per kWh, derived from cost/consumption
-	Consumption float64
-}
-
-// AccumulatedCost prices a month's hours (in chronological order), charging
-// the fixed price until the cap is reached and spot price after.
-func (n Norgespris) AccumulatedCost(p Place, hours []hourlyUsage) float64 {
+// AccumulatedCost prices hours (in chronological order), charging the fixed
+// price until the cap is reached and the hour's spot price after. used is
+// what the month had used before these hours, in kWh.
+func (n Norgespris) AccumulatedCost(p Place, hours []Usage, spot func(time.Time) float64, used float64) float64 {
 	limit := n.Cap(p)
-	used, total := 0.0, 0.0
+	total := 0.0
 	for _, h := range hours {
 		subsidized := max(0, min(h.Consumption, limit-used))
 		market := h.Consumption - subsidized
-		total += subsidized*n.PriceAt(h.Start) + market*h.Price
+		total += subsidized * n.PriceAt(h.Start)
+		if market > 0 {
+			total += market * spot(h.Start)
+		}
 		used += h.Consumption
 	}
 	return total
