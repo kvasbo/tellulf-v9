@@ -15,6 +15,7 @@ import (
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 
+	"github.com/kvasbo/tellulf-v9/internal/schedule"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
@@ -110,16 +111,6 @@ func TestFeedRejectedToken(t *testing.T) {
 	f := &feed{gql: gql, place: Home, homeID: "h1", onMessage: func(Place, liveMeasurement) {}}
 	if _, err := f.connectOnce(context.Background()); err != errUnauthorized {
 		t.Errorf("got %v, want errUnauthorized", err)
-	}
-}
-
-func TestBackoffGrowsAndStaysBounded(t *testing.T) {
-	for attempt := 1; attempt < 40; attempt++ {
-		d := backoff(attempt)
-		ceiling := min(baseBackoff<<min(attempt-1, 20), maxBackoff)
-		if d < ceiling/2 || d > ceiling {
-			t.Errorf("attempt %d: %v outside [%v, %v]", attempt, d, ceiling/2, ceiling)
-		}
 	}
 }
 
@@ -220,7 +211,7 @@ func TestNorgesprisPriceChangesOnNewYear2027(t *testing.T) {
 func TestReconnectPlan(t *testing.T) {
 	other := errors.New("network trouble")
 	within := func(d time.Duration, attempt int) bool {
-		ceiling := min(baseBackoff<<min(attempt-1, 20), maxBackoff)
+		ceiling := min(schedule.BaseBackoff<<min(attempt-1, 20), schedule.MaxBackoff)
 		return d >= ceiling/2 && d <= ceiling
 	}
 

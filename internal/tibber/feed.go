@@ -59,10 +59,6 @@ const (
 	ackTimeout = 30 * time.Second
 	// Reconnect if a connection delivers nothing for this long.
 	staleLimit = 5 * time.Minute
-	// Reconnect delays grow exponentially (with jitter) from baseBackoff up to
-	// maxBackoff while connections keep failing, and reset once data arrives.
-	baseBackoff = 10 * time.Second
-	maxBackoff  = 30 * time.Minute
 	// How long to wait before asking again when the home has no Pulse/Watty.
 	noDeviceRecheck = 30 * time.Minute
 )
@@ -75,14 +71,6 @@ var errGoingAway = errors.New("tibber server going away")
 // has a subscription for this home with the same token, e.g. a previous
 // instance that hasn't been cleaned up yet, or another integration.
 var errDuplicate = errors.New("tibber: duplicate connection")
-
-// backoff returns the delay before reconnect attempt n (1-based): half fixed,
-// half random, so clients don't reconnect in lockstep.
-func backoff(attempt int) time.Duration {
-	d := baseBackoff << min(attempt-1, 20)
-	d = min(d, maxBackoff)
-	return d/2 + rand.N(d/2)
-}
 
 type feed struct {
 	gql       *graphQL
@@ -138,7 +126,7 @@ func reconnectPlan(attempt int, gotData bool, err error) (next int, delay time.D
 		// Another client holds this home's feed. Even if we got data before
 		// being kicked, keep backing off so two clients don't take turns
 		// kicking each other every few seconds.
-		return attempt + 1, backoff(attempt + 1), false
+		return attempt + 1, schedule.Backoff(attempt + 1), false
 	}
 	if gotData {
 		attempt = 0 // the connection worked; start the backoff over
@@ -146,7 +134,7 @@ func reconnectPlan(attempt int, gotData bool, err error) (next int, delay time.D
 	if errors.Is(err, errGoingAway) {
 		return attempt, time.Second + rand.N(59*time.Second), false
 	}
-	return attempt + 1, backoff(attempt + 1), false
+	return attempt + 1, schedule.Backoff(attempt + 1), false
 }
 
 var errNoDevice = errors.New("no real-time device")

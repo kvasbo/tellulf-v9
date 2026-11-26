@@ -193,7 +193,7 @@ func (t *Tibber) runPrices(ctx context.Context, p Place) {
 			prices, err := t.gql.prices(ctx, t.homeIDs[p])
 			if err != nil {
 				failures++
-				nextAttempt = now.Add(backoff(failures))
+				nextAttempt = now.Add(schedule.Backoff(failures))
 				slog.Error("could not fetch prices", "place", p, "err", err, "retry_at", nextAttempt.Format(time.TimeOnly))
 			} else {
 				failures = 0
@@ -276,7 +276,7 @@ func (m *monthlyPace) due(now time.Time) bool {
 func (m *monthlyPace) done(now time.Time, err error) {
 	if err != nil && !errors.Is(err, errUnauthorized) {
 		m.failures++
-		m.next = now.Add(backoff(m.failures))
+		m.next = now.Add(schedule.Backoff(m.failures))
 		return
 	}
 	// Tibber says not to retry a rejected token, so that waits for its hour too.

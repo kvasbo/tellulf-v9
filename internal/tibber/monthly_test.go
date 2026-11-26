@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kvasbo/tellulf-v9/internal/schedule"
 	"github.com/kvasbo/tellulf-v9/internal/tz"
 )
 
@@ -42,7 +43,7 @@ func TestMonthlyPace(t *testing.T) {
 	if p.due(nov6(11, 2)) {
 		t.Error("repeated failures should wait longer")
 	}
-	if !p.due(nov6(11, 1).Add(maxBackoff)) {
+	if !p.due(nov6(11, 1).Add(schedule.MaxBackoff)) {
 		t.Error("the wait should stay under the longest backoff")
 	}
 
