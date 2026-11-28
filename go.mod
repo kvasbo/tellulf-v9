@@ -4,11 +4,11 @@ go 1.27.4
 
 require (
 	github.com/a-h/templ v0.3.1118
-	github.com/anthropics/anthropic-sdk-go/v2 v2.14.0
+	github.com/anthropics/anthropic-sdk-go/v2 v2.15.0
 	github.com/coder/websocket v1.8.15
 	github.com/eclipse/paho.mqtt.golang v1.5.2
 	github.com/joho/godotenv v1.5.1
-	google.golang.org/api v0.316.0
+	google.golang.org/api v0.317.0
 )
 
 require (
